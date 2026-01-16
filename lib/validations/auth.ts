@@ -56,9 +56,6 @@ export const registerSchema = z.object({
         .min(1, 'CPF é obrigatório')
         .transform((val) => val.replace(/[^\d]/g, ''))
         .refine((val) => validateCPF(val), 'CPF inválido'),
-    plan: z
-        .enum(['recruta', 'veterano', 'elite'])
-        .default('recruta'),
     password: z
         .string()
         .min(1, 'Senha é obrigatória')
@@ -77,18 +74,10 @@ export const registerSchema = z.object({
         .default(false),
     rotaNumber: z
         .string()
-        .optional(),
+        .min(1, 'ID Rota Business é obrigatório'),
 }).refine((data) => data.password === data.confirmPassword, {
     message: 'As senhas não coincidem',
     path: ['confirmPassword'],
-}).refine((data) => {
-    if (data.isProfessional && (!data.rotaNumber || data.rotaNumber.trim() === '')) {
-        return false
-    }
-    return true
-}, {
-    message: 'O número da Rota é obrigatório para profissionais',
-    path: ['rotaNumber'],
 })
 
 export type LoginFormData = z.infer<typeof loginSchema>

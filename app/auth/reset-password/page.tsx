@@ -2,40 +2,54 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { LogIn, Loader2 } from 'lucide-react'
-import { loginSchema, type LoginFormData } from '@/lib/validations/auth'
-import { useAuth } from '@/lib/auth/context'
+import { z } from 'zod'
+import { Lock, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function LoginPage() {
+const resetPasswordSchema = z.object({
+    password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+    confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+})
+
+type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
+
+export default function ResetPasswordPage() {
     const router = useRouter()
-    const { signIn } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const supabase = createClient()
 
     const {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm<LoginFormData>({
-        resolver: zodResolver(loginSchema),
+    } = useForm<ResetPasswordFormData>({
+        resolver: zodResolver(resetPasswordSchema),
     })
 
-    const onSubmit = async (data: LoginFormData) => {
+    const onSubmit = async (data: ResetPasswordFormData) => {
         setIsLoading(true)
         setError(null)
 
         try {
-            await signIn(data.email, data.password)
-            // Force page reload to ensure auth state syncs
-            window.location.href = '/dashboard'
+            const { error } = await supabase.auth.updateUser({
+                password: data.password,
+            })
+
+            if (error) throw error
+
+            // Redirecionar para login com mensagem de sucesso
+            router.push('/auth/login?reset=success')
         } catch (err: any) {
-            setError(err.message || 'Ocorreu um erro ao fazer login. Tente novamente.')
+            setError(err.message || 'Erro ao redefinir senha.')
             setIsLoading(false)
         }
     }
@@ -45,14 +59,14 @@ export default function LoginPage() {
             <CardHeader className="space-y-3">
                 <div className="flex items-center justify-center mb-2">
                     <div className="p-4 rounded-full bg-primary/20 glow-orange">
-                        <LogIn className="w-8 h-8 text-primary" />
+                        <Lock className="w-8 h-8 text-primary" />
                     </div>
                 </div>
                 <CardTitle className="text-3xl text-center text-impact text-primary">
-                    Bem-vindo de volta
+                    Nova Senha
                 </CardTitle>
                 <CardDescription className="text-center text-base">
-                    Continue sua jornada de transformação
+                    Digite sua nova senha
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -64,31 +78,9 @@ export default function LoginPage() {
                     )}
 
                     <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium">
-                            Email
+                        <label htmlFor="password" className="text-sm font-medium">
+                            Nova Senha
                         </label>
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="seu@email.com"
-                            {...register('email')}
-                            error={errors.email?.message}
-                            disabled={isLoading}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <label htmlFor="password" className="text-sm font-medium">
-                                Senha
-                            </label>
-                            <Link
-                                href="/auth/forgot-password"
-                                className="text-xs text-primary hover:underline"
-                            >
-                                Esqueceu a senha?
-                            </Link>
-                        </div>
                         <Input
                             id="password"
                             type="password"
@@ -98,8 +90,22 @@ export default function LoginPage() {
                             disabled={isLoading}
                         />
                     </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="confirmPassword" className="text-sm font-medium">
+                            Confirmar Senha
+                        </label>
+                        <Input
+                            id="confirmPassword"
+                            type="password"
+                            placeholder="••••••••"
+                            {...register('confirmPassword')}
+                            error={errors.confirmPassword?.message}
+                            disabled={isLoading}
+                        />
+                    </div>
                 </CardContent>
-                <CardFooter className="flex flex-col space-y-4">
+                <CardFooter>
                     <Button
                         type="submit"
                         className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
@@ -108,18 +114,12 @@ export default function LoginPage() {
                         {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Entrando...
+                                Redefinindo...
                             </>
                         ) : (
-                            'Entrar'
+                            'Redefinir Senha'
                         )}
                     </Button>
-                    <p className="text-sm text-center text-muted-foreground">
-                        Não tem uma conta?{' '}
-                        <Link href="/auth/register" className="text-primary hover:underline font-medium">
-                            Cadastre-se
-                        </Link>
-                    </p>
                 </CardFooter>
             </form>
         </Card>

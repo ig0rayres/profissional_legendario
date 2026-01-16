@@ -38,13 +38,29 @@ export default function RegisterPage() {
         setError(null)
 
         try {
-            // Only pass rotaNumber if user marked as professional
-            const finalRotaNumber = data.isProfessional ? data.rotaNumber : undefined
-            await signUp(data.email, data.password, data.fullName, data.cpf, data.pista, data.plan, finalRotaNumber)
+            // Verificar se o rota_number já existe
+            const supabase = await import('@/lib/supabase/client').then(m => m.createClient())
+            const { data: existingUser } = await supabase
+                .from('profiles')
+                .select('rota_number')
+                .eq('rota_number', data.rotaNumber)
+                .single()
+
+            if (existingUser) {
+                setError('Este ID Rota Business já está em uso. Por favor, use outro.')
+                setIsLoading(false)
+                return
+            }
+
+            // Pass rotaNumber (now required)
+            await signUp(data.email, data.password, data.fullName, data.cpf, data.pista, 'recruta', data.rotaNumber)
             router.push('/dashboard')
             router.refresh()
         } catch (err: any) {
-            setError(err.message || 'Ocorreu um erro ao criar sua conta. Tente novamente.')
+            // Se o erro não for de duplicação, mostrar erro genérico
+            if (err.message && !err.message.includes('duplicate key')) {
+                setError(err.message || 'Ocorreu um erro ao criar sua conta. Tente novamente.')
+            }
         } finally {
             setIsLoading(false)
         }
@@ -138,57 +154,20 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor="plan" className="text-sm font-medium">
-                            Plano de Assinatura
+                        <label htmlFor="rotaNumber" className="text-sm font-medium">
+                            ID Rota Business *
                         </label>
-                        <Select onValueChange={(value) => setValue('plan', value as 'recruta' | 'veterano' | 'elite')} defaultValue="recruta">
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione seu plano" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background">
-                                <SelectItem value="recruta">Recruta (Gratuito)</SelectItem>
-                                <SelectItem value="veterano">Veterano (R$ 29/mês)</SelectItem>
-                                <SelectItem value="elite">Elite (R$ 99/mês)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.plan && (
-                            <p className="text-sm text-destructive">{errors.plan.message}</p>
-                        )}
-                    </div>
-
-                    <div className="space-y-4 pt-2 border-t border-primary/10">
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                id="isProfessional"
-                                className="h-4 w-4 rounded border-primary text-primary focus:ring-primary bg-background"
-                                {...register('isProfessional')}
-                            />
-                            <label
-                                htmlFor="isProfessional"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                Sou um Profissional do Clube
-                            </label>
-                        </div>
-
-                        {/* Conditional Input */}
-                        <div className={`space-y-2 transition-all duration-300 ${watch('isProfessional') ? 'opacity-100 max-h-24' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-                            <label htmlFor="rotaNumber" className="text-sm font-medium">
-                                ID Rota Business *
-                            </label>
-                            <Input
-                                id="rotaNumber"
-                                type="text"
-                                placeholder="Ex: ROT-12345"
-                                {...register('rotaNumber' as any)}
-                                error={(errors as any).rotaNumber?.message}
-                                disabled={isLoading}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Obrigatório para cadastro de profissionais.
-                            </p>
-                        </div>
+                        <Input
+                            id="rotaNumber"
+                            type="text"
+                            placeholder="Ex: ROT-12345"
+                            {...register('rotaNumber')}
+                            error={errors.rotaNumber?.message}
+                            disabled={isLoading}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Obrigatório para todos os membros.
+                        </p>
                     </div>
 
                     <div className="space-y-2">
