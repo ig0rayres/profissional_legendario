@@ -30,27 +30,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient()
 
     useEffect(() => {
-        // Get initial session - SIMPLE VERSION
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ? {
-                id: session.user.id,
-                email: session.user.email!,
-                full_name: session.user.email!.split('@')[0],
-                is_professional: false,
-                role: 'user'
-            } : null)
-            setLoading(false)
+        // Get initial session - SAFE VERSION with profile fetch
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (session?.user) {
+                try {
+                    // Try to fetch profile but DON'T block if it fails
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .maybeSingle()
+
+                    setUser(profile ? {
+                        id: session.user.id,
+                        email: session.user.email!,
+                        full_name: profile.full_name || session.user.email!.split('@')[0],
+                        is_professional: profile.role === 'professional',
+                        role: profile.role || 'user',
+                        pista: profile.pista
+                    } : {
+                        id: session.user.id,
+                        email: session.user.email!,
+                        full_name: session.user.email!.split('@')[0],
+                        is_professional: false,
+                        role: 'user'
+                    })
+                } catch (error) {
+                    // Even if profile fetch fails, create basic user
+                    console.warn('Profile fetch failed, using basic user:', error)
+                    setUser({
+                        id: session.user.id,
+                        email: session.user.email!,
+                        full_name: session.user.email!.split('@')[0],
+                        is_professional: false,
+                        role: 'user'
+                    })
+                }
+                setLoading(false)
+            } else {
+                setLoading(false)
+            }
         })
 
-        // Listen for auth changes - SIMPLE VERSION
+        // Listen for auth changes - SAFE VERSION with profile fetch
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            setUser(session?.user ? {
-                id: session.user.id,
-                email: session.user.email!,
-                full_name: session.user.email!.split('@')[0],
-                is_professional: false,
-                role: 'user'
-            } : null)
+            if (session?.user) {
+                try {
+                    // Try to fetch profile but DON'T block
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .maybeSingle()
+
+                    setUser(profile ? {
+                        id: session.user.id,
+                        email: session.user.email!,
+                        full_name: profile.full_name || session.user.email!.split('@')[0],
+                        is_professional: profile.role === 'professional',
+                        role: profile.role || 'user',
+                        pista: profile.pista
+                    } : {
+                        id: session.user.id,
+                        email: session.user.email!,
+                        full_name: session.user.email!.split('@')[0],
+                        is_professional: false,
+                        role: 'user'
+                    })
+                } catch (error) {
+                    console.warn('Profile fetch failed in auth state change:', error)
+                    setUser({
+                        id: session.user.id,
+                        email: session.user.email!,
+                        full_name: session.user.email!.split('@')[0],
+                        is_professional: false,
+                        role: 'user'
+                    })
+                }
+            } else {
+                setUser(null)
+            }
             setLoading(false)
         })
 
