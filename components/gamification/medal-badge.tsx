@@ -1,9 +1,35 @@
 'use client'
 
+import {
+    CheckCircle, Sword, Star, Camera, Target, Gem,
+    Users, Zap, Megaphone, Shield, Award, Anchor,
+    PartyPopper, ImagePlus, Trophy, UserPlus
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// Mapa de ícones de medalhas por ID
+const medalIconMap: Record<string, any> = {
+    'alistamento_concluido': CheckCircle,
+    'primeiro_sangue': Sword,
+    'batismo_excelencia': Star,
+    'cinegrafista_campo': Camera,
+    'missao_cumprida': Target,
+    'inabalavel': Gem,
+    'irmandade': UserPlus,
+    'pronto_missao': Zap,
+    'recrutador': Megaphone,
+    'veterano_guerra': Shield,
+    'sentinela_elite': Award,
+    'sentinela_inabalavel': Anchor,
+    // Medalhas da Confraria
+    'anfitriao': PartyPopper,
+    'presente': Users,
+    'cronista': ImagePlus,
+    'lider_confraria': Trophy,
+}
+
 interface MedalBadgeProps {
-    icon: string // emoji
+    medalId: string
     name?: string
     size?: 'sm' | 'md' | 'lg' | 'xl'
     showLabel?: boolean
@@ -11,12 +37,14 @@ interface MedalBadgeProps {
     variant?: 'badge' | 'icon-only'
 }
 
-export function MedalBadge({ icon, name, size = 'md', showLabel = false, className, variant = 'badge' }: MedalBadgeProps) {
+export function MedalBadge({ medalId, name, size = 'md', showLabel = false, className, variant = 'badge' }: MedalBadgeProps) {
+    const Icon = medalIconMap[medalId] || Award
+
     const sizeMap = {
-        sm: 'text-sm',
-        md: 'text-base',
-        lg: 'text-2xl',
-        xl: 'text-4xl',
+        sm: 'w-4 h-4',
+        md: 'w-6 h-6',
+        lg: 'w-10 h-10',
+        xl: 'w-16 h-16',
     }
 
     const containerSizeMap = {
@@ -26,8 +54,8 @@ export function MedalBadge({ icon, name, size = 'md', showLabel = false, classNa
         xl: 'w-20 h-20',
     }
 
-    // Estilo unificado: Laranja sólido + Ícone (emoji) branco
-    const medalStyle = 'bg-orange-500 text-white shadow-lg'
+    // Usando cores secundárias da plataforma (secondary = laranja Rota Business)
+    const medalStyle = 'bg-secondary text-white shadow-lg'
 
     if (variant === 'icon-only') {
         return (
@@ -37,7 +65,7 @@ export function MedalBadge({ icon, name, size = 'md', showLabel = false, classNa
                 containerSizeMap[size],
                 className
             )}>
-                <span className={sizeMap[size]}>{icon}</span>
+                <Icon className={sizeMap[size]} strokeWidth={2.5} />
             </div>
         )
     }
@@ -49,7 +77,7 @@ export function MedalBadge({ icon, name, size = 'md', showLabel = false, classNa
                 medalStyle,
                 className
             )}>
-                <span className="text-sm">{icon}</span>
+                <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
                 {showLabel && name && <span>{name}</span>}
             </div>
         )
@@ -62,10 +90,10 @@ export function MedalBadge({ icon, name, size = 'md', showLabel = false, classNa
                 medalStyle,
                 containerSizeMap[size]
             )}>
-                <span className={sizeMap[size]}>{icon}</span>
+                <Icon className={sizeMap[size]} strokeWidth={2.5} />
             </div>
             {showLabel && name && (
-                <span className="text-xs font-bold uppercase text-orange-500">
+                <span className="text-xs font-bold uppercase text-secondary">
                     {name}
                 </span>
             )}

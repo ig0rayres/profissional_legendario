@@ -9,8 +9,8 @@ const rankIconMap: Record<string, any> = {
     'especialista': Target,
     'guardiao': Sword,
     'comandante': Medal,
-    'general': Crown,
-    'lenda': Flame,
+    'general': Flame,      // General com Flame
+    'lenda': Crown,        // Lenda com Crown
 }
 
 interface RankInsigniaProps {
@@ -38,8 +38,8 @@ export function RankInsignia({ rankId, size = 'md', showLabel = false, className
         xl: 'w-20 h-20',
     }
 
-    // Estilo unificado: Verde sólido + Ícone branco
-    const rankStyle = 'bg-green-600 text-white shadow-lg'
+    // Usando cores primárias da plataforma (primary = verde Rota Business)
+    const rankStyle = 'bg-primary text-white shadow-lg'
 
     if (variant === 'icon-only' || variant === 'avatar') {
         return (

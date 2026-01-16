@@ -293,7 +293,7 @@ export default function GameAdminPage() {
                                     <TableRow key={medal.id}>
                                         <TableCell className="font-medium">{medal.name}</TableCell>
                                         <TableCell>
-                                            <MedalBadge icon={medal.icon} size="sm" variant="icon-only" />
+                                            <MedalBadge medalId={medal.id} size="sm" variant="icon-only" />
                                         </TableCell>
                                         <TableCell className="max-w-md truncate">{medal.description}</TableCell>
                                         <TableCell>
