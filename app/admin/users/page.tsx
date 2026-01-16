@@ -61,20 +61,44 @@ export default function UsersPage() {
     }, [])
 
     async function loadUsers() {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*, subscriptions(plan_id), user_gamification(current_rank_id, total_points, total_medals)')
-            .order('created_at', { ascending: false })
+        try {
+            // Query 1: Buscar profiles
+            const { data: profiles, error: profilesError } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false })
 
-        if (error) {
-            console.error('❌ Error loading users:', error)
+            if (profilesError) {
+                console.error('❌ Error loading profiles:', profilesError)
+                setLoading(false)
+                return
+            }
+
+            // Query 2: Buscar subscriptions
+            const { data: subscriptions, error: subsError } = await supabase
+                .from('subscriptions')
+                .select('user_id, plan_id')
+
+            // Query 3: Buscar gamification
+            const { data: gamification, error: gamifError } = await supabase
+                .from('user_gamification')
+                .select('user_id, current_rank_id, total_points, total_medals')
+
+            // Combinar os dados manualmente
+            const combined = profiles?.map(profile => ({
+                ...profile,
+                subscriptions: subscriptions?.find(s => s.user_id === profile.id),
+                user_gamification: gamification?.find(g => g.user_id === profile.id)
+            })) || []
+
+            console.log('✅ Usuários carregados:', combined.length)
+            console.log('📋 Primeiros 3:', combined.slice(0, 3))
+            setUsers(combined as any)
+        } catch (error) {
+            console.error('❌ Unexpected error:', error)
+        } finally {
+            setLoading(false)
         }
-        if (data) {
-            console.log('✅ Usuários carregados:', data.length)
-            console.log('📋 Primeiros 3:', data.slice(0, 3))
-            setUsers(data as any)
-        }
-        setLoading(false)
     }
 
     // Filtered users
