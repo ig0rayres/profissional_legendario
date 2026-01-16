@@ -65,7 +65,7 @@ export default function UsersPage() {
             .from('profiles')
             .select(`
                 *,
-                subscriptions!inner(plan_id),
+                subscriptions(plan_id),
                 user_gamification(current_rank_id, total_points, total_medals)
             `)
             .order('created_at', { ascending: false })
