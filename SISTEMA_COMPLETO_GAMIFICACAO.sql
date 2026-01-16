@@ -54,7 +54,7 @@ CREATE INDEX idx_subscriptions_plan_id ON public.subscriptions(plan_id);
 CREATE INDEX idx_subscriptions_status ON public.subscriptions(status);
 
 -- =============================================
--- PASSO 3: TABELA DE RANKS (PATENTES)
+-- PASSO 4: TABELA DE RANKS (PATENTES)
 -- =============================================
 CREATE TABLE public.ranks (
     id text PRIMARY KEY,
@@ -79,7 +79,7 @@ INSERT INTO public.ranks (id, name, rank_level, points_required, icon, color, de
 ('legend', 'Lendário', 7, 5000, '⭐', '#a855f7', 'Status lendário');
 
 -- =============================================
--- PASSO 4: TABELA DE GAMIFICAÇÃO (ÚNICA FONTE)
+-- PASSO 5: TABELA DE GAMIFICAÇÃO (ÚNICA FONTE)
 -- =============================================
 CREATE TABLE public.user_gamification (
     user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -95,7 +95,7 @@ CREATE TABLE public.user_gamification (
 COMMENT ON TABLE public.user_gamification IS 'FONTE ÚNICA para pontos, rank e progresso do usuário';
 
 -- =============================================
--- PASSO 5: TABELA DE MEDALHAS (DEFINIÇÕES)
+-- PASSO 6: TABELA DE MEDALHAS (DEFINIÇÕES)
 -- =============================================
 CREATE TABLE public.medals (
     id text PRIMARY KEY,
@@ -116,7 +116,7 @@ INSERT INTO public.medals (id, name, description, icon, points_reward, category)
 ('verified', 'Verificado', 'Conta verificada', '✔️', 25, 'profile');
 
 -- =============================================
--- PASSO 6: TABELA DE MEDALHAS DOS USUÁRIOS
+-- PASSO 7: TABELA DE MEDALHAS DOS USUÁRIOS
 -- =============================================
 CREATE TABLE public.user_medals (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -129,7 +129,7 @@ CREATE TABLE public.user_medals (
 COMMENT ON TABLE public.user_medals IS 'Medalhas conquistadas pelos usuários';
 
 -- =============================================
--- PASSO 7: ÍNDICES PARA PERFORMANCE
+-- PASSO 8: ÍNDICES PARA PERFORMANCE
 -- =============================================
 -- Índices já criados acima junto com a tabela subscriptions
 CREATE INDEX idx_user_gamification_rank ON public.user_gamification(current_rank_id);
@@ -137,7 +137,7 @@ CREATE INDEX idx_user_gamification_points ON public.user_gamification(total_poin
 CREATE INDEX idx_user_medals_user_id ON public.user_medals(user_id);
 
 -- =============================================
--- PASSO 8: TRIGGER - CRIAR TUDO AUTOMATICAMENTE
+-- PASSO 9: TRIGGER - CRIAR TUDO AUTOMATICAMENTE
 -- =============================================
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
@@ -185,7 +185,7 @@ CREATE TRIGGER on_auth_user_created
     EXECUTE FUNCTION public.handle_new_user();
 
 -- =============================================
--- PASSO 9: TRIGGER - ATUALIZAR RANK AUTOMÁTICO
+-- PASSO 10: TRIGGER - ATUALIZAR RANK AUTOMÁTICO
 -- =============================================
 CREATE OR REPLACE FUNCTION public.update_user_rank()
 RETURNS TRIGGER
@@ -218,7 +218,7 @@ CREATE TRIGGER update_rank_on_points_change
     EXECUTE FUNCTION public.update_user_rank();
 
 -- =============================================
--- PASSO 10: FUNÇÃO PARA DAR MEDALHA + PONTOS COM MULTIPLICADOR
+-- PASSO 11: FUNÇÃO PARA DAR MEDALHA + PONTOS COM MULTIPLICADOR
 -- =============================================
 CREATE OR REPLACE FUNCTION public.award_medal(p_user_id uuid, p_medal_id text)
 RETURNS boolean
@@ -272,7 +272,7 @@ END;
 $$;
 
 -- =============================================
--- PASSO 11: RLS (SEGURANÇA)
+-- PASSO 12: RLS (SEGURANÇA)
 -- =============================================
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_gamification ENABLE ROW LEVEL SECURITY;
@@ -304,7 +304,7 @@ CREATE POLICY "Public view all medals" ON public.user_medals
     FOR SELECT USING (true);
 
 -- =============================================
--- PASSO 12: MIGRAR USUÁRIOS EXISTENTES
+-- PASSO 13: MIGRAR USUÁRIOS EXISTENTES
 -- =============================================
 DO $$
 DECLARE
