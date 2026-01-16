@@ -92,15 +92,26 @@ export function Header() {
                                 <div className="flex items-center gap-2">
                                     <NotificationCenter />
                                     <CriticalNoticeModal />
-                                    <div className="flex items-center gap-2 ml-2">
-                                        <span className="text-sm text-muted-foreground mr-1">
-                                            Olá, <span className="text-primary font-bold">{user.full_name.split(' ')[0]}</span>
-                                        </span>
+                                    <div className="flex items-center gap-3 ml-2">
                                         {(() => {
                                             const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
                                             const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)
-                                            return rank && (
-                                                <RankInsignia rankId={rank.id} variant="badge" showLabel={true} className="mt-1" />
+                                            const firstName = user.full_name.split(' ')[0].charAt(0).toUpperCase() + user.full_name.split(' ')[0].slice(1).toLowerCase()
+
+                                            return rank ? (
+                                                <div className="flex items-center gap-2">
+                                                    <RankInsignia rankId={rank.id} variant="avatar" showLabel={false} className="w-8 h-8" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm text-muted-foreground">
+                                                            Olá, <span className="text-primary font-bold">{firstName}</span>
+                                                        </span>
+                                                        <RankInsignia rankId={rank.id} variant="badge" showLabel={true} className="text-xs -mt-1" />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    Olá, <span className="text-primary font-bold">{firstName}</span>
+                                                </span>
                                             )
                                         })()}
                                     </div>
