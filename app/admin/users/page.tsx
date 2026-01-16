@@ -63,17 +63,17 @@ export default function UsersPage() {
     async function loadUsers() {
         const { data, error } = await supabase
             .from('profiles')
-            .select(`
-                *,
-                subscriptions(plan_id),
-                user_gamification(current_rank_id, total_points, total_medals)
-            `)
+            .select('*, subscriptions(plan_id), user_gamification(current_rank_id, total_points, total_medals)')
             .order('created_at', { ascending: false })
 
         if (error) {
-            console.error('Error loading users:', error)
+            console.error('❌ Error loading users:', error)
         }
-        if (data) setUsers(data as any)
+        if (data) {
+            console.log('✅ Usuários carregados:', data.length)
+            console.log('📋 Primeiros 3:', data.slice(0, 3))
+            setUsers(data as any)
+        }
         setLoading(false)
     }
 
