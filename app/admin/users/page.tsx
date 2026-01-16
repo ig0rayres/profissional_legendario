@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
     Table,
@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, XCircle, Loader2, Edit, Users as UsersIcon } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { CheckCircle, XCircle, Loader2, Edit, Users as UsersIcon, Search, Filter, Trash2 } from 'lucide-react'
 import { Database } from '@/types/database'
 import {
     Dialog,
@@ -30,6 +31,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { MOCK_USER_GAMIFICATION, MOCK_RANKS } from '@/lib/data/mock'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -39,6 +42,14 @@ export default function UsersPage() {
     const [processing, setProcessing] = useState<string | null>(null)
     const [editingUser, setEditingUser] = useState<Profile | null>(null)
     const [editForm, setEditForm] = useState<Partial<Profile>>({})
+
+    // Bulk selection
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
+
+    // Filters
+    const [searchTerm, setSearchTerm] = useState('')
+    const [roleFilter, setRoleFilter] = useState<string>('all')
+    const [statusFilter, setStatusFilter] = useState<string>('all')
 
     const supabase = createClient()
 
@@ -59,6 +70,85 @@ export default function UsersPage() {
         setLoading(false)
     }
 
+    // Filtered users
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            const matchesSearch = !searchTerm ||
+                user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.rota_number?.toLowerCase().includes(searchTerm.toLowerCase())
+
+            const matchesRole = roleFilter === 'all' || user.role === roleFilter
+            const matchesStatus = statusFilter === 'all' || user.verification_status === statusFilter
+
+            return matchesSearch && matchesRole && matchesStatus
+        })
+    }, [users, searchTerm, roleFilter, statusFilter])
+
+    // Bulk selection handlers
+    const toggleSelectAll = () => {
+        if (selectedUsers.size === filteredUsers.length) {
+            setSelectedUsers(new Set())
+        } else {
+            setSelectedUsers(new Set(filteredUsers.map(u => u.id)))
+        }
+    }
+
+    const toggleSelectUser = (userId: string) => {
+        const newSelected = new Set(selectedUsers)
+        if (newSelected.has(userId)) {
+            newSelected.delete(userId)
+        } else {
+            newSelected.add(userId)
+        }
+        setSelectedUsers(newSelected)
+    }
+
+    async function handleBulkVerify() {
+        if (selectedUsers.size === 0) return
+
+        setProcessing('bulk')
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ verification_status: 'verified' })
+                .in('id', Array.from(selectedUsers))
+
+            if (error) throw error
+
+            setUsers(users.map(u =>
+                selectedUsers.has(u.id) ? { ...u, verification_status: 'verified' } : u
+            ))
+            setSelectedUsers(new Set())
+        } catch (error) {
+            alert('Erro ao verificar usuários')
+        } finally {
+            setProcessing(null)
+        }
+    }
+
+    async function handleBulkDelete() {
+        if (selectedUsers.size === 0) return
+        if (!confirm(`Deseja realmente deletar ${selectedUsers.size} usuários?`)) return
+
+        setProcessing('bulk')
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .delete()
+                .in('id', Array.from(selectedUsers))
+
+            if (error) throw error
+
+            setUsers(users.filter(u => !selectedUsers.has(u.id)))
+            setSelectedUsers(new Set())
+        } catch (error) {
+            alert('Erro ao deletar usuários')
+        } finally {
+            setProcessing(null)
+        }
+    }
+
     async function handleVerification(userId: string, status: 'verified' | 'rejected') {
         setProcessing(userId)
         try {
@@ -69,7 +159,6 @@ export default function UsersPage() {
 
             if (error) throw error
 
-            // Update local state
             setUsers(users.map(u =>
                 u.id === userId ? { ...u, verification_status: status } : u
             ))
@@ -104,7 +193,6 @@ export default function UsersPage() {
 
             if (error) throw error
 
-            // Update local state
             setUsers(users.map(u =>
                 u.id === editingUser.id ? { ...u, ...editForm } : u
             ))
@@ -126,6 +214,12 @@ export default function UsersPage() {
         return <Badge className={`${plan.color} text-white`}>{plan.label}</Badge>
     }
 
+    const getUserRank = (userId: string) => {
+        const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === userId)
+        if (!gamif) return null
+        return MOCK_RANKS.find(r => r.id === gamif.current_rank_id)
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -141,102 +235,203 @@ export default function UsersPage() {
                     <h2 className="text-3xl font-bold tracking-tight">Gerenciar Usuários</h2>
                     <p className="text-muted-foreground flex items-center gap-2 mt-1">
                         <UsersIcon className="w-4 h-4" />
-                        {users.length} {users.length === 1 ? 'usuário cadastrado' : 'usuários cadastrados'}
+                        {filteredUsers.length} de {users.length} {users.length === 1 ? 'usuário' : 'usuários'}
                     </p>
                 </div>
             </div>
+
+            {/* Filters and Search */}
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar por nome, email ou ID Rota..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filtrar por plano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os planos</SelectItem>
+                        <SelectItem value="user">Usuário</SelectItem>
+                        <SelectItem value="professional">Profissional</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filtrar por status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os status</SelectItem>
+                        <SelectItem value="verified">Verificado</SelectItem>
+                        <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="rejected">Rejeitado</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Bulk Actions */}
+            {selectedUsers.size > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-md">
+                    <span className="text-sm font-medium">
+                        {selectedUsers.size} {selectedUsers.size === 1 ? 'usuário selecionado' : 'usuários selecionados'}
+                    </span>
+                    <div className="flex gap-2 ml-auto">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleBulkVerify}
+                            disabled={processing === 'bulk'}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Verificar Selecionados
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleBulkDelete}
+                            disabled={processing === 'bulk'}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Deletar Selecionados
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             <div className="border rounded-md">
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead className="w-12">
+                                <Checkbox
+                                    checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                                    onCheckedChange={toggleSelectAll}
+                                />
+                            </TableHead>
                             <TableHead>Nome</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>CPF</TableHead>
                             <TableHead>ID Rota</TableHead>
+                            <TableHead>Patente</TableHead>
                             <TableHead>Plano</TableHead>
+                            <TableHead>Vigor</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Data Cadastro</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users.length === 0 ? (
+                        {filteredUsers.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                                    Nenhum usuário cadastrado
+                                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                                    {searchTerm || roleFilter !== 'all' || statusFilter !== 'all'
+                                        ? 'Nenhum usuário encontrado com os filtros aplicados'
+                                        : 'Nenhum usuário cadastrado'}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            users.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell className="font-medium">{user.full_name}</TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>{user.cpf}</TableCell>
-                                    <TableCell className="font-mono text-xs">{user.rota_number || '-'}</TableCell>
-                                    <TableCell>{getPlanBadge(user.role)}</TableCell>
-                                    <TableCell>
-                                        <Badge
-                                            variant={
-                                                user.verification_status === 'verified' ? 'default' :
-                                                    user.verification_status === 'rejected' ? 'destructive' : 'secondary'
-                                            }
-                                            className={
-                                                user.verification_status === 'verified' ? 'bg-green-500 hover:bg-green-600' : ''
-                                            }
-                                        >
-                                            {user.verification_status === 'verified' ? 'Verificado' :
-                                                user.verification_status === 'rejected' ? 'Rejeitado' : 'Pendente'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="h-8 px-3"
-                                                onClick={() => handleEditClick(user)}
+                            filteredUsers.map((user) => {
+                                const rank = getUserRank(user.id)
+                                const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
+
+                                return (
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedUsers.has(user.id)}
+                                                onCheckedChange={() => toggleSelectUser(user.id)}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="font-medium">{user.full_name}</TableCell>
+                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell>{user.cpf}</TableCell>
+                                        <TableCell className="font-mono text-xs">{user.rota_number || '-'}</TableCell>
+                                        <TableCell>
+                                            {rank ? (
+                                                <RankInsignia rankId={rank.id} variant="badge" showLabel={true} />
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">-</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{getPlanBadge(user.role)}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="font-mono">
+                                                {gamif?.total_points || 0} pts
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant={
+                                                    user.verification_status === 'verified' ? 'default' :
+                                                        user.verification_status === 'rejected' ? 'destructive' : 'secondary'
+                                                }
+                                                className={
+                                                    user.verification_status === 'verified' ? 'bg-green-500 hover:bg-green-600' : ''
+                                                }
                                             >
-                                                <Edit className="h-3 w-3 mr-1" />
-                                                Editar
-                                            </Button>
-                                            {user.verification_status !== 'verified' && (
+                                                {user.verification_status === 'verified' ? 'Verificado' :
+                                                    user.verification_status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                    onClick={() => handleVerification(user.id, 'verified')}
-                                                    disabled={processing === user.id}
+                                                    className="h-8 px-3"
+                                                    onClick={() => handleEditClick(user)}
                                                 >
-                                                    {processing === user.id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <CheckCircle className="h-4 w-4" />
-                                                    )}
+                                                    <Edit className="h-3 w-3 mr-1" />
+                                                    Editar
                                                 </Button>
-                                            )}
-                                            {user.verification_status !== 'rejected' && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={() => handleVerification(user.id, 'rejected')}
-                                                    disabled={processing === user.id}
-                                                >
-                                                    {processing === user.id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <XCircle className="h-4 w-4" />
-                                                    )}
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                                                {user.verification_status !== 'verified' && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                        onClick={() => handleVerification(user.id, 'verified')}
+                                                        disabled={processing === user.id}
+                                                    >
+                                                        {processing === user.id ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <CheckCircle className="h-4 w-4" />
+                                                        )}
+                                                    </Button>
+                                                )}
+                                                {user.verification_status !== 'rejected' && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        onClick={() => handleVerification(user.id, 'rejected')}
+                                                        disabled={processing === user.id}
+                                                    >
+                                                        {processing === user.id ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <XCircle className="h-4 w-4" />
+                                                        )}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })
                         )}
                     </TableBody>
                 </Table>
