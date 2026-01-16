@@ -68,15 +68,14 @@ CREATE TABLE public.ranks (
 
 COMMENT ON TABLE public.ranks IS 'Definição dos níveis de patente';
 
--- Inserir ranks
+-- Inserir 6 ranks da Rota do Valente
 INSERT INTO public.ranks (id, name, rank_level, points_required, icon, color, description) VALUES
-('recruit', 'Recruta', 1, 0, '🔰', '#94a3b8', 'Iniciante na jornada'),
-('explorer', 'Explorador', 2, 100, '🧭', '#3b82f6', 'Começando a explorar'),
-('adventurer', 'Aventureiro', 3, 250, '⚔️', '#8b5cf6', 'Ganhando experiência'),
-('warrior', 'Guerreiro', 4, 500, '🛡️', '#f59e0b', 'Lutador experiente'),
-('veteran', 'Veterano', 5, 1000, '🏆', '#ef4444', 'Mestre da jornada'),
-('elite', 'Elite', 6, 2500, '👑', '#eab308', 'Entre os melhores'),
-('legend', 'Lendário', 7, 5000, '⭐', '#a855f7', 'Status lendário');
+('recruta', 'Recruta', 1, 0, '🔰', '#94a3b8', 'Iniciante na jornada'),
+('especialista', 'Especialista', 2, 200, '🎯', '#3b82f6', 'Ganhando experiência'),
+('veterano', 'Veterano', 3, 500, '⚔️', '#8b5cf6', 'Experiente e dedicado'),
+('comandante', 'Comandante', 4, 1000, '🛡️', '#f59e0b', 'Líder respeitado'),
+('general', 'General', 5, 2000, '🏆', '#ef4444', 'Mestre da jornada'),
+('lenda', 'Lenda', 6, 3500, '👑', '#a855f7', 'Status lendário');
 
 -- =============================================
 -- PASSO 5: TABELA DE GAMIFICAÇÃO (ÚNICA FONTE)
@@ -108,12 +107,26 @@ CREATE TABLE public.medals (
 
 COMMENT ON TABLE public.medals IS 'Definições de medalhas disponíveis';
 
+-- Inserir 16 medalhas: 12 originais + 4 da Confraria
 INSERT INTO public.medals (id, name, description, icon, points_reward, category) VALUES
-('first_login', 'Primeiro Acesso', 'Fez login pela primeira vez', '🎯', 10, 'social'),
-('profile_complete', 'Perfil Completo', 'Completou 100% do perfil', '✅', 50, 'profile'),
-('first_project', 'Primeiro Projeto', 'Criou o primeiro projeto', '🚀', 100, 'projects'),
-('networker', 'Networker', 'Conectou com 10 pessoas', '🤝', 75, 'social'),
-('verified', 'Verificado', 'Conta verificada', '✔️', 25, 'profile');
+-- Medalhas originais da Rota do Valente
+('alistamento_concluido', 'Alistamento Concluído', 'Completar 100% do perfil', '✅', 100, 'profile'),
+('primeiro_sangue', 'Primeiro Sangue', 'Primeira venda/contrato fechado', '⚔️', 50, 'contracts'),
+('batismo_excelencia', 'Batismo de Excelência', 'Primeira avaliação 5 estrelas', '⭐', 80, 'reviews'),
+('cinegrafista_campo', 'Cinegrafista de Campo', 'Primeiro upload de relatório/foto', '📸', 30, 'portfolio'),
+('missao_cumprida', 'Missão Cumprida', 'Marcar 1º serviço como concluído', '🎯', 100, 'services'),
+('inabalavel', 'Inabalável', 'Manter média 5★ após 5 trabalhos avaliados', '💎', 150, 'quality'),
+('irmandade', 'Irmandade', 'Contratar outro membro do Club', '🤝', 75, 'networking'),
+('pronto_missao', 'Pronto para a Missão', 'Responder 5 demandas em <2h', '⚡', 50, 'responsiveness'),
+('recrutador', 'Recrutador', 'Indicar 3 novos membros', '📣', 150, 'referrals'),
+('veterano_guerra', 'Veterano de Guerra', 'Completar 20 serviços', '🛡️', 300, 'experience'),
+('sentinela_elite', 'Sentinela de Elite', 'Manter Plano Elite por 3 meses', '💠', 500, 'loyalty'),
+('sentinela_inabalavel', 'Sentinela Inabalável', 'Manter-se ativo por 30 dias consecutivos', '⚓', 200, 'retention'),
+-- Medalhas da Confraria (eventos)
+('anfitriao', 'Anfitrião', 'Agendar primeiro evento de confraria', '🎪', 80, 'confraternity'),
+('presente', 'Presente', 'Aceitar e participar de evento de confraria', '🎟️', 50, 'confraternity'),
+('cronista', 'Cronista', 'Subir fotos e detalhes de evento', '📷', 60, 'confraternity'),
+('lider_confraria', 'Líder da Confraria', 'Organizar 5 eventos de confraria', '🏅', 250, 'confraternity');
 
 -- =============================================
 -- PASSO 7: TABELA DE MEDALHAS DOS USUÁRIOS
