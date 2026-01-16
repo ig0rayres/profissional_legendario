@@ -12,6 +12,7 @@ import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { cn } from '@/lib/utils'
 import { Metadata } from 'next'
 import { RotabusinessLogo } from '@/components/branding/logo'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
     title: 'Rota do Valente | Sistema de Mérito e Elite Business',
@@ -19,7 +20,24 @@ export const metadata: Metadata = {
     keywords: 'networking business, elite profissional, sistema de merito, rota business club, valor profissional, autoridade',
 }
 
-export default function RotaDoValentePublicPage() {
+export default async function RotaDoValentePublicPage() {
+    const supabase = await createClient()
+
+    // Fetch real ranks from database
+    const { data: ranks } = await supabase
+        .from('ranks')
+        .select('*')
+        .order('rank_level', { ascending: true })
+
+    // Fetch real medals from database  
+    const { data: medals } = await supabase
+        .from('medals')
+        .select('*')
+        .order('points_reward', { ascending: false })
+
+    const RANKS = ranks || MOCK_RANKS
+    const MEDALS = medals || MOCK_BADGES
+
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900">
             {/* Simple Hero Section */}
@@ -91,28 +109,23 @@ export default function RotaDoValentePublicPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-slate-200 border border-slate-200 shadow-md">
-                        {MOCK_RANKS.map((rank) => (
+                        {RANKS.map((rank: any) => (
                             <div key={rank.id} className="bg-white p-10 hover:bg-slate-50 transition-colors group">
                                 <div className="flex items-center justify-between mb-8">
                                     <RankInsignia rankId={rank.id} size="lg" variant="icon-only" />
                                     <div className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 border border-primary/20">
-                                        MULT. x{rank.multiplier.toFixed(2)}
+                                        VIGOR DESDE {rank.points_required}
                                     </div>
                                 </div>
                                 <h3 className="text-2xl font-black uppercase mb-3 tracking-tight group-hover:text-primary transition-colors text-slate-900">
                                     {rank.name}
                                 </h3>
                                 <p className="text-slate-500 text-xs mb-8 min-h-[48px] uppercase font-bold tracking-wider leading-relaxed">
-                                    {rank.id === 'recruta' && 'A porta de entrada. Compromisso com a excelência desde o primeiro dia.'}
-                                    {rank.id === 'especialista' && 'Habilidade técnica validada e reconhecimento no campo.'}
-                                    {rank.id === 'veterano' && 'Experiência comprovada através de missões concluídas com sucesso.'}
-                                    {rank.id === 'comandante' && 'Liderança emergente e bônus substantivo de eficiência.'}
-                                    {rank.id === 'general' && 'Autoridade máxima com impacto direto na rede Rota Business.'}
-                                    {rank.id === 'lenda' && 'O ápice do prestígio. Um exemplo para toda a comunidade.'}
+                                    {rank.description || 'Patente de honra e dedicação'}
                                 </p>
                                 <div className="flex items-center justify-between pt-6 border-t border-slate-100">
                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                        REQUISITO: {rank.min_xp} Vigor
+                                        REQUISITO: {rank.points_required} Vigor
                                     </div>
                                     <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
                                 </div>
@@ -131,32 +144,16 @@ export default function RotaDoValentePublicPage() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {MOCK_BADGES.map((badge) => {
-                            const iconMap: Record<string, any> = {
-                                'user-check': UserCheck,
-                                'sword': Sword,
-                                'sparkles': Sparkles,
-                                'video': Video,
-                                'flag': Flag,
-                                'hammer': Hammer,
-                                'heart-handshake': HeartHandshake,
-                                'zap': Zap,
-                                'megaphone': Megaphone,
-                                'mountain': Mountain,
-                                'gem': Gem,
-                                'anchor': Anchor,
-                            }
-                            const Icon = iconMap[badge.icon_key] || Sparkles
-
+                        {MEDALS.map((medal: any) => {
                             return (
-                                <div key={badge.id} className="p-8 bg-white border border-slate-200 hover:border-secondary/50 transition-all flex flex-col items-center text-center group shadow-sm">
-                                    <div className="w-14 h-14 bg-secondary flex items-center justify-center mb-6 text-white shadow-lg shadow-secondary/20 group-hover:scale-110 transition-transform">
-                                        <Icon className="w-6 h-6" />
+                                <div key={medal.id} className="p-8 bg-white border border-slate-200 hover:border-secondary/50 transition-all flex flex-col items-center text-center group shadow-sm">
+                                    <div className="w-14 h-14 bg-secondary flex items-center justify-center mb-6 text-white shadow-lg shadow-secondary/20 group-hover:scale-110 transition-transform text-2xl">
+                                        {medal.icon}
                                     </div>
-                                    <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-slate-900">{badge.name}</h4>
-                                    <div className="text-[10px] font-black text-slate-400 uppercase mb-4">{badge.description}</div>
+                                    <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-slate-900">{medal.name}</h4>
+                                    <div className="text-[10px] font-black text-slate-400 uppercase mb-4">{medal.description}</div>
                                     <div className="mt-auto px-3 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-400">
-                                        VALOR: {badge.xp_reward} Vigor
+                                        VALOR: {medal.points_reward} Vigor
                                     </div>
                                 </div>
                             )

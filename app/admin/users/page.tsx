@@ -32,7 +32,6 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { RankInsignia } from '@/components/gamification/rank-insignia'
-import { MOCK_USER_GAMIFICATION, MOCK_RANKS } from '@/lib/data/mock'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -64,13 +63,17 @@ export default function UsersPage() {
     async function loadUsers() {
         const { data, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select(`
+                *,
+                subscriptions!inner(plan_id),
+                user_gamification(current_rank_id, total_points, total_medals)
+            `)
             .order('created_at', { ascending: false })
 
         if (error) {
             console.error('Error loading users:', error)
         }
-        if (data) setUsers(data)
+        if (data) setUsers(data as any)
         setLoading(false)
     }
 
@@ -229,20 +232,23 @@ export default function UsersPage() {
         }
     }
 
-    const getPlanBadge = (role: string) => {
+    const getPlanBadge = (user: any) => {
+        const planId = user.subscriptions?.plan_id || 'recruta'
         const plans: Record<string, { label: string, color: string }> = {
-            'admin': { label: 'Admin', color: 'bg-purple-500' },
-            'professional': { label: 'Profissional', color: 'bg-blue-500' },
-            'user': { label: 'Usuário', color: 'bg-gray-500' },
+            'recruta': { label: 'Recruta', color: 'bg-gray-500' },
+            'veterano': { label: 'Veterano', color: 'bg-blue-500' },
+            'elite': { label: 'Elite', color: 'bg-purple-500' },
         }
-        const plan = plans[role] || plans['user']
+        const plan = plans[planId] || plans['recruta']
         return <Badge className={`${plan.color} text-white`}>{plan.label}</Badge>
     }
 
-    const getUserRank = (userId: string) => {
-        const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === userId)
-        if (!gamif) return null
-        return MOCK_RANKS.find(r => r.id === gamif.current_rank_id)
+    const getUserRank = (user: any) => {
+        return user.user_gamification?.current_rank_id || null
+    }
+
+    const getVigorPoints = (user: any) => {
+        return user.user_gamification?.total_points || 0
     }
 
     if (loading) {
@@ -366,8 +372,8 @@ export default function UsersPage() {
                             </TableRow>
                         ) : (
                             paginatedUsers.map((user) => {
-                                const rank = getUserRank(user.id)
-                                const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
+                                const rankId = getUserRank(user)
+                                const vigorPoints = getVigorPoints(user)
 
                                 return (
                                     <TableRow key={user.id}>
@@ -382,16 +388,16 @@ export default function UsersPage() {
                                         <TableCell>{user.cpf}</TableCell>
                                         <TableCell className="font-mono text-xs">{user.rota_number || '-'}</TableCell>
                                         <TableCell>
-                                            {rank ? (
-                                                <RankInsignia rankId={rank.id} variant="badge" showLabel={true} />
+                                            {rankId ? (
+                                                <RankInsignia rankId={rankId} variant="badge" showLabel={true} />
                                             ) : (
                                                 <span className="text-xs text-muted-foreground">-</span>
                                             )}
                                         </TableCell>
-                                        <TableCell>{getPlanBadge(user.role)}</TableCell>
+                                        <TableCell>{getPlanBadge(user)}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className="font-mono">
-                                                {gamif?.total_points || 0} pts
+                                                {vigorPoints} pts
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
