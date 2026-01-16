@@ -68,11 +68,11 @@ CREATE TABLE public.ranks (
 
 COMMENT ON TABLE public.ranks IS 'Definição dos níveis de patente';
 
--- Inserir 6 ranks da Rota do Valente
+-- Inserir 6 patentes (hierarquias)
 INSERT INTO public.ranks (id, name, rank_level, points_required, icon, color, description) VALUES
-('recruta', 'Recruta', 1, 0, '🔰', '#94a3b8', 'Iniciante na jornada'),
+('novato', 'Novato', 1, 0, '🔰', '#94a3b8', 'Iniciante na jornada'),
 ('especialista', 'Especialista', 2, 200, '🎯', '#3b82f6', 'Ganhando experiência'),
-('veterano', 'Veterano', 3, 500, '⚔️', '#8b5cf6', 'Experiente e dedicado'),
+('guardiao', 'Guardião', 3, 500, '⚔️', '#8b5cf6', 'Protegendo os valores'),
 ('comandante', 'Comandante', 4, 1000, '🛡️', '#f59e0b', 'Líder respeitado'),
 ('general', 'General', 5, 2000, '🏆', '#ef4444', 'Mestre da jornada'),
 ('lenda', 'Lenda', 6, 3500, '👑', '#a855f7', 'Status lendário');
@@ -179,9 +179,9 @@ BEGIN
     VALUES (NEW.id, 'recruta', 'active')
     ON CONFLICT (user_id) DO NOTHING;
     
-    -- 3. Criar gamificação (Patente Recruta, 0 pontos)
+    -- 3. Criar gamificação (Patente Novato, 0 pontos)
     INSERT INTO public.user_gamification (user_id, current_rank_id, total_points, total_medals)
-    VALUES (NEW.id, 'recruit', 0, 0)
+    VALUES (NEW.id, 'novato', 0, 0)
     ON CONFLICT (user_id) DO NOTHING;
     
     RETURN NEW;
@@ -334,7 +334,7 @@ BEGIN
         
         -- Gamification
         INSERT INTO public.user_gamification (user_id, current_rank_id, total_points, total_medals)
-        VALUES (v_user.id, 'recruit', 0, 0)
+        VALUES (v_user.id, 'novato', 0, 0)
         ON CONFLICT (user_id) DO NOTHING;
         v_count_gamif := v_count_gamif + 1;
     END LOOP;
