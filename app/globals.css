@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&family=Inter:wght@400;500;700&display=swap');
+
+@layer base {
+  :root {
+    /* Rota Business Club Identity */
+    --background: 0 0% 90%;
+    /* #E5E5E5 Light Grey */
+    --foreground: 228 19% 22%;
+    /* #2D3142 Charcoal */
+    --card: 0 0% 100%;
+    /* #FFFFFF White */
+    --card-foreground: 228 19% 22%;
+
+    /* Verde Rota (Forest Green) is Primary (Reverted) */
+    --primary: 166 40% 17%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Laranja Cume (Burnt Orange) is Secondary/Accent */
+    --secondary: 25 100% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Accent matches Secondary */
+    --accent: 25 100% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 0 0% 90%;
+    --muted-foreground: 228 19% 40%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 166 40% 17%;
+    /* Using primary green for borders for sharpness */
+    --input: 166 40% 17%;
+    --ring: 25 100% 40%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark mode if needed, using dark green bg */
+    --background: 166 40% 10%;
+    --foreground: 0 0% 95%;
+    --card: 166 40% 13%;
+    --card-foreground: 0 0% 95%;
+    --primary: 25 100% 50%;
+    /* Brighter orange for dark mode */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 166 40% 25%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 25 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 166 40% 20%;
+    --muted-foreground: 166 20% 70%;
+    --border: 166 40% 25%;
+    --input: 166 40% 25%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Robust Headers */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    /* ExtraBold */
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+}
+
+@layer utilities {
+
+  /* Subtle glass effects with earthy tint */
+  .glass {
+    background: rgba(80, 50, 30, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(120, 80, 50, 0.2);
+  }
+
+  .glass-strong {
+    background: rgba(80, 50, 30, 0.25);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(120, 80, 50, 0.3);
+  }
+
+  /* Clean light backgrounds */
+  .bg-adventure {
+    background: var(--background);
+    /* Use Cinza Base */
+  }
+
+  .bg-mountain {
+    background: linear-gradient(to bottom, var(--background) 0%, #FFFFFF 100%);
+  }
+
+  /* Subtle warm glow - preserved for accents */
+  .glow-orange {
+    box-shadow: 0 0 15px rgba(204, 85, 0, 0.15), 0 0 30px rgba(204, 85, 0, 0.08);
+  }
+
+  .glow-orange-strong {
+    box-shadow: 0 0 20px rgba(204, 85, 0, 0.25), 0 0 40px rgba(204, 85, 0, 0.12);
+  }
+
+  /* Standard text effects */
+  .text-impact {
+    font-family: 'Montserrat', sans-serif;
+    /* Ensuring consistency */
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    /* Removed heavy text-shadow for cleaner look */
+  }
+
+  /* Grounded transformation animation */
+  .animate-transform {
+    animation: transform 0.6s ease-out;
+  }
+
+  @keyframes transform {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Subtle pulse */
+  .pulse-orange {
+    animation: pulse-orange 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-orange {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.85;
+    }
+  }
+
+  /* Removed textures for cleaner corporate look */
+}

@@ -1,0 +1,222 @@
+'use client'
+
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
+interface User {
+    id: string
+    email: string
+    full_name: string
+    avatar_url?: string
+    is_professional: boolean
+    role?: 'admin' | 'user' | 'professional'
+    pista?: string
+    rota_number?: string
+}
+
+interface AuthContextType {
+    user: User | null
+    loading: boolean
+    signIn: (email: string, password: string) => Promise<void>
+    signUp: (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => Promise<void>
+    signOut: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState<User | null>(null)
+    const [loading, setLoading] = useState(true)
+    const supabase = createClient()
+
+    useEffect(() => {
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                // Fetch profile data
+                supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .maybeSingle()
+                    .then(({ data: profile, error }) => {
+                        try {
+                            if (error) {
+                                console.error('Error fetching profile in getSession:', error)
+                            }
+                            if (profile) {
+                                setUser({
+                                    id: session.user.id,
+                                    email: session.user.email!,
+                                    full_name: profile.full_name || '',
+                                    is_professional: profile.role === 'professional',
+                                    role: profile.role,
+                                    pista: profile.pista
+                                })
+                            } else {
+                                // Profile doesn't exist - set basic user
+                                console.warn('Profile not found for user, creating basic user object')
+                                setUser({
+                                    id: session.user.id,
+                                    email: session.user.email!,
+                                    full_name: session.user.email!.split('@')[0],
+                                    is_professional: false,
+                                    role: 'user'
+                                })
+                            }
+                        } catch (err) {
+                            console.error('Unexpected error in profile processing:', err)
+                        } finally {
+                            setLoading(false)
+                        }
+                    })
+            } else {
+                setLoading(false)
+            }
+        })
+
+        // Listen for auth changes
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session?.user) {
+                // Fetch profile
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .maybeSingle()
+
+                if (error) {
+                    console.error('Error fetching profile in onAuthStateChange:', error)
+                }
+
+                if (profile) {
+                    setUser({
+                        id: session.user.id,
+                        email: session.user.email!,
+                        full_name: profile.full_name || '',
+                        is_professional: profile.role === 'professional',
+                        role: profile.role,
+                        pista: profile.pista
+                    })
+                }
+            } else {
+                setUser(null)
+            }
+            setLoading(false)
+        })
+
+        return () => subscription.unsubscribe()
+    }, [])
+
+    const signIn = async (email: string, password: string) => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        })
+
+        if (error) {
+            throw new Error(error.message || 'Email ou senha incorretos')
+        }
+
+        // Fetch profile with error handling
+        if (data.user) {
+            try {
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .maybeSingle()
+
+                if (profileError) {
+                    console.error('Error fetching profile:', profileError)
+                    // Don't throw - allow login to proceed with basic user data
+                }
+
+                if (profile) {
+                    setUser({
+                        id: data.user.id,
+                        email: data.user.email!,
+                        full_name: profile.full_name || '',
+                        is_professional: profile.role === 'professional',
+                        role: profile.role,
+                        pista: profile.pista
+                    })
+                } else {
+                    // No profile found, but auth succeeded - set basic user
+                    setUser({
+                        id: data.user.id,
+                        email: data.user.email!,
+                        full_name: data.user.email!.split('@')[0],
+                        is_professional: false,
+                        role: 'user'
+                    })
+                }
+            } catch (err) {
+                console.error('Unexpected error fetching profile:', err)
+                // Set basic user data to allow login to proceed
+                setUser({
+                    id: data.user.id,
+                    email: data.user.email!,
+                    full_name: data.user.email!.split('@')[0],
+                    is_professional: false,
+                    role: 'user'
+                })
+            }
+        }
+    }
+
+    const signUp = async (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: fullName,
+                    cpf: cpf,
+                    pista: pista,
+                    plan: plan,
+                    rota_number: rotaNumber,
+                    role: rotaNumber ? 'professional' : 'user'
+                }
+            }
+        })
+
+        if (error) {
+            throw new Error(error.message)
+        }
+
+        // Profile will be created by trigger
+        if (data.user) {
+            setUser({
+                id: data.user.id,
+                email: data.user.email!,
+                full_name: fullName,
+                is_professional: !!rotaNumber,
+                role: rotaNumber ? 'professional' : 'user',
+                pista: pista,
+                rota_number: rotaNumber
+            })
+        }
+    }
+
+    const signOut = async () => {
+        await supabase.auth.signOut()
+        setUser(null)
+    }
+
+    return (
+        <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+            {children}
+        </AuthContext.Provider>
+    )
+}
+
+export function useAuth() {
+    const context = useContext(AuthContext)
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider')
+    }
+    return context
+}

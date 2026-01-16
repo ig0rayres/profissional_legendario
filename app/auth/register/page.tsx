@@ -1,0 +1,251 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { UserPlus, Loader2 } from 'lucide-react'
+import { registerSchema, type RegisterFormData } from '@/lib/validations/auth'
+import { useAuth } from '@/lib/auth/context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LOCATIONS } from '@/lib/data/locations'
+
+export default function RegisterPage() {
+    const router = useRouter()
+    const { signUp } = useAuth()
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors },
+    } = useForm<RegisterFormData>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            isProfessional: false
+        }
+    })
+
+    const onSubmit = async (data: RegisterFormData) => {
+        setIsLoading(true)
+        setError(null)
+
+        try {
+            // Only pass rotaNumber if user marked as professional
+            const finalRotaNumber = data.isProfessional ? data.rotaNumber : undefined
+            await signUp(data.email, data.password, data.fullName, data.cpf, data.pista, data.plan, finalRotaNumber)
+            router.push('/dashboard')
+            router.refresh()
+        } catch (err: any) {
+            setError(err.message || 'Ocorreu um erro ao criar sua conta. Tente novamente.')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <Card className="w-full bg-card/80 backdrop-blur-md border-primary/20 shadow-xl">
+            <CardHeader className="space-y-3">
+                <div className="flex items-center justify-center mb-2">
+                    <div className="p-4 rounded-full bg-primary/20 glow-orange">
+                        <UserPlus className="w-8 h-8 text-primary" />
+                    </div>
+                </div>
+                <CardTitle className="text-3xl text-center text-impact text-primary">
+                    Torne-se um Membro Rota Business
+                </CardTitle>
+                <CardDescription className="text-center text-base">
+                    Inicie sua jornada de transformação
+                </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <CardContent className="space-y-4">
+                    {error && (
+                        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-slide-down">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="space-y-2">
+                        <label htmlFor="fullName" className="text-sm font-medium">
+                            Nome Completo
+                        </label>
+                        <Input
+                            id="fullName"
+                            type="text"
+                            placeholder="João Silva"
+                            {...register('fullName')}
+                            error={errors.fullName?.message}
+                            disabled={isLoading}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="email" className="text-sm font-medium">
+                            Email
+                        </label>
+                        <Input
+                            id="email"
+                            type="email"
+                            placeholder="seu@email.com"
+                            {...register('email')}
+                            error={errors.email?.message}
+                            disabled={isLoading}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="cpf" className="text-sm font-medium">
+                            CPF
+                        </label>
+                        <Input
+                            id="cpf"
+                            type="text"
+                            placeholder="000.000.000-00"
+                            {...register('cpf')}
+                            error={errors.cpf?.message}
+                            disabled={isLoading}
+                            maxLength={14}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="pista" className="text-sm font-medium">
+                            Unidade (Pista)
+                        </label>
+                        <Select onValueChange={(value) => setValue('pista', value)}>
+                            <SelectTrigger className={errors.pista ? "border-destructive" : ""}>
+                                <SelectValue placeholder="Selecione sua unidade" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background">
+                                {LOCATIONS.map((location) => (
+                                    <SelectItem key={location.id} value={location.value}>
+                                        {location.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.pista && (
+                            <p className="text-sm text-destructive">{errors.pista.message}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="plan" className="text-sm font-medium">
+                            Plano de Assinatura
+                        </label>
+                        <Select onValueChange={(value) => setValue('plan', value as 'recruta' | 'veterano' | 'elite')} defaultValue="recruta">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione seu plano" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background">
+                                <SelectItem value="recruta">Recruta (Gratuito)</SelectItem>
+                                <SelectItem value="veterano">Veterano (R$ 29/mês)</SelectItem>
+                                <SelectItem value="elite">Elite (R$ 99/mês)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {errors.plan && (
+                            <p className="text-sm text-destructive">{errors.plan.message}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-4 pt-2 border-t border-primary/10">
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="isProfessional"
+                                className="h-4 w-4 rounded border-primary text-primary focus:ring-primary bg-background"
+                                {...register('isProfessional')}
+                            />
+                            <label
+                                htmlFor="isProfessional"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Sou um Profissional do Clube
+                            </label>
+                        </div>
+
+                        {/* Conditional Input */}
+                        <div className={`space-y-2 transition-all duration-300 ${watch('isProfessional') ? 'opacity-100 max-h-24' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                            <label htmlFor="rotaNumber" className="text-sm font-medium">
+                                ID Rota Business *
+                            </label>
+                            <Input
+                                id="rotaNumber"
+                                type="text"
+                                placeholder="Ex: ROT-12345"
+                                {...register('rotaNumber' as any)}
+                                error={(errors as any).rotaNumber?.message}
+                                disabled={isLoading}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Obrigatório para cadastro de profissionais.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="password" className="text-sm font-medium">
+                            Senha
+                        </label>
+                        <Input
+                            id="password"
+                            type="password"
+                            placeholder="••••••••"
+                            {...register('password')}
+                            error={errors.password?.message}
+                            disabled={isLoading}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="confirmPassword" className="text-sm font-medium">
+                            Confirmar Senha
+                        </label>
+                        <Input
+                            id="confirmPassword"
+                            type="password"
+                            placeholder="••••••••"
+                            {...register('confirmPassword')}
+                            error={errors.confirmPassword?.message}
+                            disabled={isLoading}
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-4">
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Criando conta...
+                            </>
+                        ) : (
+                            'Criar Conta'
+                        )}
+                    </Button>
+
+                    <p className="text-sm text-center text-muted-foreground">
+                        Já tem uma conta?{' '}
+                        <Link
+                            href="/auth/login"
+                            className="text-primary hover:underline font-medium"
+                        >
+                            Faça login
+                        </Link>
+                    </p>
+                </CardFooter>
+            </form>
+        </Card>
+    )
+}
