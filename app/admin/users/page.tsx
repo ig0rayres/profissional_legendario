@@ -51,6 +51,10 @@ export default function UsersPage() {
     const [roleFilter, setRoleFilter] = useState<string>('all')
     const [statusFilter, setStatusFilter] = useState<string>('all')
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(20)
+
     const supabase = createClient()
 
     useEffect(() => {
@@ -85,12 +89,33 @@ export default function UsersPage() {
         })
     }, [users, searchTerm, roleFilter, statusFilter])
 
+    // Paginated users
+    const paginatedUsers = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage
+        const endIndex = startIndex + itemsPerPage
+        return filteredUsers.slice(startIndex, endIndex)
+    }, [filteredUsers, currentPage, itemsPerPage])
+
+    // Total pages
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchTerm, roleFilter, statusFilter, itemsPerPage])
+
     // Bulk selection handlers
     const toggleSelectAll = () => {
-        if (selectedUsers.size === filteredUsers.length) {
-            setSelectedUsers(new Set())
+        if (selectedUsers.size === paginatedUsers.length && paginatedUsers.length > 0) {
+            // Deselect all on this page
+            const newSelected = new Set(selectedUsers)
+            paginatedUsers.forEach(u => newSelected.delete(u.id))
+            setSelectedUsers(newSelected)
         } else {
-            setSelectedUsers(new Set(filteredUsers.map(u => u.id)))
+            // Select all on this page
+            const newSelected = new Set(selectedUsers)
+            paginatedUsers.forEach(u => newSelected.add(u.id))
+            setSelectedUsers(newSelected)
         }
     }
 
@@ -314,7 +339,7 @@ export default function UsersPage() {
                         <TableRow>
                             <TableHead className="w-12">
                                 <Checkbox
-                                    checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                                    checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUsers.has(u.id))}
                                     onCheckedChange={toggleSelectAll}
                                 />
                             </TableHead>
@@ -331,7 +356,7 @@ export default function UsersPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredUsers.length === 0 ? (
+                        {paginatedUsers.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                                     {searchTerm || roleFilter !== 'all' || statusFilter !== 'all'
@@ -340,7 +365,7 @@ export default function UsersPage() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredUsers.map((user) => {
+                            paginatedUsers.map((user) => {
                                 const rank = getUserRank(user.id)
                                 const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
 
@@ -436,6 +461,64 @@ export default function UsersPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination */}
+            {filteredUsers.length > 0 && (
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de {filteredUsers.length}
+                        </span>
+                        <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
+                            <SelectTrigger className="w-[130px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="20">20 por página</SelectItem>
+                                <SelectItem value="50">50 por página</SelectItem>
+                                <SelectItem value="100">100 por página</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                        >
+                            Primeira
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Anterior
+                        </Button>
+                        <span className="text-sm px-4">
+                            Página {currentPage} de {totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Próxima
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                        >
+                            Última
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Edit Dialog */}
             <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
