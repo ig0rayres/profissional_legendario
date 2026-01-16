@@ -33,7 +33,7 @@ COMMENT ON TABLE public.plan_tiers IS 'FONTE ÚNICA para definições de planos 
 INSERT INTO public.plan_tiers (id, name, description, monthly_price, xp_multiplier, display_order, features) VALUES
 ('recruta', 'Recruta', 'Plano gratuito para iniciantes', 0.00, 1.00, 1, '{"network_limit": 10, "projects": 3, "marketplace": false}'::jsonb),
 ('veterano', 'Veterano', 'Para profissionais em crescimento', 97.00, 1.50, 2, '{"network_limit": 50, "projects": 10, "marketplace": true}'::jsonb),
-('elite', 'Elite', 'Máximo desempenho e benefícios', 297.00, 3.00, 3, '{"network_limit": -1, "projects": -1, "marketplace": true, "priority_support": true}'::jsonb);
+('elite', 'Elite', 'Máximo desempenho e benefícios', 127.00, 3.00, 3, '{"network_limit": -1, "projects": -1, "marketplace": true, "priority_support": true}'::jsonb);
 
 -- =============================================
 -- PASSO 3: ASSINATURAS DOS USUÁRIOS
