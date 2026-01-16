@@ -1,38 +1,28 @@
 'use client'
 
-import { Shield, Target, Crown, Zap, Sword, Medal, Flame } from 'lucide-react'
+import { Shield, Target, Crown, Zap, Sword, Medal, Flame, Compass } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// Mapa de ícones por ID de patente
 const rankIconMap: Record<string, any> = {
-    'recruta': Shield,
-    'especialista': Sword,
-    'veterano': Medal,
-    'comandante': Target,
+    'novato': Shield,
+    'especialista': Target,
+    'guardiao': Sword,
+    'comandante': Medal,
     'general': Crown,
     'lenda': Flame,
 }
-
-const rankColorMap: Record<string, string> = {
-    'recruta': 'text-white bg-primary border-primary/20 shadow-sm',
-    'especialista': 'text-white bg-primary border-primary/20 shadow-sm',
-    'veterano': 'text-white bg-primary border-primary/30 shadow-md',
-    'comandante': 'text-white bg-primary border-primary/40 shadow-md',
-    'general': 'text-white bg-primary border-primary/50 shadow-lg',
-    'lenda': 'text-white bg-primary border-primary/60 shadow-2xl glow-primary',
-}
-// Note: Standardizing all ranks to "Verde Rota" (primary brand color) with white icons.
 
 interface RankInsigniaProps {
     rankId: string
     size?: 'sm' | 'md' | 'lg' | 'xl'
     showLabel?: boolean
-    className?: boolean
-    variant?: 'badge' | 'icon-only' | 'full'
+    className?: string
+    variant?: 'badge' | 'icon-only' | 'avatar'
 }
 
-export function RankInsignia({ rankId, size = 'md', showLabel = false, className, variant = 'badge' }: any) {
+export function RankInsignia({ rankId, size = 'md', showLabel = false, className, variant = 'badge' }: RankInsigniaProps) {
     const Icon = rankIconMap[rankId] || Shield
-    const colorClass = rankColorMap[rankId] || rankColorMap.recruta
 
     const sizeMap = {
         sm: 'w-4 h-4',
@@ -42,36 +32,52 @@ export function RankInsignia({ rankId, size = 'md', showLabel = false, className
     }
 
     const containerSizeMap = {
-        sm: 'p-1',
-        md: 'p-1.5',
-        lg: 'p-3',
-        xl: 'p-5',
+        sm: 'w-6 h-6',
+        md: 'w-8 h-8',
+        lg: 'w-14 h-14',
+        xl: 'w-20 h-20',
     }
 
-    if (variant === 'icon-only') {
+    // Estilo unificado: Verde sólido + Ícone branco
+    const rankStyle = 'bg-green-600 text-white shadow-lg'
+
+    if (variant === 'icon-only' || variant === 'avatar') {
         return (
-            <div className={cn("rounded-full flex items-center justify-center", colorClass, containerSizeMap[size as keyof typeof containerSizeMap], className)}>
-                <Icon className={sizeMap[size as keyof typeof sizeMap]} />
+            <div className={cn(
+                "rounded-full flex items-center justify-center",
+                rankStyle,
+                containerSizeMap[size],
+                className
+            )}>
+                <Icon className={sizeMap[size]} strokeWidth={2.5} />
             </div>
         )
     }
 
     if (variant === 'badge') {
         return (
-            <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-wider", colorClass, className)}>
-                <Icon className="w-3 h-3" />
-                {showLabel ? rankId : null}
+            <div className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide",
+                rankStyle,
+                className
+            )}>
+                <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
+                {showLabel && <span>{rankId}</span>}
             </div>
         )
     }
 
     return (
         <div className={cn("flex flex-col items-center gap-2", className)}>
-            <div className={cn("rounded-full flex items-center justify-center shadow-2xl", colorClass, containerSizeMap[size as keyof typeof containerSizeMap])}>
-                <Icon className={sizeMap[size as keyof typeof sizeMap]} />
+            <div className={cn(
+                "rounded-full flex items-center justify-center",
+                rankStyle,
+                containerSizeMap[size]
+            )}>
+                <Icon className={sizeMap[size]} strokeWidth={2.5} />
             </div>
             {showLabel && (
-                <span className={cn("font-black uppercase tracking-widest text-impact", colorClass.split(' ')[0])}>
+                <span className="text-xs font-bold uppercase text-green-600">
                     {rankId}
                 </span>
             )}

@@ -26,6 +26,7 @@ import {
 import { Trophy, Medal, Plus, Edit, Trash2, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { MedalBadge } from '@/components/gamification/medal-badge'
 
 type Rank = {
     id: string
@@ -233,7 +234,7 @@ export default function GameAdminPage() {
                                         <TableCell className="font-bold">{rank.rank_level}</TableCell>
                                         <TableCell className="font-medium">{rank.name}</TableCell>
                                         <TableCell>
-                                            <span className="text-2xl">{rank.icon}</span>
+                                            <RankInsignia rankId={rank.id} size="sm" variant="icon-only" />
                                         </TableCell>
                                         <TableCell>{rank.points_required} pts</TableCell>
                                         <TableCell className="max-w-md truncate">{rank.description}</TableCell>
@@ -292,7 +293,7 @@ export default function GameAdminPage() {
                                     <TableRow key={medal.id}>
                                         <TableCell className="font-medium">{medal.name}</TableCell>
                                         <TableCell>
-                                            <span className="text-2xl">{medal.icon}</span>
+                                            <MedalBadge icon={medal.icon} size="sm" variant="icon-only" />
                                         </TableCell>
                                         <TableCell className="max-w-md truncate">{medal.description}</TableCell>
                                         <TableCell>
