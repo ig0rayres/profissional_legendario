@@ -31,10 +31,13 @@ export default function LoginPage() {
         setError(null)
 
         try {
+            console.log('🔐 Tentando login com:', data.email)
             await signIn(data.email, data.password)
+            console.log('✅ Login bem-sucedido! Redirecionando...')
             // Force page reload to ensure auth state syncs
             window.location.href = '/dashboard'
         } catch (err: any) {
+            console.error('❌ Erro no login:', err)
             setError(err.message || 'Ocorreu um erro ao fazer login. Tente novamente.')
             setIsLoading(false)
         }
