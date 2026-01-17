@@ -40,11 +40,11 @@ export default function RegisterPage() {
         try {
             // Verificar se o rota_number já existe
             const supabase = await import('@/lib/supabase/client').then(m => m.createClient())
-            const { data: existingUser } = await supabase
+            const { data: existingUser, error: checkError } = await supabase
                 .from('profiles')
                 .select('rota_number')
                 .eq('rota_number', data.rotaNumber)
-                .single()
+                .maybeSingle()
 
             if (existingUser) {
                 setError('Este ID Rota Business já está em uso. Por favor, use outro.')
