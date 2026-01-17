@@ -8,13 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Star, Briefcase, Award, Medal } from 'lucide-react'
 import Link from 'next/link'
-import {
-    MOCK_PROFESSIONALS,
-    MOCK_REVIEWS,
-    MOCK_USER_GAMIFICATION,
-    MOCK_RANKS,
-    MOCK_BADGES
-} from '@/lib/data/mock'
+import { createClient } from '@/lib/supabase/server'
+import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { MedalBadge } from '@/components/gamification/medal-badge'
 
 interface PageProps {
     params: {
@@ -22,51 +18,81 @@ interface PageProps {
     }
 }
 
-export default function ProfessionalProfile({ params }: { params: { id: string } }) {
-    // Get professional profile from mock data
-    const profile = MOCK_PROFESSIONALS.find(p => p.id === params.id)
+export default async function ProfessionalProfile({ params }: { params: { id: string } }) {
+    const supabase = await createClient()
 
-    if (!profile) {
+    // Buscar perfil real do usuário
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', params.id)
+        .single()
+
+    if (profileError || !profile) {
         notFound()
     }
 
-    const gamification = MOCK_USER_GAMIFICATION.find(g => g.user_id === profile.user_id)
-    const rank = MOCK_RANKS.find(r => r.id === gamification?.current_rank_id) || MOCK_RANKS[0]
-    const earnedBadges = MOCK_BADGES.filter(b =>
-        gamification?.badges_earned.some(eb => eb.badge_id === b.id)
-    )
+    // Buscar gamificação
+    const { data: gamification } = await supabase
+        .from('user_gamification')
+        .select('*')
+        .eq('user_id', params.id)
+        .single()
 
-    // Mock portfolio items (since we don't have them in mock.ts yet, we'll use empty or generate some)
-    const portfolioItems = [
-        {
-            id: '1',
-            title: 'Projeto Exemplo 1',
-            description: 'Descrição do projeto exemplo',
-            image_url: '/images/event-1.jpg',
-            user_id: params.id,
-            display_order: 1
-        },
-        {
-            id: '2',
-            title: 'Projeto Exemplo 2',
-            description: 'Descrição do projeto exemplo',
-            image_url: '/images/event-2.jpg',
-            image: '/images/event-2.jpg',
-            user_id: params.id,
-            display_order: 2
-        }
-    ]
+    // Buscar patente
+    const { data: rank } = await supabase
+        .from('ranks')
+        .select('*')
+        .eq('id', gamification?.current_rank_id || 'novato')
+        .single()
 
-    // Adapt mock profile to component expected shape if necessary
+    // Buscar medalhas conquistadas
+    const { data: userMedals } = await supabase
+        .from('user_medals')
+        .select(`
+            medal_id,
+            earned_at,
+            medals (
+                id,
+                name,
+                icon,
+                description
+            )
+        `)
+        .eq('user_id', params.id)
+
+    const earnedMedals = userMedals?.map(um => um.medals) || []
+
+    // Buscar subscription/plano
+    const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select
+
+        (`
+            plan_id,
+            plan_tiers (
+                name,
+                xp_multiplier
+            )
+        `)
+        .eq('user_id', params.id)
+        .single()
+
+    // Portfolio items (vazio por enquanto)
+    const portfolioItems: any[] = []
+
+    // Adaptar profile para componentes
     const adaptedProfile = {
         ...profile,
-        skills: profile.specialties,
-        tops: { name: profile.location },
-        portfolio_description: 'Confira alguns dos meus trabalhos recentes.',
-        total_ratings: profile.total_reviews,
-        average_rating: profile.rating,
-        rank,
-        badges: earnedBadges
+        skills: [], // Ainda não temos campo de skills
+        tops: { name: profile.pista || 'São Paulo' },
+        portfolio_description: profile.bio || 'Profissional Rota Business',
+        total_ratings: 0, // Ainda não temos avaliações
+        average_rating: 0,
+        rank: rank || { id: 'novato', name: 'Novato', icon: '🛡️' },
+        badges: earnedMedals,
+        gamification: gamification || { total_points: 0, total_medals: 0 },
+        subscription: subscription?.plan_tiers || { name: 'Recruta', xp_multiplier: 1.0 }
     }
 
     return (
@@ -87,160 +113,112 @@ export default function ProfessionalProfile({ params }: { params: { id: string }
                                 {profile.bio ? (
                                     <p className="text-gray-300 leading-relaxed">{profile.bio}</p>
                                 ) : (
-                                    <p className="text-gray-500 italic">Este profissional ainda não adicionou uma bio.</p>
+                                    <p className="text-gray-500 italic">Este usuário ainda não adicionou uma bio.</p>
                                 )}
                             </CardContent>
                         </Card>
 
-                        {/* Portfolio Section */}
-                        <Card>
+                        {/* Gamification Stats */}
+                        <Card className="border-primary/20 bg-primary/5">
                             <CardHeader>
-                                <CardTitle>Portfólio</CardTitle>
-                                <CardDescription>
-                                    Trabalhos realizados
-                                </CardDescription>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Award className="w-5 h-5 text-primary" />
+                                    Status Rota do Valente
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <PortfolioGallery items={portfolioItems} columns={2} />
-                            </CardContent>
-                        </Card>
-
-                        {/* Ratings Section */}
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Star className="w-5 h-5 text-yellow-500" />
-                                            Avaliações
-                                        </CardTitle>
-                                        <CardDescription>
-                                            {profile.total_reviews > 0
-                                                ? `${profile.total_reviews} ${profile.total_reviews === 1 ? 'avaliação' : 'avaliações'}`
-                                                : 'Nenhuma avaliação ainda'}
-                                        </CardDescription>
-                                    </div>
-                                    {profile.rating > 0 && (
-                                        <div className="text-right">
-                                            <div className="text-3xl font-bold text-yellow-500">
-                                                {profile.rating.toFixed(1)}
-                                            </div>
-                                            <div className="flex gap-1 mt-1">
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <Star
-                                                        key={star}
-                                                        className={`w-4 h-4 ${star <= Math.round(profile.rating)
-                                                            ? 'text-yellow-500 fill-yellow-500'
-                                                            : 'text-gray-600'
-                                                            }`}
-                                                    />
-                                                ))}
-                                            </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-background/50 p-4 rounded-lg">
+                                        <p className="text-sm text-muted-foreground mb-1">Patente</p>
+                                        <div className="flex items-center gap-2">
+                                            <RankInsignia rankId={gamification?.current_rank_id || 'novato'} size="md" />
+                                            <p className="font-bold text-lg">{rank?.name}</p>
                                         </div>
-                                    )}
+                                    </div>
+                                    <div className="bg-background/50 p-4 rounded-lg">
+                                        <p className="text-sm text-muted-foreground mb-1">Plano</p>
+                                        <p className="font-bold text-lg capitalize">{subscription?.plan_tiers?.name || 'Recruta'}</p>
+                                        <p className="text-xs text-muted-foreground">Multiplicador: {subscription?.plan_tiers?.xp_multiplier || 1.0}x</p>
+                                    </div>
+                                    <div className="bg-background/50 p-4 rounded-lg">
+                                        <p className="text-sm text-muted-foreground mb-1">Vigor</p>
+                                        <p className="font-bold text-2xl text-primary">{gamification?.total_points || 0}</p>
+                                    </div>
+                                    <div className="bg-background/50 p-4 rounded-lg">
+                                        <p className="text-sm text-muted-foreground mb-1">Medalhas</p>
+                                        <p className="font-bold text-2xl text-secondary">{gamification?.total_medals || 0}</p>
+                                    </div>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {/* Rating List */}
-                                <RatingList professionalId={params.id} />
                             </CardContent>
                         </Card>
 
-                        {/* Rating Form */}
-                        <RatingForm
-                            professionalId={params.id}
-                            professionalName={profile.full_name}
-                        />
+                        {/* Portfolio Section */}
+                        {portfolioItems.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Portfólio</CardTitle>
+                                    <CardDescription>
+                                        Trabalhos realizados
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <PortfolioGallery items={portfolioItems} columns={2} />
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Gamification Badges */}
-                        {adaptedProfile.badges && adaptedProfile.badges.length > 0 && (
-                            <Card className="border-secondary/20 bg-secondary/5 overflow-hidden relative">
-                                <div className="absolute top-0 right-0 p-3 opacity-10">
-                                    <Award className="w-12 h-12 text-secondary" />
-                                </div>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-black uppercase text-secondary flex items-center gap-2">
-                                        <Medal className="w-4 h-4" />
-                                        Conquistas
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex flex-wrap gap-2">
-                                        {adaptedProfile.badges.map((badge: any) => (
-                                            <div
-                                                key={badge.id}
-                                                title={`${badge.name}: ${badge.description}`}
-                                                className="w-10 h-10 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center hover:scale-110 transition-transform cursor-help group shadow-inner"
-                                            >
-                                                <Award className="w-5 h-5 text-secondary group-hover:text-amber-400 transition-colors" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground mt-4 font-bold uppercase tracking-wider">
-                                        {adaptedProfile.badges.length} de 11 Medalhas conquistadas
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        )}
+                        {/* Gamification Medals */}
+                        <Card className="border-secondary/20 bg-secondary/5 overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-3 opacity-10">
+                                <Award className="w-12 h-12 text-secondary" />
+                            </div>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-black uppercase text-secondary flex items-center gap-2">
+                                    <Medal className="w-4 h-4" />
+                                    Conquistas
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {earnedMedals.length > 0 ? (
+                                    <>
+                                        <div className="flex flex-wrap gap-2">
+                                            {earnedMedals.map((medal: any) => (
+                                                <div
+                                                    key={medal.id}
+                                                    title={`${medal.name}: ${medal.description}`}
+                                                    className="hover:scale-110 transition-transform cursor-help"
+                                                >
+                                                    <MedalBadge medalId={medal.id} size="md" variant="icon-only" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-4 font-bold uppercase tracking-wider">
+                                            {earnedMedals.length} de 16 Medalhas conquistadas
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground italic">Nenhuma medalha conquistada ainda</p>
+                                )}
+                            </CardContent>
+                        </Card>
 
                         {/* Contact Card */}
                         <ProfileInfo profile={adaptedProfile} />
 
-                        {/* Request Project Button */}
-                        <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Briefcase className="w-5 h-5" />
-                                    Solicitar Orçamento
-                                </CardTitle>
-                                <CardDescription>
-                                    Interessado no trabalho deste profissional?
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Button className="w-full" size="lg" disabled>
-                                    <Briefcase className="w-4 h-4 mr-2" />
-                                    Em Breve
-                                </Button>
-                                <p className="text-xs text-gray-500 text-center mt-2">
-                                    Sistema de solicitações em desenvolvimento
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        {/* Skills */}
-                        {profile.specialties && profile.specialties.length > 0 && (
+                        {/* Location */}
+                        {profile.pista && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Habilidades</CardTitle>
+                                    <CardTitle>Localização</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="flex flex-wrap gap-2">
-                                        {profile.specialties.map((skill: string, i: number) => (
-                                            <span
-                                                key={i}
-                                                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                                            >
-                                                {skill}
-                                            </span>
-                                        ))}
-                                    </div>
+                                    <p className="text-lg font-medium">{profile.pista}</p>
                                 </CardContent>
                             </Card>
                         )}
-
-                        {/* Location */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Localização</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-lg font-medium">{profile.location}</p>
-                            </CardContent>
-                        </Card>
                     </div>
                 </div>
 
@@ -248,7 +226,7 @@ export default function ProfessionalProfile({ params }: { params: { id: string }
                 <div className="mt-8 text-center">
                     <Link href="/professionals">
                         <Button variant="outline">
-                            ← Voltar para Busca de Profissionais
+                            ← Voltar para Profissionais
                         </Button>
                     </Link>
                 </div>
