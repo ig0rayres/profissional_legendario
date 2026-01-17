@@ -30,83 +30,97 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient()
 
     useEffect(() => {
-        // Get initial session - SAFE VERSION with profile fetch
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
+        // ============================================================
+        // 🔥 ARQUITETURA HÍBRIDA - 2 FASES
+        // FASE 1: Auth Rápido (NUNCA FALHA)
+        // FASE 2: Enriquecimento (NÃO-BLOQUEANTE)
+        // ============================================================
+
+        // FASE 1: Get initial session - SIMPLE & FAST (always works)
+        supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
-                try {
-                    // Try to fetch profile but DON'T block if it fails
-                    const { data: profile } = await supabase
-                        .from('profiles')
+                // Define usuário básico IMEDIATAMENTE
+                const basicUser = {
+                    id: session.user.id,
+                    email: session.user.email!,
+                    full_name: session.user.email!.split('@')[0],
+                    is_professional: false,
+                    role: 'user' as const
+                }
+
+                setUser(basicUser)
+                setLoading(false) // ✅ UI já liberada - login não trava
+
+                // FASE 2: Enriquecimento NÃO-BLOQUEANTE (com timeout)
+                Promise.race([
+                    supabase.from('profiles')
                         .select('*')
                         .eq('id', session.user.id)
-                        .maybeSingle()
-
-                    setUser(profile ? {
-                        id: session.user.id,
-                        email: session.user.email!,
-                        full_name: profile.full_name || session.user.email!.split('@')[0],
-                        is_professional: profile.role === 'professional',
-                        role: profile.role || 'user',
-                        pista: profile.pista
-                    } : {
-                        id: session.user.id,
-                        email: session.user.email!,
-                        full_name: session.user.email!.split('@')[0],
-                        is_professional: false,
-                        role: 'user'
+                        .maybeSingle(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+                    )
+                ])
+                    .then((result: any) => {
+                        if (result?.data) {
+                            // Enriquecer com dados do banco
+                            setUser({
+                                ...basicUser,
+                                full_name: result.data.full_name || basicUser.full_name,
+                                role: result.data.role || 'user',
+                                is_professional: result.data.role === 'professional',
+                                pista: result.data.pista,
+                                rota_number: result.data.rota_number,
+                                avatar_url: result.data.avatar_url
+                            })
+                        }
                     })
-                } catch (error) {
-                    // Even if profile fetch fails, create basic user
-                    console.warn('Profile fetch failed, using basic user:', error)
-                    setUser({
-                        id: session.user.id,
-                        email: session.user.email!,
-                        full_name: session.user.email!.split('@')[0],
-                        is_professional: false,
-                        role: 'user'
+                    .catch(err => {
+                        // Não é crítico - continua com basicUser
+                        console.warn('[Auth] Profile enrichment failed (non-critical):', err.message)
                     })
-                }
-                setLoading(false)
             } else {
+                setUser(null)
                 setLoading(false)
             }
         })
 
-        // Listen for auth changes - SAFE VERSION with profile fetch
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        // Listen for auth changes - SIMPLE VERSION (no profile fetch here)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (session?.user) {
-                try {
-                    // Try to fetch profile but DON'T block
-                    const { data: profile } = await supabase
-                        .from('profiles')
+                const basicUser = {
+                    id: session.user.id,
+                    email: session.user.email!,
+                    full_name: session.user.email!.split('@')[0],
+                    is_professional: false,
+                    role: 'user' as const
+                }
+                setUser(basicUser)
+
+                // Enriquecimento assíncrono (não-bloqueante)
+                Promise.race([
+                    supabase.from('profiles')
                         .select('*')
                         .eq('id', session.user.id)
-                        .maybeSingle()
-
-                    setUser(profile ? {
-                        id: session.user.id,
-                        email: session.user.email!,
-                        full_name: profile.full_name || session.user.email!.split('@')[0],
-                        is_professional: profile.role === 'professional',
-                        role: profile.role || 'user',
-                        pista: profile.pista
-                    } : {
-                        id: session.user.id,
-                        email: session.user.email!,
-                        full_name: session.user.email!.split('@')[0],
-                        is_professional: false,
-                        role: 'user'
+                        .maybeSingle(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+                ])
+                    .then((result: any) => {
+                        if (result?.data) {
+                            setUser({
+                                ...basicUser,
+                                full_name: result.data.full_name || basicUser.full_name,
+                                role: result.data.role || 'user',
+                                is_professional: result.data.role === 'professional',
+                                pista: result.data.pista,
+                                rota_number: result.data.rota_number,
+                                avatar_url: result.data.avatar_url
+                            })
+                        }
                     })
-                } catch (error) {
-                    console.warn('Profile fetch failed in auth state change:', error)
-                    setUser({
-                        id: session.user.id,
-                        email: session.user.email!,
-                        full_name: session.user.email!.split('@')[0],
-                        is_professional: false,
-                        role: 'user'
+                    .catch(() => {
+                        // Silently fail - basic user already set
                     })
-                }
             } else {
                 setUser(null)
             }
