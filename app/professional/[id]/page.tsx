@@ -1,16 +1,14 @@
 import { notFound } from 'next/navigation'
-import { ProfileHeader } from '@/components/professional/profile-header'
-import { ProfileInfo } from '@/components/professional/profile-info'
-import { PortfolioGallery } from '@/components/portfolio/portfolio-gallery'
-import { RatingForm } from '@/components/ratings/rating-form'
-import { RatingList } from '@/components/ratings/rating-list'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Star, Briefcase, Award, Medal } from 'lucide-react'
+import { Star, Briefcase, MapPin, Mail, Phone, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { RankInsignia } from '@/components/gamification/rank-insignia'
-import { MedalBadge } from '@/components/gamification/medal-badge'
+import { getUserProfileData } from '@/lib/profile/queries'
+import { GamificationCard } from '@/components/profile/gamification-card'
+import { MedalsGrid } from '@/components/profile/medals-grid'
+import { ConfraternityStats } from '@/components/profile/confraternity-stats'
+import { Badge } from '@/components/ui/badge'
+import Image from 'next/image'
 
 interface PageProps {
     params: {
@@ -19,150 +17,240 @@ interface PageProps {
 }
 
 export default async function ProfessionalProfile({ params }: { params: { id: string } }) {
-    const supabase = await createClient()
+    // Buscar TODOS os dados do perfil
+    const profileData = await getUserProfileData(params.id)
 
-    // Buscar perfil real do usuário
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', params.id)
-        .single()
-
-    if (profileError || !profile) {
+    if (!profileData) {
         notFound()
     }
 
-    // Buscar gamificação
-    const { data: gamification } = await supabase
-        .from('user_gamification')
-        .select('*')
-        .eq('user_id', params.id)
-        .single()
+    const {
+        profile,
+        gamification,
+        subscription,
+        allMedals,
+        earnedMedals,
+        confraternityStats,
+        portfolio,
+        ratings,
+        ratingStats
+    } = profileData
 
-    // Buscar patente
-    const { data: rank } = await supabase
-        .from('ranks')
-        .select('*')
-        .eq('id', gamification?.current_rank_id || 'novato')
-        .single()
+    // Calcular próxima patente
+    const currentRankLevel = gamification?.rank?.rank_level || 1
+    const nextRank = allMedals.length > 0
+        ? await (async () => {
+            const { createClient } = await import('@/lib/supabase/server')
+            const supabase = await createClient()
+            const { data } = await supabase
+                .from('ranks')
+                .select('*')
+                .eq('rank_level', currentRankLevel + 1)
+                .single()
+            return data
+        })()
+        : null
 
-    // Buscar medalhas conquistadas
-    const { data: userMedals } = await supabase
-        .from('user_medals')
-        .select(`
-            medal_id,
-            earned_at,
-            medals (
-                id,
-                name,
-                icon,
-                description
-            )
-        `)
-        .eq('user_id', params.id)
-
-    const earnedMedals = userMedals?.map(um => um.medals) || []
-
-    // Buscar subscription/plano
-    const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select
-
-        (`
-            plan_id,
-            plan_tiers (
-                name,
-                xp_multiplier
-            )
-        `)
-        .eq('user_id', params.id)
-        .single()
-
-    // Portfolio items (vazio por enquanto)
-    const portfolioItems: any[] = []
-
-    // Adaptar profile para componentes
-    const adaptedProfile = {
-        ...profile,
-        skills: [], // Ainda não temos campo de skills
-        tops: { name: profile.pista || 'São Paulo' },
-        portfolio_description: profile.bio || 'Profissional Rota Business',
-        total_ratings: 0, // Ainda não temos avaliações
-        average_rating: 0,
-        rank: rank || { id: 'novato', name: 'Novato', icon: '🛡️' },
-        badges: earnedMedals,
-        gamification: gamification || { total_points: 0, total_medals: 0 },
-        subscription: subscription?.plan_tiers || { name: 'Recruta', xp_multiplier: 1.0 }
-    }
+    // Badge de plano
+    const planBadgeColor = {
+        'recruta': 'bg-gray-500',
+        'veterano': 'bg-blue-500',
+        'elite': 'bg-purple-500'
+    }[subscription?.plan_id || 'recruta'] || 'bg-gray-500'
 
     return (
         <div className="min-h-screen bg-adventure">
-            <div className="container mx-auto px-4 py-8 max-w-6xl">
-                {/* Profile Header */}
-                <ProfileHeader profile={adaptedProfile} />
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
+                {/* Back Button */}
+                <div className="mb-6">
+                    <Link href="/professionals">
+                        <Button variant="ghost" size="sm">
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Voltar para Profissionais
+                        </Button>
+                    </Link>
+                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                {/* Header Card */}
+                <Card className="mb-6 overflow-hidden">
+                    <div className="h-32 bg-gradient-to-r from-primary/20 to-secondary/20" />
+                    <CardContent className="relative -mt-16 pb-6">
+                        <div className="flex flex-col md:flex-row gap-6 items-start">
+                            {/* Avatar */}
+                            <div className="relative">
+                                {profile.avatar_url ? (
+                                    <Image
+                                        src={profile.avatar_url}
+                                        alt={profile.full_name}
+                                        width={128}
+                                        height={128}
+                                        className="rounded-full border-4 border-background shadow-xl"
+                                    />
+                                ) : (
+                                    <div className="w-32 h-32 rounded-full border-4 border-background shadow-xl bg-primary/10 flex items-center justify-center">
+                                        <span className="text-4xl font-bold text-primary">
+                                            {profile.full_name.charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                )}
+                                {/* Plan Badge */}
+                                <div className={`absolute bottom-0 right-0 ${planBadgeColor} text-white text-xs font-bold px-2 py-1 rounded-full border-2 border-background`}>
+                                    {subscription?.plan_tiers?.name || 'Recruta'}
+                                </div>
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 pt-4">
+                                <h1 className="text-3xl font-bold mb-2">{profile.full_name}</h1>
+                                <div className="flex flex-wrap gap-3 text-muted-foreground mb-3">
+                                    {profile.pista && (
+                                        <div className="flex items-center gap-1">
+                                            <MapPin className="w-4 h-4" />
+                                            <span className="text-sm">{profile.pista}</span>
+                                        </div>
+                                    )}
+                                    {profile.rota_number && (
+                                        <Badge variant="outline">
+                                            ID Rota: {profile.rota_number}
+                                        </Badge>
+                                    )}
+                                </div>
+
+                                {/* Bio */}
+                                {profile.bio && (
+                                    <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                                        {profile.bio}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* About Section */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Sobre</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {profile.bio ? (
-                                    <p className="text-gray-300 leading-relaxed">{profile.bio}</p>
-                                ) : (
-                                    <p className="text-gray-500 italic">Este usuário ainda não adicionou uma bio.</p>
-                                )}
-                            </CardContent>
-                        </Card>
+                        {/* Gamification Card */}
+                        <GamificationCard
+                            gamification={gamification}
+                            subscription={subscription}
+                            nextRank={nextRank}
+                        />
 
-                        {/* Gamification Stats */}
-                        <Card className="border-primary/20 bg-primary/5">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Award className="w-5 h-5 text-primary" />
-                                    Status Rota do Valente
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-background/50 p-4 rounded-lg">
-                                        <p className="text-sm text-muted-foreground mb-1">Patente</p>
-                                        <div className="flex items-center gap-2">
-                                            <RankInsignia rankId={gamification?.current_rank_id || 'novato'} size="md" />
-                                            <p className="font-bold text-lg">{rank?.name}</p>
-                                        </div>
-                                    </div>
-                                    <div className="bg-background/50 p-4 rounded-lg">
-                                        <p className="text-sm text-muted-foreground mb-1">Plano</p>
-                                        <p className="font-bold text-lg capitalize">{subscription?.plan_tiers?.name || 'Recruta'}</p>
-                                        <p className="text-xs text-muted-foreground">Multiplicador: {subscription?.plan_tiers?.xp_multiplier || 1.0}x</p>
-                                    </div>
-                                    <div className="bg-background/50 p-4 rounded-lg">
-                                        <p className="text-sm text-muted-foreground mb-1">Vigor</p>
-                                        <p className="font-bold text-2xl text-primary">{gamification?.total_points || 0}</p>
-                                    </div>
-                                    <div className="bg-background/50 p-4 rounded-lg">
-                                        <p className="text-sm text-muted-foreground mb-1">Medalhas</p>
-                                        <p className="font-bold text-2xl text-secondary">{gamification?.total_medals || 0}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* Medals Grid */}
+                        <MedalsGrid
+                            allMedals={allMedals}
+                            earnedMedals={earnedMedals}
+                        />
 
-                        {/* Portfolio Section */}
-                        {portfolioItems.length > 0 && (
+                        {/* Portfolio (if has items) */}
+                        {portfolio.length > 0 && (
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Portfólio</CardTitle>
-                                    <CardDescription>
-                                        Trabalhos realizados
-                                    </CardDescription>
+                                    <CardDescription>Trabalhos realizados</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <PortfolioGallery items={portfolioItems} columns={2} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {portfolio.map((item) => (
+                                            <div key={item.id} className="space-y-2">
+                                                {item.image_url && (
+                                                    <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                                                        <Image
+                                                            src={item.image_url}
+                                                            alt={item.title}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-semibold text-sm">{item.title}</p>
+                                                    {item.description && (
+                                                        <p className="text-xs text-muted-foreground line-clamp-2">
+                                                            {item.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Ratings */}
+                        {ratingStats && ratingStats.total_ratings > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="flex items-center gap-2">
+                                                <Star className="w-5 h-5 text-yellow-500" />
+                                                Avaliações
+                                            </CardTitle>
+                                            <CardDescription>
+                                                {ratingStats.total_ratings} {ratingStats.total_ratings === 1 ? 'avaliação' : 'avaliações'}
+                                            </CardDescription>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-3xl font-bold text-yellow-500">
+                                                {ratingStats.average_rating.toFixed(1)}
+                                            </div>
+                                            <div className="flex gap-1 mt-1">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <Star
+                                                        key={star}
+                                                        className={`w-4 h-4 ${star <= Math.round(ratingStats.average_rating)
+                                                                ? 'text-yellow-500 fill-yellow-500'
+                                                                : 'text-gray-600'
+                                                            }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {ratings.map((rating) => (
+                                            <div key={rating.id} className="border-b border-border last:border-0 pb-4 last:pb-0">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                        <span className="font-bold text-primary">
+                                                            {rating.reviewer?.full_name?.charAt(0).toUpperCase() || '?'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <p className="font-semibold text-sm">
+                                                                {rating.reviewer?.full_name || 'Usuário'}
+                                                            </p>
+                                                            <div className="flex gap-0.5">
+                                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                                    <Star
+                                                                        key={star}
+                                                                        className={`w-3 h-3 ${star <= rating.rating
+                                                                                ? 'text-yellow-500 fill-yellow-500'
+                                                                                : 'text-gray-600'
+                                                                            }`}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        {rating.comment && (
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {rating.comment}
+                                                            </p>
+                                                        )}
+                                                        <p className="text-xs text-muted-foreground mt-2">
+                                                            {new Date(rating.created_at).toLocaleDateString('pt-BR')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </CardContent>
                             </Card>
                         )}
@@ -170,65 +258,50 @@ export default async function ProfessionalProfile({ params }: { params: { id: st
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Gamification Medals */}
-                        <Card className="border-secondary/20 bg-secondary/5 overflow-hidden relative">
-                            <div className="absolute top-0 right-0 p-3 opacity-10">
-                                <Award className="w-12 h-12 text-secondary" />
-                            </div>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-black uppercase text-secondary flex items-center gap-2">
-                                    <Medal className="w-4 h-4" />
-                                    Conquistas
-                                </CardTitle>
+                        {/* Confraternity Stats */}
+                        <ConfraternityStats stats={confraternityStats} />
+
+                        {/* Contact Info */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-bold">Informações de Contato</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                {earnedMedals.length > 0 ? (
-                                    <>
-                                        <div className="flex flex-wrap gap-2">
-                                            {earnedMedals.map((medal: any) => (
-                                                <div
-                                                    key={medal.id}
-                                                    title={`${medal.name}: ${medal.description}`}
-                                                    className="hover:scale-110 transition-transform cursor-help"
-                                                >
-                                                    <MedalBadge medalId={medal.id} size="md" variant="icon-only" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground mt-4 font-bold uppercase tracking-wider">
-                                            {earnedMedals.length} de 16 Medalhas conquistadas
-                                        </p>
-                                    </>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground italic">Nenhuma medalha conquistada ainda</p>
+                            <CardContent className="space-y-3">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Mail className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">{profile.email}</span>
+                                </div>
+                                {profile.phone && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Phone className="w-4 h-4 text-muted-foreground" />
+                                        <span className="text-muted-foreground">{profile.phone}</span>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
 
-                        {/* Contact Card */}
-                        <ProfileInfo profile={adaptedProfile} />
-
-                        {/* Location */}
-                        {profile.pista && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Localização</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-lg font-medium">{profile.pista}</p>
-                                </CardContent>
-                            </Card>
-                        )}
+                        {/* Request Project (disabled for now) */}
+                        <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-sm">
+                                    <Briefcase className="w-4 h-4" />
+                                    Solicitar Orçamento
+                                </CardTitle>
+                                <CardDescription className="text-xs">
+                                    Interessado no trabalho deste profissional?
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button className="w-full" size="sm" disabled>
+                                    <Briefcase className="w-4 h-4 mr-2" />
+                                    Em Breve
+                                </Button>
+                                <p className="text-xs text-gray-500 text-center mt-2">
+                                    Sistema em desenvolvimento
+                                </p>
+                            </CardContent>
+                        </Card>
                     </div>
-                </div>
-
-                {/* Back to Search */}
-                <div className="mt-8 text-center">
-                    <Link href="/professionals">
-                        <Button variant="outline">
-                            ← Voltar para Profissionais
-                        </Button>
-                    </Link>
                 </div>
             </div>
         </div>
