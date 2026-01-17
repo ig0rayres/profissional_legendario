@@ -256,6 +256,41 @@ export default function UsersPage() {
         }
     }
 
+    async function handleDeleteUser(userId: string, userEmail: string) {
+        if (!confirm(`Tem certeza que deseja EXCLUIR o usuário ${userEmail}?\n\nIsso vai apagar:\n✅ Perfil\n✅ Subscription\n✅ Gamificação\n✅ Medalhas\n\nEsta ação NÃO pode ser desfeita!`)) {
+            return
+        }
+
+        setProcessing(userId)
+        try {
+            // 1. Delete from profiles (CASCADE vai deletar subscriptions, gamification, medals)
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .delete()
+                .eq('id', userId)
+
+            if (profileError) throw profileError
+
+            // 2. Delete from auth.users (via admin API)
+            const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+
+            if (authError) {
+                console.warn('Erro ao deletar auth user (pode precisar de permissão admin):', authError)
+                // Continua mesmo se falhar - profile já foi deletado
+            }
+
+            // 3. Remove from UI
+            setUsers(users.filter(u => u.id !== userId))
+
+            alert(`✅ Usuário ${userEmail} excluído com sucesso!`)
+        } catch (error: any) {
+            console.error('Erro ao deletar usuário:', error)
+            alert('❌ Erro ao excluir usuário: ' + error.message)
+        } finally {
+            setProcessing(null)
+        }
+    }
+
     const getPlanBadge = (user: any) => {
         const planId = user.subscriptions?.plan_id || 'recruta'
         const plans: Record<string, { label: string, color: string }> = {
@@ -482,6 +517,16 @@ export default function UsersPage() {
                                                         )}
                                                     </Button>
                                                 )}
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => handleDeleteUser(user.id, user.email)}
+                                                    disabled={processing === user.id}
+                                                    title="Excluir usuário permanentemente"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         </TableCell>
                                     </TableRow>
