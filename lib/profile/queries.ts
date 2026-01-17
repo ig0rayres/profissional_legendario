@@ -107,7 +107,7 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             gamification: gamification as GamificationData | null,
             subscription: subscription as SubscriptionData | null,
             allMedals: (allMedals || []) as MedalData[],
-            earnedMedals: (userMedals || []) as UserMedalData[],
+            earnedMedals: (userMedals || []) as any as UserMedalData[], // Fix type casting
             confraternityStats,
             portfolio: (portfolio || []) as PortfolioItem[],
             ratings: (ratings || []) as RatingData[],
