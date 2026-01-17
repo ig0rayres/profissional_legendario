@@ -117,8 +117,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     const signIn = async (email: string, password: string) => {
+        console.log('🔑 signIn() chamado')
         const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw new Error(error.message || 'Email ou senha incorretos')
+        console.log('🔑 signInWithPassword retornou:', { error })
+        if (error) {
+            console.error('🔑 ERRO no Supabase:', error)
+            throw new Error(error.message || 'Email ou senha incorretos')
+        }
+        console.log('🔑 Login bem-sucedido no Supabase!')
     }
 
     const signUp = async (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => {
