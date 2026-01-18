@@ -34,7 +34,7 @@ interface MedalBadgeProps {
     size?: 'sm' | 'md' | 'lg' | 'xl'
     showLabel?: boolean
     className?: string
-    variant?: 'badge' | 'icon-only'
+    variant?: 'badge' | 'icon-only' | 'outline' | 'profile'
 }
 
 export function MedalBadge({ medalId, name, size = 'md', showLabel = false, className, variant = 'badge' }: MedalBadgeProps) {
@@ -56,12 +56,40 @@ export function MedalBadge({ medalId, name, size = 'md', showLabel = false, clas
 
     // Usando cores secundárias da plataforma (secondary = laranja Rota Business)
     const medalStyle = 'bg-secondary text-white shadow-lg'
+    const outlineStyle = 'bg-white/90 backdrop-blur-sm text-secondary border-2 border-secondary/60 shadow-lg'
+    const profileStyle = 'bg-transparent text-primary' // Fundo transparente, ícone verde escuro
+
+    if (variant === 'profile') {
+        return (
+            <div className={cn(
+                "rounded-full flex items-center justify-center",
+                profileStyle,
+                containerSizeMap[size],
+                className
+            )}>
+                <Icon className={sizeMap[size]} strokeWidth={2.5} />
+            </div>
+        )
+    }
 
     if (variant === 'icon-only') {
         return (
             <div className={cn(
                 "rounded-full flex items-center justify-center",
                 medalStyle,
+                containerSizeMap[size],
+                className
+            )}>
+                <Icon className={sizeMap[size]} strokeWidth={2.5} />
+            </div>
+        )
+    }
+
+    if (variant === 'outline') {
+        return (
+            <div className={cn(
+                "rounded-full flex items-center justify-center",
+                outlineStyle,
                 containerSizeMap[size],
                 className
             )}>

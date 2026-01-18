@@ -81,7 +81,14 @@ export default function RegisterPage() {
                     Inicie sua jornada de transformação
                 </CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form
+                method="post"
+                action="#"
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    handleSubmit(onSubmit)(e)
+                }}
+            >
                 <CardContent className="space-y-4">
                     {error && (
                         <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-slide-down">

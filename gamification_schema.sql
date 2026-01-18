@@ -1,4 +1,20 @@
+-- ============================================================
 -- Rota do Valente - Gamification System Migration
+-- ============================================================
+-- 
+-- ⚠️ ATENÇÃO: VERSÃO DESATUALIZADA!
+-- 
+-- Este arquivo é o schema ORIGINAL. O multiplicador de XP agora
+-- é determinado SOMENTE pelo PLANO DE ASSINATURA:
+--   - Recruta: 1.0x
+--   - Veterano: 1.5x
+--   - Elite: 3.0x
+-- 
+-- O campo "multiplier" na tabela ranks NÃO é mais utilizado.
+-- Para o schema atualizado, consulte:
+-- - docs/GAMIFICATION_TECHNICAL.md
+-- - docs/GAMIFICATION_MONTHLY_SYSTEM.md
+-- ============================================================
 
 -- 1. Ranks Definition
 create table public.ranks (

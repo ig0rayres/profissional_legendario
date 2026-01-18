@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Briefcase, Menu, X, LogOut, Store, Shield, Settings, Users } from 'lucide-react'
+import { Briefcase, Menu, X, LogOut, Store, Shield, Settings, Users, User } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 import { RotabusinessLogo } from '@/components/branding/logo'
+import Image from 'next/image'
 import { MOCK_USER_GAMIFICATION, MOCK_RANKS } from '@/lib/data/mock'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { NotificationCenter } from '@/components/notifications/notification-center'
@@ -93,24 +94,39 @@ export function Header() {
                                     <NotificationCenter />
                                     <CriticalNoticeModal />
                                     <div className="flex items-center gap-3 ml-2">
+                                        {/* Avatar do usuário */}
+                                        <div className="relative w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden bg-primary/10 flex items-center justify-center">
+                                            {user.avatar_url ? (
+                                                <Image
+                                                    src={user.avatar_url}
+                                                    alt={user.full_name}
+                                                    width={40}
+                                                    height={40}
+                                                    className="object-cover w-full h-full"
+                                                />
+                                            ) : (
+                                                <User className="w-5 h-5 text-primary/60" />
+                                            )}
+                                        </div>
+
                                         {(() => {
                                             const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
                                             const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)
-                                            const firstName = user.full_name.split(' ')[0].charAt(0).toUpperCase() + user.full_name.split(' ')[0].slice(1).toLowerCase()
+                                            // Mostrar nome e sobrenome (até 2 palavras)
+                                            const nameParts = user.full_name.split(' ')
+                                            const displayName = nameParts.length >= 2
+                                                ? `${nameParts[0]} ${nameParts[1]}`
+                                                : nameParts[0]
 
                                             return rank ? (
-                                                <div className="flex items-center gap-2">
-                                                    <RankInsignia rankId={rank.id} variant="avatar" showLabel={false} className="w-8 h-8" />
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm text-muted-foreground">
-                                                            Olá, <span className="text-primary font-bold">{firstName}</span>
-                                                        </span>
-                                                        <RankInsignia rankId={rank.id} variant="badge" showLabel={true} className="text-xs -mt-1" />
-                                                    </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm text-muted-foreground">
+                                                        Olá, <span className="text-primary font-bold">{displayName}</span>
+                                                    </span>
                                                 </div>
                                             ) : (
                                                 <span className="text-sm text-muted-foreground">
-                                                    Olá, <span className="text-primary font-bold">{firstName}</span>
+                                                    Olá, <span className="text-primary font-bold">{displayName}</span>
                                                 </span>
                                             )
                                         })()}

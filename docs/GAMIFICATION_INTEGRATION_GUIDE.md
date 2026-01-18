@@ -588,12 +588,19 @@ LIMIT 20;
 ### Ver Stats de Um Usuário
 
 ```sql
+-- NOTA: O multiplicador vem do PLANO, não do rank!
 SELECT 
     gs.*,
     r.name as rank_name,
-    r.multiplier
+    s.plan_id,
+    CASE s.plan_id 
+        WHEN 'elite' THEN 3.0 
+        WHEN 'veterano' THEN 1.5 
+        ELSE 1.0 
+    END as plan_multiplier
 FROM gamification_stats gs
 JOIN ranks r ON r.id = gs.current_rank_id
+LEFT JOIN subscriptions s ON s.user_id = gs.user_id AND s.status = 'active'
 WHERE gs.user_id = 'USER_ID';
 ```
 

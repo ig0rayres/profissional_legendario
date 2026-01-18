@@ -39,11 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // FASE 1: Get initial session - SIMPLE & FAST (always works)
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
+                // Extrair primeiro nome do email como fallback
+                const emailName = session.user.email!.split('@')[0]
+                const formattedName = emailName.charAt(0).toUpperCase() + emailName.slice(1)
+
                 // Define usuário básico IMEDIATAMENTE
                 const basicUser = {
                     id: session.user.id,
                     email: session.user.email!,
-                    full_name: session.user.email!.split('@')[0],
+                    full_name: formattedName,
                     is_professional: false,
                     role: 'user' as const
                 }
@@ -52,32 +56,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setLoading(false) // ✅ UI já liberada - login não trava
 
                 // FASE 2: Enriquecimento NÃO-BLOQUEANTE (com timeout)
-                Promise.race([
-                    supabase.from('profiles')
-                        .select('*')
-                        .eq('id', session.user.id)
-                        .maybeSingle(),
-                    new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
-                    )
-                ])
-                    .then((result: any) => {
-                        if (result?.data) {
+                supabase.from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .maybeSingle()
+                    .then(({ data, error }) => {
+                        console.log('[Auth] Profile fetch result:', { data, error })
+
+                        if (error) {
+                            console.warn('[Auth] Profile fetch error:', error.message)
+                            return
+                        }
+
+                        if (data) {
+                            console.log('[Auth] Enriching user with profile:', data.full_name)
                             // Enriquecer com dados do banco
                             setUser({
                                 ...basicUser,
-                                full_name: result.data.full_name || basicUser.full_name,
-                                role: result.data.role || 'user',
-                                is_professional: result.data.role === 'professional',
-                                pista: result.data.pista,
-                                rota_number: result.data.rota_number,
-                                avatar_url: result.data.avatar_url
+                                full_name: data.full_name || basicUser.full_name,
+                                role: data.role || 'user',
+                                is_professional: data.role === 'professional',
+                                pista: data.pista,
+                                rota_number: data.rota_number,
+                                avatar_url: data.avatar_url
                             })
                         }
-                    })
-                    .catch(err => {
-                        // Não é crítico - continua com basicUser
-                        console.warn('[Auth] Profile enrichment failed (non-critical):', err.message)
                     })
             } else {
                 setUser(null)

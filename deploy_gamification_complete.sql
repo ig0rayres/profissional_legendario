@@ -2,6 +2,20 @@
 -- GAMIFICATION SYSTEM - COMPLETE DEPLOYMENT
 -- Execute this in Supabase SQL Editor
 -- ============================================
+-- 
+-- ⚠️ ATENÇÃO: VERSÃO DESATUALIZADA!
+-- 
+-- Este arquivo usa multiplicador do RANK, mas o sistema atual
+-- usa multiplicador do PLANO DE ASSINATURA:
+--   - Recruta: 1.0x
+--   - Veterano: 1.5x
+--   - Elite: 3.0x
+-- 
+-- Para o schema atualizado, consulte:
+-- - docs/GAMIFICATION_TECHNICAL.md
+-- - docs/GAMIFICATION_MONTHLY_SYSTEM.md
+-- - supabase/migrations/20260118_gamification_monthly_system.sql
+-- ============================================
 
 -- Part 1: Schema (from gamification_schema.sql - lines 1-273)
 -- Part 2: Triggers (from gamification_triggers.sql - lines 1-174)

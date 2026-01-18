@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { CheckCircle, XCircle, Loader2, Edit, Users as UsersIcon, Search, Filter, Trash2 } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Edit, Users as UsersIcon, Search, Filter, Trash2, LogIn } from 'lucide-react'
 import { Database } from '@/types/database'
 import {
     Dialog,
@@ -107,7 +107,7 @@ export default function UsersPage() {
             const matchesSearch = !searchTerm ||
                 user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.rota_number?.toLowerCase().includes(searchTerm.toLowerCase())
+                (user as any).rota_number?.toLowerCase().includes(searchTerm.toLowerCase())
 
             const matchesRole = roleFilter === 'all' || user.role === roleFilter
             const matchesStatus = statusFilter === 'all' || user.verification_status === statusFilter
@@ -286,6 +286,43 @@ export default function UsersPage() {
         } catch (error: any) {
             console.error('Erro ao deletar usuário:', error)
             alert('❌ Erro ao excluir usuário: ' + error.message)
+        } finally {
+            setProcessing(null)
+        }
+    }
+
+    async function handleLoginAs(userId: string, userEmail: string) {
+        if (!confirm(`Logar como ${userEmail}?\n\nUm magic link será gerado para acessar a conta.\nA senha do usuário NÃO será alterada.`)) {
+            return
+        }
+
+        setProcessing(userId)
+        try {
+            // Chamar API de impersonate para gerar magic link
+            const response = await fetch('/api/admin/impersonate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, email: userEmail })
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro ao fazer impersonate')
+            }
+
+            if (!data.magicLink) {
+                throw new Error('Magic link não foi gerado')
+            }
+
+            // Primeiro fazer signOut da conta atual
+            await supabase.auth.signOut()
+
+            // Redirecionar para o magic link
+            window.location.href = data.magicLink
+        } catch (error: any) {
+            console.error('Erro ao logar como usuário:', error)
+            alert('❌ ' + error.message)
         } finally {
             setProcessing(null)
         }
@@ -486,6 +523,20 @@ export default function UsersPage() {
                                                 >
                                                     <Edit className="h-3 w-3 mr-1" />
                                                     Editar
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={() => handleLoginAs(user.id, user.email)}
+                                                    disabled={processing === user.id}
+                                                    title={`Logar como ${user.full_name}`}
+                                                >
+                                                    {processing === user.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <LogIn className="h-4 w-4" />
+                                                    )}
                                                 </Button>
                                                 {user.verification_status !== 'verified' && (
                                                     <Button

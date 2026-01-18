@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { MOCK_USER_GAMIFICATION, MOCK_RANKS } from '@/lib/data/mock'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { getProfileUrl } from '@/lib/profile/utils'
+
 interface ProfessionalCardProps {
     professional: any
 }
@@ -15,7 +17,7 @@ export function ProfessionalCard({ professional }: ProfessionalCardProps) {
     const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id) || MOCK_RANKS[0]
 
     return (
-        <Link href={`/professional/${professional.id}`}>
+        <Link href={getProfileUrl({ full_name: professional.full_name, slug: professional.slug, rota_number: professional.rota_number })}>
             <Card className="group hover:border-primary/50 transition-all cursor-pointer h-full relative overflow-hidden bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-0">
                     {/* Avatar Section */}

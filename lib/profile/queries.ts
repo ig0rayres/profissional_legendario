@@ -101,6 +101,19 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
 
         const ratingStats: RatingStats | null = ratingStatsRaw || null
 
+        // 10. Projetos entregues e em andamento
+        const { count: projectsCompleted } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('professional_id', userId)
+            .eq('status', 'completed')
+
+        const { count: projectsInProgress } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('professional_id', userId)
+            .eq('status', 'in_progress')
+
         // Montar objeto completo
         return {
             profile: profile as ProfileData,
@@ -111,7 +124,9 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             confraternityStats,
             portfolio: (portfolio || []) as PortfolioItem[],
             ratings: (ratings || []) as RatingData[],
-            ratingStats
+            ratingStats,
+            projectsCompleted: projectsCompleted || 0,
+            projectsInProgress: projectsInProgress || 0
         }
     } catch (error) {
         console.error('Erro ao buscar dados do perfil:', error)

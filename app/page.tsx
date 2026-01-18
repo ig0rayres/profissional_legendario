@@ -15,6 +15,7 @@ import { RatingDialog } from '@/components/ratings/rating-dialog'
 import { PlansSection } from '@/components/sections/plans-section'
 import { FeaturedConfraternities } from '@/components/home/FeaturedConfraternities'
 import { RotabusinessLogo } from '@/components/branding/logo'
+import { getProfileUrl } from '@/lib/profile/utils'
 
 export default function HomePage() {
     const [scrolled, setScrolled] = useState(false)
@@ -223,7 +224,7 @@ export default function HomePage() {
                                             </span>
                                         </div>
                                         <div className="mt-4 flex gap-2">
-                                            <Link href={`/professional/${prof.id}`} className="flex-1">
+                                            <Link href={getProfileUrl({ full_name: prof.full_name, slug: prof.slug, rota_number: prof.rota_number })} className="flex-1">
                                                 <Button className="w-full glow-orange" size="sm">
                                                     Ver Perfil
                                                 </Button>

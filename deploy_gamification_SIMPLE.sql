@@ -3,6 +3,19 @@
 -- Execute this in Supabase SQL Editor
 -- NO TRIGGERS - Uses API calls instead
 -- ============================================
+-- 
+-- ⚠️ ATENÇÃO: VERSÃO DESATUALIZADA!
+-- 
+-- Este arquivo usa multiplicador do RANK, mas o sistema atual
+-- usa multiplicador do PLANO DE ASSINATURA:
+--   - Recruta: 1.0x
+--   - Veterano: 1.5x
+--   - Elite: 3.0x
+-- 
+-- Para o schema atualizado, consulte:
+-- - docs/GAMIFICATION_TECHNICAL.md
+-- - docs/GAMIFICATION_MONTHLY_SYSTEM.md
+-- ============================================
 
 -- ====== PART 1: BASE SCHEMA ======
 

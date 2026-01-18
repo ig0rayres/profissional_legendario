@@ -59,37 +59,47 @@ export async function canSendInvite(userId: string): Promise<{
     try {
         const supabase = createClient()
 
-        // Chamar função SQL
-        const { data, error } = await supabase.rpc('check_confraternity_limit', {
-            p_user_id: userId
-        })
+        // Buscar plano do usuário da tabela subscriptions
+        const { data: subscription } = await supabase
+            .from('subscriptions')
+            .select('plan_id')
+            .eq('user_id', userId)
+            .eq('status', 'active')
+            .single()
 
-        if (error) {
-            console.error('Error checking limit:', error)
+        const planType = subscription?.plan_id || 'recruta'
+
+        // Recruta: 0, Veterano: 4, Elite: 10
+        const maxInvites = planType === 'elite' ? 10 : planType === 'veterano' ? 4 : 0
+
+        // Recruta não pode enviar
+        if (maxInvites === 0) {
             return {
                 canSend: false,
                 remainingInvites: 0,
                 maxInvites: 0,
-                planType: 'recruta'
+                planType
             }
         }
 
-        // Buscar detalhes do limite
-        const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+        // Contar convites ACEITOS este mês (não enviados)
+        const startOfMonth = new Date()
+        startOfMonth.setDate(1)
+        startOfMonth.setHours(0, 0, 0, 0)
 
-        const { data: limitData } = await supabase
-            .from('confraternity_limits')
-            .select('*, profiles!inner(subscription_tier)')
-            .eq('user_id', userId)
-            .single()
+        const { count } = await supabase
+            .from('confraternity_invites')
+            .select('*', { count: 'exact', head: true })
+            .eq('sender_id', userId)
+            .eq('status', 'accepted') // Apenas aceitos contam
+            .gte('accepted_at', startOfMonth.toISOString())
 
-        const planType = limitData?.profiles?.subscription_tier || 'recruta'
-        const maxInvites = planType === 'elite' ? 10 : planType === 'veterano' ? 2 : 0
-        const invitesSent = limitData?.invites_sent || 0
+        const invitesAccepted = count || 0
+        const canSend = invitesAccepted < maxInvites
 
         return {
-            canSend: data as boolean,
-            remainingInvites: Math.max(0, maxInvites - invitesSent),
+            canSend,
+            remainingInvites: Math.max(0, maxInvites - invitesAccepted),
             maxInvites,
             planType
         }
@@ -117,6 +127,8 @@ export async function sendConfraternityInvite(
     try {
         const supabase = createClient()
 
+        console.log('[Confraternity] Sending invite from', senderId, 'to', receiverId)
+
         // 1. Verificar limite
         const { canSend } = await canSendInvite(senderId)
 
@@ -127,7 +139,16 @@ export async function sendConfraternityInvite(
             }
         }
 
-        // 2. Criar convite
+        // 2. Buscar nome do remetente
+        const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', senderId)
+            .single()
+
+        const senderName = senderProfile?.full_name || 'Usuário'
+
+        // 3. Criar convite
         const { data: invite, error: inviteError } = await supabase
             .from('confraternity_invites')
             .insert({
@@ -142,25 +163,53 @@ export async function sendConfraternityInvite(
             .single()
 
         if (inviteError) {
-            console.error('Error creating invite:', inviteError)
+            console.error('[Confraternity] Error creating invite:', inviteError)
             return { success: false, error: inviteError.message }
         }
 
-        // 3. Incrementar contador
-        await supabase.rpc('increment_confraternity_count', {
-            p_user_id: senderId
-        })
+        console.log('[Confraternity] Invite created:', invite.id)
 
-        // 4. Gamificação: +10 XP por enviar convite
+        // 4. Criar NOTIFICAÇÃO para o receptor
         try {
-            await awardPoints(
+            const { error: notifError } = await supabase
+                .from('notifications')
+                .insert({
+                    user_id: receiverId,
+                    type: 'confraternity_invite',
+                    title: '⚔️ Convite de Confraria',
+                    body: `${senderName} deseja marcar uma confraria com você!`,
+                    priority: 'high',
+                    action_url: `/elo-da-rota/confraria`,
+                    metadata: {
+                        invite_id: invite.id,
+                        from_user_id: senderId,
+                        from_user_name: senderName,
+                        proposed_date: proposedDate,
+                        location: location
+                    }
+                })
+
+            if (notifError) {
+                console.error('[Confraternity] Notification error:', notifError)
+            } else {
+                console.log('[Confraternity] Notification sent to receiver')
+            }
+        } catch (notifErr) {
+            console.error('[Confraternity] Exception creating notification:', notifErr)
+        }
+
+        // 5. Gamificação: +10 Vigor (XP) por enviar convite
+        try {
+            console.log('[Confraternity] Awarding points to sender...')
+            const result = await awardPoints(
                 senderId,
                 10,
                 'confraternity_invite_sent',
                 'Enviou convite de confraternização'
             )
+            console.log('[Confraternity] Points awarded result:', result)
         } catch (gamifError) {
-            console.error('Gamification error:', gamifError)
+            console.error('[Confraternity] Gamification error:', gamifError)
         }
 
         return {
@@ -168,7 +217,7 @@ export async function sendConfraternityInvite(
             invite: invite as ConfraternityInvite
         }
     } catch (error: any) {
-        console.error('Exception sending invite:', error)
+        console.error('[Confraternity] Exception sending invite:', error)
         return {
             success: false,
             error: error.message
@@ -524,8 +573,8 @@ export async function getPublicConfraternities(
             .from('confraternities')
             .select(`
                 *,
-                member1:profiles!member1_id(id, full_name, avatar_url, subscription_tier),
-                member2:profiles!member2_id(id, full_name, avatar_url, subscription_tier)
+                member1:profiles!member1_id(id, full_name),
+                member2:profiles!member2_id(id, full_name)
             `)
             .eq('visibility', 'public')
             .order('date_occurred', { ascending: false })

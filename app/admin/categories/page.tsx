@@ -1,55 +1,200 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, Plus, Edit2, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Plus, Edit2, Trash2, Loader2, Save, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MOCK_CATEGORIES, ServiceCategory } from '@/lib/data/mock'
 import { Badge } from '@/components/ui/badge'
-import { CategoryFormDialog } from '@/components/admin/category-form-dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
+import { createClient } from '@/lib/supabase/client'
 import * as LucideIcons from 'lucide-react'
 
+interface ServiceCategory {
+    id: string
+    name: string
+    slug: string
+    description: string | null
+    icon: string
+    color: string
+    active: boolean
+    created_at: string
+    updated_at: string
+}
+
 export default function CategoriesPage() {
+    const supabase = createClient()
     const [searchQuery, setSearchQuery] = useState('')
-    const [categories, setCategories] = useState<ServiceCategory[]>(MOCK_CATEGORIES)
+    const [categories, setCategories] = useState<ServiceCategory[]>([])
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-    const filteredCategories = categories.filter(cat =>
-        cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cat.description.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    // Form state
+    const [formData, setFormData] = useState({
+        name: '',
+        slug: '',
+        description: '',
+        icon: 'Tag',
+        color: '#3B82F6',
+        active: true
+    })
 
-    const handleSaveCategory = (category: Partial<ServiceCategory>) => {
-        if (selectedCategory) {
-            // Update existing
-            setCategories(prev => prev.map(c => c.id === selectedCategory.id ? { ...c, ...category } as ServiceCategory : c))
-        } else {
-            // Add new
-            setCategories(prev => [...prev, category as ServiceCategory])
+    useEffect(() => {
+        loadCategories()
+    }, [])
+
+    async function loadCategories() {
+        setLoading(true)
+        const { data, error } = await supabase
+            .from('service_categories')
+            .select('*')
+            .order('name')
+
+        if (data) {
+            setCategories(data)
         }
-        setSelectedCategory(null)
+        setLoading(false)
     }
 
-    const handleEditClick = (category: ServiceCategory) => {
-        setSelectedCategory(category)
-        setIsDialogOpen(true)
+    const filteredCategories = categories.filter(cat =>
+        cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (cat.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    function generateSlug(name: string): string {
+        return name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim()
     }
 
     const handleNewCategoryClick = () => {
         setSelectedCategory(null)
+        setFormData({
+            name: '',
+            slug: '',
+            description: '',
+            icon: 'Tag',
+            color: '#3B82F6',
+            active: true
+        })
         setIsDialogOpen(true)
     }
 
-    const handleDeleteClick = (category: ServiceCategory) => {
-        if (confirm(`Tem certeza que deseja excluir a categoria "${category.name}"?`)) {
-            setCategories(prev => prev.filter(c => c.id !== category.id))
+    const handleEditClick = (category: ServiceCategory) => {
+        setSelectedCategory(category)
+        setFormData({
+            name: category.name,
+            slug: category.slug,
+            description: category.description || '',
+            icon: category.icon,
+            color: category.color,
+            active: category.active
+        })
+        setIsDialogOpen(true)
+    }
+
+    const handleSaveCategory = async () => {
+        setSaving(true)
+
+        const slug = formData.slug || generateSlug(formData.name)
+
+        try {
+            if (selectedCategory) {
+                // Update
+                const { error } = await supabase
+                    .from('service_categories')
+                    .update({
+                        name: formData.name,
+                        slug: slug,
+                        description: formData.description || null,
+                        icon: formData.icon,
+                        color: formData.color,
+                        active: formData.active,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', selectedCategory.id)
+
+                if (error) throw error
+            } else {
+                // Insert
+                const { error } = await supabase
+                    .from('service_categories')
+                    .insert({
+                        name: formData.name,
+                        slug: slug,
+                        description: formData.description || null,
+                        icon: formData.icon,
+                        color: formData.color,
+                        active: formData.active
+                    })
+
+                if (error) throw error
+            }
+
+            await loadCategories()
+            setIsDialogOpen(false)
+        } catch (error: any) {
+            console.error('Erro ao salvar categoria:', error)
+            alert('Erro ao salvar: ' + error.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleDeleteClick = async (category: ServiceCategory) => {
+        if (!confirm(`Tem certeza que deseja excluir a categoria "${category.name}"?`)) {
+            return
+        }
+
+        try {
+            const { error } = await supabase
+                .from('service_categories')
+                .delete()
+                .eq('id', category.id)
+
+            if (error) throw error
+
+            await loadCategories()
+        } catch (error: any) {
+            console.error('Erro ao deletar categoria:', error)
+            alert('Erro ao deletar: ' + error.message)
         }
     }
 
     const getIcon = (iconName: string) => {
         const Icon = (LucideIcons as any)[iconName]
         return Icon ? <Icon className="w-5 h-5" /> : <LucideIcons.Tag className="w-5 h-5" />
+    }
+
+    // Lista de ícones disponíveis
+    const availableIcons = [
+        'Tag', 'Book', 'Users', 'Heart', 'ClipboardList', 'LayoutGrid',
+        'TrendingUp', 'Code', 'DollarSign', 'Palette', 'UserCheck',
+        'Briefcase', 'Star', 'Zap', 'Shield', 'Award', 'Target',
+        'Globe', 'Camera', 'Music', 'Film', 'Mic', 'Plane', 'Car'
+    ]
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        )
     }
 
     return (
@@ -72,12 +217,136 @@ export default function CategoriesPage() {
             </div>
 
             {/* Category Form Dialog */}
-            <CategoryFormDialog
-                open={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                category={selectedCategory}
-                onSave={handleSaveCategory}
-            />
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {selectedCategory ? 'Editar Categoria' : 'Nova Categoria'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {selectedCategory ? 'Atualize os dados da categoria' : 'Preencha os dados para criar uma nova categoria'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nome *</Label>
+                            <Input
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        name: e.target.value,
+                                        slug: generateSlug(e.target.value)
+                                    }))
+                                }}
+                                placeholder="Nome da categoria"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="slug">Slug</Label>
+                            <Input
+                                id="slug"
+                                value={formData.slug}
+                                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                                placeholder="slug-da-categoria"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Descrição</Label>
+                            <Textarea
+                                id="description"
+                                value={formData.description}
+                                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="Descrição da categoria"
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Ícone</Label>
+                                <div className="flex flex-wrap gap-1 p-2 border rounded-lg max-h-32 overflow-y-auto">
+                                    {availableIcons.map((iconName) => (
+                                        <button
+                                            key={iconName}
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, icon: iconName }))}
+                                            className={`p-2 rounded ${formData.icon === iconName ? 'bg-primary text-white' : 'hover:bg-muted'}`}
+                                            title={iconName}
+                                        >
+                                            {getIcon(iconName)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="color">Cor</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="color"
+                                        type="color"
+                                        value={formData.color}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                                        className="w-16 h-10 p-1"
+                                    />
+                                    <Input
+                                        value={formData.color}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                                        placeholder="#HEX"
+                                        className="flex-1"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="active">Categoria Ativa</Label>
+                            <Switch
+                                id="active"
+                                checked={formData.active}
+                                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
+                            />
+                        </div>
+
+                        {/* Preview */}
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-10 h-10 rounded-md flex items-center justify-center"
+                                    style={{ backgroundColor: formData.color + '20', color: formData.color }}
+                                >
+                                    {getIcon(formData.icon)}
+                                </div>
+                                <div>
+                                    <p className="font-bold" style={{ color: formData.color }}>{formData.name || 'Nome'}</p>
+                                    <p className="text-xs text-muted-foreground">/{formData.slug || 'slug'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
+                            <X className="w-4 h-4 mr-2" />
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleSaveCategory} disabled={saving || !formData.name}>
+                            {saving ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <Save className="w-4 h-4 mr-2" />
+                            )}
+                            Salvar
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -92,15 +361,15 @@ export default function CategoriesPage() {
                     </div>
                 </div>
                 <div className="glass-strong p-4 rounded-lg border border-primary/20">
-                    <div className="text-sm text-muted-foreground">Total de Usuários</div>
-                    <div className="text-2xl font-bold text-blue-500 mt-1">
-                        {categories.reduce((acc, cat) => acc + (cat.userCount || 0), 0)}
+                    <div className="text-sm text-muted-foreground">Categorias Inativas</div>
+                    <div className="text-2xl font-bold text-yellow-500 mt-1">
+                        {categories.filter(c => !c.active).length}
                     </div>
                 </div>
                 <div className="glass-strong p-4 rounded-lg border border-primary/20">
-                    <div className="text-sm text-muted-foreground">Total de Projetos</div>
-                    <div className="text-2xl font-bold text-purple-500 mt-1">
-                        {categories.reduce((acc, cat) => acc + (cat.projectCount || 0), 0)}
+                    <div className="text-sm text-muted-foreground">Última Atualização</div>
+                    <div className="text-lg font-bold text-blue-500 mt-1">
+                        {categories[0] ? new Date(categories[0].updated_at).toLocaleDateString('pt-BR') : '-'}
                     </div>
                 </div>
             </div>
@@ -146,20 +415,8 @@ export default function CategoriesPage() {
 
                         {/* Description */}
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                            {category.description}
+                            {category.description || 'Sem descrição'}
                         </p>
-
-                        {/* Stats */}
-                        <div className="flex gap-4 mb-4 text-sm">
-                            <div>
-                                <span className="text-muted-foreground">Usuários: </span>
-                                <span className="font-semibold text-blue-500">{category.userCount || 0}</span>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground">Projetos: </span>
-                                <span className="font-semibold text-purple-500">{category.projectCount || 0}</span>
-                            </div>
-                        </div>
 
                         {/* Actions */}
                         <div className="flex gap-2 pt-3 border-t border-primary/10">

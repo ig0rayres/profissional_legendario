@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, ShieldCheck, Settings, LogOut, Flame, Bell, Tags, ShoppingBag, Trophy, DollarSign } from 'lucide-react'
+import { LayoutDashboard, Users, ShieldCheck, Settings, LogOut, Flame, Bell, Tags, ShoppingBag, Trophy, DollarSign, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth/context'
 import { useEffect, useState } from 'react'
@@ -38,6 +38,7 @@ export default function AdminLayout({
         { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
         { name: 'Mensagens', href: '/admin/notifications', icon: Bell },
         { name: 'Categorias', href: '/admin/categories', icon: Tags },
+        { name: 'Pistas', href: '/admin/pistas', icon: MapPin },
         { name: 'Marketplace', href: '/admin/marketplace', icon: ShoppingBag },
         { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign },
         { name: 'Game', href: '/admin/game', icon: Trophy },

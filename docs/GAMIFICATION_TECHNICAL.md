@@ -1,8 +1,19 @@
 # 📚 Documentação Técnica - Sistema de Gamificação
 **Rota Business Club**  
-**Versão:** 1.0.0  
-**Data:** 16 de Janeiro de 2026  
-**Status:** Produção
+**Versão:** 2.0.0  
+**Data:** 18 de Janeiro de 2026  
+**Status:** Em Atualização (Migração para Sistema Mensal)
+
+---
+
+> ⚠️ **IMPORTANTE: Mudança de Arquitetura**
+> 
+> O sistema de gamificação está sendo atualizado para o modelo **MENSAL**.
+> - Pontos de Vigor (XP) são resetados no início de cada mês
+> - Medalhas são resetadas no início de cada mês
+> - Todo o histórico é mantido para visualização
+> 
+> **Documentação Completa:** [GAMIFICATION_MONTHLY_SYSTEM.md](./GAMIFICATION_MONTHLY_SYSTEM.md)
 
 ---
 
@@ -25,6 +36,8 @@ O Sistema de Gamificação da Rota Business Club é responsável por recompensar
 
 ### Características Principais
 
+- ✅ **Ciclo Mensal** - XP e medalhas resetam todo mês (NEW!)
+- ✅ **Histórico Completo** - Todos os meses anteriores são arquivados (NEW!)
 - ✅ **Distribuição Automática de Pontos** - Sistema gerencia automaticamente concessão de XP
 - ✅ **Sistema de Medalhas** - 12 badges com critérios específicos
 - ✅ **Progressão de Ranks** - 6 níveis com multiplicadores crescentes
@@ -161,21 +174,27 @@ CREATE TABLE public.ranks (
     name text NOT NULL,
     min_xp integer NOT NULL,
     max_xp integer,
-    multiplier numeric(3,2) DEFAULT 1.00,
+    multiplier numeric(3,2) DEFAULT 1.00,  -- ⚠️ NÃO USADO! Multiplicador vem do PLANO
     display_order integer NOT NULL
 );
 ```
 
+> ⚠️ **ATENÇÃO:** O campo `multiplier` na tabela ranks **NÃO É UTILIZADO** no cálculo de XP.
+> O multiplicador real é determinado pelo **PLANO DE ASSINATURA** do usuário:
+> - Plano Recruta: 1.0x
+> - Plano Veterano: 1.5x  
+> - Plano Elite: 3.0x
+
 **Dados:**
 
-| id | name | min_xp | max_xp | multiplier | display_order |
+| id | name | min_xp | max_xp | ~~multiplier~~ | display_order |
 |----|------|--------|--------|------------|---------------|
-| recruta | Recruta | 0 | 199 | 1.00 | 1 |
-| especialista | Especialista | 200 | 499 | 1.00 | 2 |
-| veterano | Veterano | 500 | 999 | 1.00 | 3 |
-| comandante | Comandante | 1000 | 1999 | 1.50 | 4 |
-| general | General | 2000 | 3499 | 2.00 | 5 |
-| lenda | Lenda | 3500 | ∞ | 3.00 | 6 |
+| recruta | Recruta | 0 | 199 | ~~1.00~~ | 1 |
+| especialista | Especialista | 200 | 499 | ~~1.00~~ | 2 |
+| veterano | Veterano | 500 | 999 | ~~1.00~~ | 3 |
+| comandante | Comandante | 1000 | 1999 | ~~1.50~~ | 4 |
+| general | General | 2000 | 3499 | ~~2.00~~ | 5 |
+| lenda | Lenda | 3500 | ∞ | ~~3.00~~ | 6 |
 
 **Índices:**
 - PRIMARY KEY em `id`
@@ -340,8 +359,8 @@ SECURITY DEFINER
 **Lógica:**
 1. Inicializa stats se não existir
 2. Reseta contador diário se mudou o dia
-3. Busca multiplicador do rank atual
-4. Calcula XP final: `floor(base_amount * multiplier)`
+3. **Busca multiplicador do PLANO DE ASSINATURA** (Recruta=1x, Veterano=1.5x, Elite=3x)
+4. Calcula XP final: `floor(base_amount * plan_multiplier)`
 5. Aplica limite diário (500 XP para ações repetíveis)
 6. Atualiza `gamification_stats`
 7. Registra em `xp_logs`
@@ -506,8 +525,9 @@ async function getUserGamificationStats(
     currentRank: {
         id: string;
         name: string;
-        multiplier: number;
     };
+    planId: string;           // Plano do usuário
+    planMultiplier: number;   // Multiplicador do PLANO (não do rank!)
     seasonXp: number;
     dailyXpCount: number;
     badgesCount: number;
@@ -877,14 +897,26 @@ END IF;
 
 ### Problema: Multiplicador não aplicado
 
-**Verificar:**
+> ⚠️ **IMPORTANTE:** O multiplicador é determinado pelo PLANO DE ASSINATURA, não pela patente!
+> - Recruta: 1.0x
+> - Veterano: 1.5x
+> - Elite: 3.0x
+
+**Verificar plano do usuário:**
 ```sql
--- Ver rank atual e multiplicador
-SELECT gs.user_id, gs.total_xp, gs.current_rank_id, 
-       r.name, r.multiplier
-FROM gamification_stats gs
-JOIN ranks r ON r.id = gs.current_rank_id
-WHERE gs.user_id = 'USER_ID';
+-- Ver plano e multiplicador
+SELECT 
+    p.id as user_id,
+    p.full_name,
+    s.plan_id,
+    CASE s.plan_id 
+        WHEN 'elite' THEN 3.0 
+        WHEN 'veterano' THEN 1.5 
+        ELSE 1.0 
+    END as multiplicador
+FROM profiles p
+LEFT JOIN subscriptions s ON s.user_id = p.id AND s.status = 'active'
+WHERE p.id = 'USER_ID';
 ```
 
 **Testar manualmente:**
@@ -897,8 +929,11 @@ SELECT add_user_xp(
     'Teste de multiplicador'
 );
 
--- Verificar XP logs
-SELECT amount, base_amount, amount::float / base_amount as multiplicador_aplicado
+-- Verificar XP logs (metadata contém plan_id e multiplier)
+SELECT amount, base_amount, 
+       amount::float / base_amount as multiplicador_aplicado,
+       metadata->>'plan_id' as plano,
+       metadata->>'multiplier' as multiplicador_esperado
 FROM xp_logs
 WHERE user_id = 'USER_ID'
 ORDER BY created_at DESC

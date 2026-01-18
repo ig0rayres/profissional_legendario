@@ -192,15 +192,22 @@ LIMIT 10
 ON CONFLICT (user_id) DO NOTHING;
 
 -- 6.2 Verificar dados criados
+-- NOTA: O multiplicador vem do PLANO DE ASSINATURA, não do rank!
 SELECT 
     gs.user_id,
     p.full_name,
     gs.total_xp,
     r.name as rank_name,
-    r.multiplier
+    s.plan_id,
+    CASE s.plan_id 
+        WHEN 'elite' THEN 3.0 
+        WHEN 'veterano' THEN 1.5 
+        ELSE 1.0 
+    END as plan_multiplier
 FROM gamification_stats gs
 JOIN profiles p ON p.id = gs.user_id
 JOIN ranks r ON r.id = gs.current_rank_id
+LEFT JOIN subscriptions s ON s.user_id = gs.user_id AND s.status = 'active'
 ORDER BY gs.total_xp DESC
 LIMIT 10;
 
@@ -217,7 +224,7 @@ Execute cada seção acima no SQL Editor do Supabase e anote os resultados.
 - [ ] Função add_user_xp() funcionando
 - [ ] Função award_badge() funcionando
 - [ ] Função check_rank_up() funcionando
-- [ ] Multiplicadores aplicados corretamente
+- [ ] Multiplicadores de PLANO aplicados (Recruta=1x, Veterano=1.5x, Elite=3x)
 - [ ] Limite diário aplicado (500 pts)
 - [ ] Progressão de ranks automática
 - [ ] Dados visíveis no admin panel

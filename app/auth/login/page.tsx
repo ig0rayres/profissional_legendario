@@ -33,7 +33,12 @@ export default function LoginPage() {
         try {
             console.log('🔐 Tentando login com:', data.email)
             await signIn(data.email, data.password)
-            console.log('✅ Login bem-sucedido! Redirecionando...')
+            console.log('✅ Login bem-sucedido! Aguardando sincronização...')
+
+            // Pequeno delay para garantir que o auth state seja sincronizado
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            console.log('✅ Redirecionando para dashboard...')
             // Force page reload to ensure auth state syncs
             window.location.href = '/dashboard'
         } catch (err: any) {
@@ -58,7 +63,14 @@ export default function LoginPage() {
                     Continue sua jornada de transformação
                 </CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form
+                method="post"
+                action="#"
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    handleSubmit(onSubmit)(e)
+                }}
+            >
                 <CardContent className="space-y-4">
                     {error && (
                         <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm animate-slide-down">

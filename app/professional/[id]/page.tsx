@@ -10,8 +10,34 @@ interface PageProps {
 }
 
 export default async function ProfessionalProfile({ params }: { params: { id: string } }) {
+    const supabase = await createClient()
+
+    // Tentar buscar por slug primeiro, senão por UUID
+    let userId: string | null = null
+
+    // Verificar se é UUID ou slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id)
+
+    if (isUUID) {
+        // É UUID, usar direto
+        userId = params.id
+    } else {
+        // É slug, buscar o UUID
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('slug', params.id)
+            .single()
+
+        userId = profile?.id || null
+    }
+
+    if (!userId) {
+        notFound()
+    }
+
     // Buscar TODOS os dados do perfil
-    const profileData = await getUserProfileData(params.id)
+    const profileData = await getUserProfileData(userId)
 
     if (!profileData) {
         notFound()
@@ -19,7 +45,6 @@ export default async function ProfessionalProfile({ params }: { params: { id: st
 
     // Calcular próxima patente
     const currentRankLevel = profileData.gamification?.rank?.rank_level || 1
-    const supabase = await createClient()
     const { data: nextRank } = await supabase
         .from('ranks')
         .select('*')

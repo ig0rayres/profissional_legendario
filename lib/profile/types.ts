@@ -5,9 +5,13 @@ export interface ProfileData {
     email: string
     full_name: string
     avatar_url?: string
+    cover_url?: string  // Foto de capa do perfil
     bio?: string
     phone?: string
+    whatsapp?: string   // Número do WhatsApp
+    instagram?: string  // Handle do Instagram
     pista?: string
+    slug?: string       // URL amigável do perfil
     rota_number?: string
     role: 'user' | 'professional' | 'admin'
     verification_status: 'pending' | 'verified' | 'rejected'
@@ -36,9 +40,10 @@ export interface RankData {
 export interface MedalData {
     id: string
     name: string
-    icon: string
+    icon_key: string  // Nome do ícone Lucide em PascalCase
     description: string
-    points_reward: number
+    xp_reward?: number
+    points_reward?: number
     category?: string
 }
 
@@ -121,4 +126,6 @@ export interface CompleteProfileData {
     portfolio: PortfolioItem[]
     ratings: RatingData[]
     ratingStats: RatingStats | null
+    projectsCompleted?: number
+    projectsInProgress?: number
 }

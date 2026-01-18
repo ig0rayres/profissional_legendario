@@ -34,7 +34,7 @@ export interface XPLogEntry {
 
 /**
  * Award points to a user for completing an action
- * Automatically applies multipliers and daily limits
+ * Updates user_gamification directly
  */
 export async function awardPoints(
     userId: string,
@@ -46,26 +46,84 @@ export async function awardPoints(
     try {
         const supabase = createClient()
 
-        // Call the stored procedure to add XP
-        const { data, error } = await supabase.rpc('add_user_xp', {
-            p_user_id: userId,
-            p_base_amount: baseAmount,
-            p_action_type: actionType,
-            p_description: description || null,
-            p_metadata: metadata || {}
-        })
+        console.log('[Gamification] Awarding', baseAmount, 'points to user', userId, 'for', actionType)
 
-        if (error) {
-            console.error('Error awarding points:', error)
-            return { success: false, xpAwarded: 0, error: error.message }
+        // 1. Buscar plano do usuário para aplicar multiplicador
+        const { data: subscription } = await supabase
+            .from('subscriptions')
+            .select('plan_id')
+            .eq('user_id', userId)
+            .eq('status', 'active')
+            .single()
+
+        // Multiplicadores: Recruta x1, Veterano x1.5, Elite x3
+        const planId = subscription?.plan_id || 'recruta'
+        const multiplier = planId === 'elite' ? 3 : planId === 'veterano' ? 1.5 : 1
+        const finalAmount = Math.round(baseAmount * multiplier) // Arredondar para inteiro
+
+        console.log('[Gamification] Plan:', planId, 'Multiplier:', multiplier, 'Final:', finalAmount)
+
+        // 2. Obter pontos atuais
+        const { data: currentStats, error: fetchError } = await supabase
+            .from('user_gamification')
+            .select('total_points')
+            .eq('user_id', userId)
+            .single()
+
+        if (fetchError) {
+            console.error('[Gamification] Error fetching current stats:', fetchError)
+            return { success: false, xpAwarded: 0, error: fetchError.message }
+        }
+
+        const currentPoints = currentStats?.total_points || 0
+        const newPoints = currentPoints + finalAmount
+
+        // 2. Atualizar pontos
+        const { error: updateError } = await supabase
+            .from('user_gamification')
+            .update({
+                total_points: newPoints,
+                last_activity_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+
+        if (updateError) {
+            console.error('[Gamification] Error updating points:', updateError)
+            return { success: false, xpAwarded: 0, error: updateError.message }
+        }
+
+        console.log('[Gamification] Points updated:', currentPoints, '->', newPoints)
+
+        // 3. Verificar e atualizar rank se necessário
+        try {
+            const { data: ranks } = await supabase
+                .from('ranks')
+                .select('id, points_required')
+                .order('points_required', { ascending: false })
+
+            if (ranks) {
+                for (const rank of ranks) {
+                    if (newPoints >= rank.points_required) {
+                        await supabase
+                            .from('user_gamification')
+                            .update({ current_rank_id: rank.id })
+                            .eq('user_id', userId)
+                        console.log('[Gamification] Rank updated to:', rank.id)
+                        break
+                    }
+                }
+            }
+        } catch (rankError) {
+            console.error('[Gamification] Error updating rank:', rankError)
         }
 
         return {
             success: true,
-            xpAwarded: data || 0
+            xpAwarded: finalAmount
         }
     } catch (error: any) {
-        console.error('Exception awarding points:', error)
+        console.error('[Gamification] Exception awarding points:', error)
         return {
             success: false,
             xpAwarded: 0,

@@ -3,6 +3,14 @@
 -- Execute este script no Supabase SQL Editor
 -- Vai testar TUDO item por item
 -- ============================================
+-- 
+-- ⚠️ NOTA IMPORTANTE:
+-- O multiplicador de XP é determinado pelo PLANO DE ASSINATURA:
+--   - Recruta: 1.0x
+--   - Veterano: 1.5x
+--   - Elite: 3.0x
+-- O campo "multiplier" na tabela ranks NÃO é usado.
+-- ============================================
 
 -- PREPARAÇÃO: Criar usuário de teste
 DO $$

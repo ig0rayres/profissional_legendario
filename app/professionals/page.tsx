@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,10 +12,21 @@ import { RotabusinessLogo, RotabusinessIcon } from '@/components/branding/logo'
 import { cn } from '@/lib/utils'
 import { RankingsBoard } from '@/components/gamification/rankings-board'
 import { RatingDialog } from '@/components/ratings/rating-dialog'
+import { getProfileUrl } from '@/lib/profile/utils'
 
 export default function ProfessionalsPage() {
+    const searchParams = useSearchParams()
+    const categoryParam = searchParams.get('category')
+
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null)
+
+    // Aplicar filtro da URL quando carregar
+    useEffect(() => {
+        if (categoryParam) {
+            setSelectedSpecialty(categoryParam)
+        }
+    }, [categoryParam])
 
     // Get all unique specialties
     const allSpecialties = Array.from(
@@ -353,7 +365,7 @@ export default function ProfessionalsPage() {
                                 </div>
 
                                 <div className="flex gap-2 w-full">
-                                    <Link href={`/professional/${prof.id}`} className="flex-1">
+                                    <Link href={getProfileUrl({ full_name: prof.full_name, slug: prof.slug, rota_number: prof.rota_number })} className="flex-1">
                                         <Button variant="outline" className="w-full text-impact font-bold hover:bg-primary/10 border-primary/20" size="sm">
                                             Explorar Perfil
                                         </Button>
