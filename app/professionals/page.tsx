@@ -5,64 +5,110 @@ import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Users, Star, MapPin, Search, Flame, ArrowLeft, Shield, TrendingUp, Activity, CheckCircle2, Zap, Trophy, Award, Globe, Medal as MedalIcon, Briefcase } from 'lucide-react'
+import { Users, Star, MapPin, Search, Flame, ArrowLeft, Shield, TrendingUp, Activity, CheckCircle2, Zap, Trophy, Award, Globe, Medal as MedalIcon, Briefcase, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { MOCK_PROFESSIONALS, MOCK_USER_GAMIFICATION, MOCK_RANKS } from '@/lib/data/mock'
+import { createClient } from '@/lib/supabase/client'
 import { RotabusinessLogo, RotabusinessIcon } from '@/components/branding/logo'
 import { cn } from '@/lib/utils'
 import { RankingsBoard } from '@/components/gamification/rankings-board'
 import { RatingDialog } from '@/components/ratings/rating-dialog'
 import { getProfileUrl } from '@/lib/profile/utils'
 
+interface Professional {
+    id: string
+    full_name: string
+    slug: string | null
+    rota_number: string | null
+    avatar_url: string | null
+    bio: string | null
+    pista: string | null
+    vigor: number
+    rank_name: string | null
+}
+
 export default function ProfessionalsPage() {
     const searchParams = useSearchParams()
     const categoryParam = searchParams.get('category')
+    const supabase = createClient()
 
     const [searchTerm, setSearchTerm] = useState('')
-    const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null)
+    const [selectedPista, setSelectedPista] = useState<string | null>(null)
+    const [professionals, setProfessionals] = useState<Professional[]>([])
+    const [pistas, setPistas] = useState<string[]>([])
+    const [loading, setLoading] = useState(true)
 
-    // Aplicar filtro da URL quando carregar
+    // Carregar profissionais reais
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true)
+
+            // Buscar profissionais com vigor
+            const { data: profiles, error } = await supabase
+                .from('profiles')
+                .select(`
+                    id, full_name, slug, rota_number, avatar_url, bio, pista,
+                    user_gamification(total_xp, current_rank_id),
+                    ranks:user_gamification(ranks(name))
+                `)
+                .not('rota_number', 'is', null)
+                .order('created_at', { ascending: false })
+
+            if (profiles && !error) {
+                const mapped = profiles.map((p: any) => ({
+                    id: p.id,
+                    full_name: p.full_name,
+                    slug: p.slug,
+                    rota_number: p.rota_number,
+                    avatar_url: p.avatar_url,
+                    bio: p.bio,
+                    pista: p.pista,
+                    vigor: p.user_gamification?.[0]?.total_xp || 0,
+                    rank_name: p.user_gamification?.[0]?.ranks?.name || 'Novato'
+                }))
+                setProfessionals(mapped)
+
+                // Extrair pistas únicas
+                const uniquePistas = Array.from(new Set(mapped.map(p => p.pista).filter(Boolean))) as string[]
+                setPistas(uniquePistas)
+            }
+
+            setLoading(false)
+        }
+        loadData()
+    }, [supabase])
+
+    // Aplicar filtro da URL
     useEffect(() => {
         if (categoryParam) {
-            setSelectedSpecialty(categoryParam)
+            setSelectedPista(categoryParam)
         }
     }, [categoryParam])
 
-    // Get all unique specialties
-    const allSpecialties = Array.from(
-        new Set(MOCK_PROFESSIONALS.flatMap(p => p.specialties))
-    )
-
-    // Filter professionals
-    const filteredProfessionals = MOCK_PROFESSIONALS.map(prof => {
-        const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === prof.user_id)
-        const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id) || MOCK_RANKS[0]
-        return { ...prof, rank, vigor: gamif?.total_xp || 0 } as any
-    }).filter(prof => {
+    // Filtrar profissionais
+    const filteredProfessionals = professionals.filter(prof => {
         const matchesSearch = prof.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            prof.bio.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesSpecialty = !selectedSpecialty || (prof.specialties && prof.specialties.includes(selectedSpecialty))
-        return matchesSearch && matchesSpecialty
+            (prof.bio?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+        const matchesPista = !selectedPista || prof.pista === selectedPista
+        return matchesSearch && matchesPista
     })
 
-    // Calculate Rankings for Dashboard
-    const nationalRankings = MOCK_PROFESSIONALS.map(prof => {
-        const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === prof.user_id)
-        return {
+    // Rankings
+    const nationalRankings = [...professionals]
+        .sort((a, b) => b.vigor - a.vigor)
+        .map((prof, idx) => ({
             id: prof.id,
             name: prof.full_name,
-            xp: gamif?.total_xp || 0,
-            rank: MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)?.name || 'Recruta',
-            location: prof.location,
+            xp: prof.vigor,
+            rank: prof.rank_name || 'Novato',
+            location: prof.pista || '',
             avatar_url: prof.avatar_url,
-            position: 0
-        }
-    }).sort((a, b) => b.xp - a.xp).map((item, idx) => ({ ...item, position: idx + 1 }))
+            position: idx + 1
+        }))
 
     const rankingData = {
-        local: nationalRankings.filter(r => r.location.includes('Ribeirão Preto')),
-        regional: nationalRankings.filter(r => r.location.includes('SP')),
-        national: nationalRankings
+        local: nationalRankings.slice(0, 10),
+        regional: nationalRankings.slice(0, 10),
+        national: nationalRankings.slice(0, 10)
     }
 
     return (
@@ -119,7 +165,7 @@ export default function ProfessionalsPage() {
                                             <Users className="w-4 h-4" />
                                             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Membros</span>
                                         </div>
-                                        <div className="text-3xl font-black text-white">{MOCK_PROFESSIONALS.length * 12 + 150}</div>
+                                        <div className="text-3xl font-black text-white">{professionals.length || 0}</div>
                                         <div className="flex items-center gap-1 text-[10px] font-bold text-green-500">
                                             <TrendingUp className="w-3 h-3" /> +12% sem.
                                         </div>
@@ -172,22 +218,22 @@ export default function ProfessionalsPage() {
 
                                     <div className="flex flex-wrap gap-2">
                                         <Button
-                                            variant={selectedSpecialty === null ? "default" : "outline"}
+                                            variant={selectedPista === null ? "default" : "outline"}
                                             size="sm"
-                                            onClick={() => setSelectedSpecialty(null)}
-                                            className={cn("h-10 px-6 font-bold uppercase text-[10px] tracking-wider transition-all", selectedSpecialty === null ? "glow-orange bg-primary border-primary" : "border-primary/20 bg-card/50 hover:bg-primary/10")}
+                                            onClick={() => setSelectedPista(null)}
+                                            className={cn("h-10 px-6 font-bold uppercase text-[10px] tracking-wider transition-all", selectedPista === null ? "glow-orange bg-primary border-primary" : "border-primary/20 bg-card/50 hover:bg-primary/10")}
                                         >
-                                            Todos os Setores
+                                            Todas as Pistas
                                         </Button>
-                                        {allSpecialties.map(specialty => (
+                                        {pistas.map(pista => (
                                             <Button
-                                                key={specialty}
-                                                variant={selectedSpecialty === specialty ? "default" : "outline"}
+                                                key={pista}
+                                                variant={selectedPista === pista ? "default" : "outline"}
                                                 size="sm"
-                                                onClick={() => setSelectedSpecialty(specialty)}
-                                                className={cn("h-10 px-6 font-bold uppercase text-[10px] tracking-wider transition-all", selectedSpecialty === specialty ? "glow-orange bg-primary border-primary" : "border-primary/20 bg-card/50 hover:bg-primary/10")}
+                                                onClick={() => setSelectedPista(pista)}
+                                                className={cn("h-10 px-6 font-bold uppercase text-[10px] tracking-wider transition-all", selectedPista === pista ? "glow-orange bg-primary border-primary" : "border-primary/20 bg-card/50 hover:bg-primary/10")}
                                             >
-                                                {specialty}
+                                                {pista}
                                             </Button>
                                         ))}
                                     </div>
@@ -310,18 +356,13 @@ export default function ProfessionalsPage() {
                                             )}
                                         </div>
                                         {/* Rank Badge Overlay */}
-                                        <div className="absolute -bottom-1 -right-1 bg-secondary rounded-full p-1 border-2 border-background shadow-lg" title={prof.rank.name}>
+                                        <div className="absolute -bottom-1 -right-1 bg-secondary rounded-full p-1 border-2 border-background shadow-lg" title={prof.rank_name || 'Novato'}>
                                             <Shield className="w-3 h-3 text-white" />
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                        {prof.verified && (
-                                            <div className="px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-[10px] font-bold border border-green-500/20">
-                                                ✓ VERIFICADO
-                                            </div>
-                                        )}
                                         <div className="px-2 py-1 rounded-full bg-secondary text-white text-[10px] font-black border border-secondary/20 uppercase tracking-tighter shadow-lg shadow-secondary/20">
-                                            {prof.rank.name}
+                                            {prof.rank_name || 'Novato'}
                                         </div>
                                     </div>
                                 </div>
@@ -330,37 +371,25 @@ export default function ProfessionalsPage() {
                                 </CardTitle>
                                 <CardDescription className="flex items-center gap-1 text-muted-foreground">
                                     <MapPin className="w-3 h-3" />
-                                    {prof.location}
+                                    {prof.pista || 'Sem pista'}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <p className="text-sm text-foreground line-clamp-2">
-                                    {prof.bio}
+                                    {prof.bio || 'Membro do Rota Business Club'}
                                 </p>
 
-                                {/* Specialties */}
-                                <div className="flex flex-wrap gap-1">
-                                    {prof.specialties.slice(0, 3).map((spec, idx) => (
-                                        <span
-                                            key={idx}
-                                            className="px-2 py-1 rounded-md bg-muted/30 text-xs text-foreground"
-                                        >
-                                            {spec}
-                                        </span>
-                                    ))}
-                                </div>
-
-                                {/* Rating and Rate */}
+                                {/* Rating and Vigor */}
                                 <div className="flex items-center justify-between pt-2 border-t border-primary/10">
                                     <div className="flex items-center gap-1">
-                                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                        <span className="font-bold text-yellow-500">{prof.rating}</span>
+                                        <Trophy className="w-4 h-4 text-secondary" />
+                                        <span className="font-bold text-secondary">{prof.vigor}</span>
                                         <span className="text-xs text-muted-foreground">
-                                            ({prof.total_reviews})
+                                            Vigor
                                         </span>
                                     </div>
-                                    <div className="text-sm font-black text-secondary">
-                                        {prof.vigor} Vigor
+                                    <div className="text-sm font-black text-primary">
+                                        {prof.rota_number}
                                     </div>
                                 </div>
 

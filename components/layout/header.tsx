@@ -90,47 +90,50 @@ export function Header() {
 
                         {user ? (
                             <div className="flex items-center gap-4 ml-4 pl-4 border-l border-primary/20">
-                                <div className="flex items-center gap-2">
-                                    <NotificationCenter />
-                                    <CriticalNoticeModal />
-                                    <div className="flex items-center gap-3 ml-2">
-                                        {/* Avatar do usuário */}
-                                        <div className="relative w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden bg-primary/10 flex items-center justify-center">
+                                <div className="flex items-center gap-4">
+                                    {/* Avatar com Notificação */}
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-full border-2 border-primary/30 overflow-hidden bg-primary/10 flex items-center justify-center">
                                             {user.avatar_url ? (
                                                 <Image
                                                     src={user.avatar_url}
                                                     alt={user.full_name}
-                                                    width={40}
-                                                    height={40}
+                                                    width={48}
+                                                    height={48}
                                                     className="object-cover w-full h-full"
                                                 />
                                             ) : (
-                                                <User className="w-5 h-5 text-primary/60" />
+                                                <User className="w-6 h-6 text-primary/60" />
                                             )}
                                         </div>
+                                        {/* Sino de Notificação na parte debaixo do Avatar */}
+                                        <div className="absolute -bottom-4 -right-4">
+                                            <NotificationCenter />
+                                        </div>
+                                    </div>
+                                    <CriticalNoticeModal />
 
-                                        {(() => {
-                                            const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
-                                            const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)
-                                            // Mostrar nome e sobrenome (até 2 palavras)
-                                            const nameParts = user.full_name.split(' ')
-                                            const displayName = nameParts.length >= 2
-                                                ? `${nameParts[0]} ${nameParts[1]}`
-                                                : nameParts[0]
+                                    {(() => {
+                                        const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
+                                        const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)
+                                        // Mostrar nome e sobrenome (até 2 palavras)
+                                        const nameParts = user.full_name.split(' ')
+                                        const displayName = nameParts.length >= 2
+                                            ? `${nameParts[0]} ${nameParts[1]}`
+                                            : nameParts[0]
 
-                                            return rank ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm text-muted-foreground">
-                                                        Olá, <span className="text-primary font-bold">{displayName}</span>
-                                                    </span>
-                                                </div>
-                                            ) : (
+                                        return rank ? (
+                                            <div className="flex flex-col ml-2">
                                                 <span className="text-sm text-muted-foreground">
                                                     Olá, <span className="text-primary font-bold">{displayName}</span>
                                                 </span>
-                                            )
-                                        })()}
-                                    </div>
+                                            </div>
+                                        ) : (
+                                            <span className="text-sm text-muted-foreground ml-2">
+                                                Olá, <span className="text-primary font-bold">{displayName}</span>
+                                            </span>
+                                        )
+                                    })()}
                                 </div>
                                 <Link href="/dashboard">
                                     <Button variant="ghost" size="sm" className="hover:bg-primary/10">

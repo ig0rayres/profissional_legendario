@@ -292,13 +292,13 @@ export default function UsersPage() {
     }
 
     async function handleLoginAs(userId: string, userEmail: string) {
-        if (!confirm(`Logar como ${userEmail}?\n\nUm magic link será gerado para acessar a conta.\nA senha do usuário NÃO será alterada.`)) {
+        if (!confirm(`Logar como ${userEmail}?\n\nVocê será deslogado como admin e logado como este usuário.\nA senha do usuário NÃO será alterada.`)) {
             return
         }
 
         setProcessing(userId)
         try {
-            // Chamar API de impersonate para gerar magic link
+            // Chamar API de impersonate para gerar OTP
             const response = await fetch('/api/admin/impersonate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -311,15 +311,31 @@ export default function UsersPage() {
                 throw new Error(data.error || 'Erro ao fazer impersonate')
             }
 
-            if (!data.magicLink) {
-                throw new Error('Magic link não foi gerado')
+            if (!data.otp) {
+                throw new Error('OTP não foi gerado')
             }
 
-            // Primeiro fazer signOut da conta atual
+            console.log('🔑 OTP recebido, fazendo login...')
+
+            // Fazer signOut da conta atual
             await supabase.auth.signOut()
 
-            // Redirecionar para o magic link
-            window.location.href = data.magicLink
+            // Usar o OTP para fazer login diretamente
+            const { error: verifyError } = await supabase.auth.verifyOtp({
+                email: userEmail,
+                token: data.otp,
+                type: 'email'
+            })
+
+            if (verifyError) {
+                console.error('❌ Erro ao verificar OTP:', verifyError)
+                throw new Error('Erro ao fazer login: ' + verifyError.message)
+            }
+
+            console.log('✅ Login realizado com sucesso!')
+
+            // Redirecionar para dashboard
+            window.location.href = '/dashboard'
         } catch (error: any) {
             console.error('Erro ao logar como usuário:', error)
             alert('❌ ' + error.message)

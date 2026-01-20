@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Link2, Users } from 'lucide-react'
+import { Link2, Users, Bell } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -25,11 +25,38 @@ interface ElosDaRotaProps {
 
 export function ElosDaRota({ userId }: ElosDaRotaProps) {
     const [connections, setConnections] = useState<Connection[]>([])
+    const [pendingCount, setPendingCount] = useState(0)
     const [loading, setLoading] = useState(true)
     const supabase = createClient()
 
     useEffect(() => {
         loadConnections()
+        loadPendingRequests()
+
+        // Subscrever a mudanças em tempo real na tabela user_connections
+        const channel = supabase
+            .channel('elos-updates')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'user_connections',
+                filter: `requester_id=eq.${userId}`
+            }, () => {
+                loadConnections()
+            })
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'user_connections',
+                filter: `addressee_id=eq.${userId}`
+            }, () => {
+                loadConnections()
+            })
+            .subscribe()
+
+        return () => {
+            channel.unsubscribe()
+        }
     }, [userId])
 
     async function loadConnections() {
@@ -94,6 +121,26 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
         setLoading(false)
     }
 
+    // Carregar solicitações pendentes de elo (onde o usuário é o destinatário)
+    async function loadPendingRequests() {
+        const { count } = await supabase
+            .from('user_connections')
+            .select('*', { count: 'exact', head: true })
+            .eq('addressee_id', userId)
+            .eq('status', 'pending')
+
+        setPendingCount(count || 0)
+    }
+
+    // Abrir notificações (simula clique no sininho)
+    const openNotifications = () => {
+        // Procurar o botão do sininho e clicar nele
+        const bellButton = document.querySelector('[data-notification-trigger]') as HTMLButtonElement
+        if (bellButton) {
+            bellButton.click()
+        }
+    }
+
     // Função para pegar nome + sobrenome
     const getDisplayName = (fullName: string) => {
         const parts = fullName.split(' ')
@@ -106,13 +153,28 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
     return (
         <Card className="glass-card border-primary/10 shadow-lg shadow-black/10 hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
-                    <Link2 className="w-4 h-4 text-primary" />
-                    Elos da Rota
-                    {connections.length > 0 && (
-                        <span className="ml-auto bg-primary/20 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
+                <CardTitle className="flex items-center justify-between text-sm font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-2">
+                        <Link2 className="w-4 h-4 text-primary" />
+                        Elos da Rota
+                        {/* Contador total de elos */}
+                        <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
                             {connections.length}
                         </span>
+                    </div>
+
+                    {/* Sininho de solicitações pendentes - igual ao do topo */}
+                    {pendingCount > 0 && (
+                        <button
+                            onClick={openNotifications}
+                            className="relative p-1.5 rounded-full bg-accent/10 hover:bg-accent/20 transition-colors cursor-pointer group"
+                            title={`${pendingCount} solicitação(ões) pendente(s) - Clique para ver`}
+                        >
+                            <Bell className="w-5 h-5 text-accent fill-accent/20 group-hover:text-accent transition-colors" />
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-black text-white glow-orange animate-pulse">
+                                {pendingCount}
+                            </span>
+                        </button>
                     )}
                 </CardTitle>
             </CardHeader>

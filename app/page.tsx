@@ -10,17 +10,54 @@ import {
     ChevronRight, Play, Quote, MapPin, Award, TrendingUp,
     Mountain, Compass, Shield
 } from 'lucide-react'
-import { MOCK_PROFESSIONALS } from '@/lib/data/mock'
+import { createClient } from '@/lib/supabase/client'
 import { RatingDialog } from '@/components/ratings/rating-dialog'
 import { PlansSection } from '@/components/sections/plans-section'
 import { FeaturedConfraternities } from '@/components/home/FeaturedConfraternities'
 import { RotabusinessLogo } from '@/components/branding/logo'
 import { getProfileUrl } from '@/lib/profile/utils'
+import { RankInsignia } from '@/components/gamification/rank-insignia'
+
+interface Professional {
+    id: string
+    full_name: string
+    slug: string | null
+    rota_number: string | null
+    avatar_url: string | null
+    bio: string | null
+    pista: string | null
+    rank_id: string | null
+}
 
 export default function HomePage() {
     const [scrolled, setScrolled] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
     const [currentSlide, setCurrentSlide] = useState(0)
+    const [professionals, setProfessionals] = useState<Professional[]>([])
+    const [loadingProfessionals, setLoadingProfessionals] = useState(true)
+
+    const supabase = createClient()
+
+    // Carregar profissionais reais do banco
+    useEffect(() => {
+        async function loadProfessionals() {
+            console.log('Carregando profissionais...')
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, full_name, slug, rota_number, avatar_url, bio, pista')
+                .not('rota_number', 'is', null)
+                .limit(6)
+                .order('created_at', { ascending: false })
+
+            console.log('Profiles data:', data, 'error:', error)
+
+            if (data && !error) {
+                setProfessionals(data.map(p => ({ ...p, rank_id: null })))
+            }
+            setLoadingProfessionals(false)
+        }
+        loadProfessionals()
+    }, [supabase])
 
     // Carousel Effect
     useEffect(() => {
@@ -186,57 +223,74 @@ export default function HomePage() {
 
                         {/* Featured Professionals */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {MOCK_PROFESSIONALS.slice(0, 3).map((prof, index) => (
-                                <Card
-                                    key={prof.id}
-                                    className="glass-strong border-primary/20 hover:border-primary/40 transition-all hover:glow-orange group animate-transform"
-                                    style={{ animationDelay: `${index * 0.1}s` }}
-                                >
-                                    <CardContent className="p-6">
-                                        <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/30 transition-colors overflow-hidden relative">
-                                            {prof.avatar_url ? (
-                                                <img
-                                                    src={prof.avatar_url}
-                                                    alt={prof.full_name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <Users className="w-8 h-8 text-primary" />
-                                            )}
-                                        </div>
-                                        <h3 className="text-xl font-bold text-impact text-primary mb-2">
-                                            {prof.full_name}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
-                                            <MapPin className="w-3 h-3" />
-                                            {prof.location}
-                                        </p>
-                                        <p className="text-sm text-foreground mb-4 line-clamp-2">
-                                            {prof.bio}
-                                        </p>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-1">
-                                                <Star className="w-4 h-4 text-accent fill-accent" />
-                                                <span className="font-bold text-accent">{prof.rating}</span>
+                            {loadingProfessionals ? (
+                                // Loading skeleton
+                                [...Array(3)].map((_, index) => (
+                                    <Card key={index} className="glass-strong border-primary/20 animate-pulse">
+                                        <CardContent className="p-6">
+                                            <div className="w-16 h-16 rounded-full bg-primary/20 mb-4" />
+                                            <div className="h-6 bg-primary/20 rounded mb-2 w-3/4" />
+                                            <div className="h-4 bg-primary/10 rounded mb-3 w-1/2" />
+                                            <div className="h-12 bg-primary/10 rounded mb-4" />
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            ) : professionals.length === 0 ? (
+                                <div className="col-span-3 text-center py-8 text-muted-foreground">
+                                    Nenhum profissional encontrado
+                                </div>
+                            ) : (
+                                professionals.slice(0, 3).map((prof, index) => (
+                                    <Card
+                                        key={prof.id}
+                                        className="glass-strong border-primary/20 hover:border-primary/40 transition-all hover:glow-orange group animate-transform"
+                                        style={{ animationDelay: `${index * 0.1}s` }}
+                                    >
+                                        <CardContent className="p-6">
+                                            <div className="relative w-16 h-16 mb-4">
+                                                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors overflow-hidden">
+                                                    {prof.avatar_url ? (
+                                                        <img
+                                                            src={prof.avatar_url}
+                                                            alt={prof.full_name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <Users className="w-8 h-8 text-primary" />
+                                                    )}
+                                                </div>
+                                                {/* Patente */}
+                                                <div className="absolute -bottom-1 -right-1">
+                                                    <RankInsignia rankId={prof.rank_id} size="xs" />
+                                                </div>
                                             </div>
-                                            <span className="text-sm font-bold text-primary">
-                                                R$ {prof.hourly_rate}/h
-                                            </span>
-                                        </div>
-                                        <div className="mt-4 flex gap-2">
-                                            <Link href={getProfileUrl({ full_name: prof.full_name, slug: prof.slug, rota_number: prof.rota_number })} className="flex-1">
-                                                <Button className="w-full glow-orange" size="sm">
-                                                    Ver Perfil
-                                                </Button>
-                                            </Link>
-                                            <RatingDialog
-                                                professionalId={prof.id}
-                                                professionalName={prof.full_name}
-                                            />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                            <h3 className="text-xl font-bold text-impact text-primary mb-2">
+                                                {prof.full_name}
+                                            </h3>
+                                            {prof.pista && (
+                                                <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {prof.pista}
+                                                </p>
+                                            )}
+                                            <p className="text-sm text-foreground mb-4 line-clamp-2">
+                                                {prof.bio || 'Membro do Rota Business Club'}
+                                            </p>
+                                            <div className="mt-4 flex gap-2">
+                                                <Link href={getProfileUrl({ full_name: prof.full_name, slug: prof.slug, rota_number: prof.rota_number })} className="flex-1">
+                                                    <Button className="w-full glow-orange" size="sm">
+                                                        Ver Perfil
+                                                    </Button>
+                                                </Link>
+                                                <RatingDialog
+                                                    professionalId={prof.id}
+                                                    professionalName={prof.full_name}
+                                                />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            )}
                         </div>
 
                         <div className="text-center mt-8">

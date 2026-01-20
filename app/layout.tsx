@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 import { BrandingProvider } from "@/lib/branding/context";
 import { AuthProvider } from "@/lib/auth/context";
 import { Header } from "@/components/layout/header";
+import { ChatWidget } from "@/components/chat/chat-widget";
 
 export default function RootLayout({
     children,
@@ -28,6 +29,7 @@ export default function RootLayout({
                     <BrandingProvider>
                         <Header />
                         {children}
+                        <ChatWidget />
                     </BrandingProvider>
                 </AuthProvider>
             </body>

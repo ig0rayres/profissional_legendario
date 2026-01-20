@@ -45,6 +45,7 @@ O Sistema de Gamificação da Rota Business Club é responsável por recompensar
 - ✅ **Multiplicadores por Rank** - XP aumenta conforme rank do usuário
 - ✅ **Logs Completos** - Auditoria de todas as transações de XP
 - ✅ **Real-time** - Atualizações instantâneas via Supabase
+- ✅ **Anti-Duplicação de Elos** - Cada par de usuários só recebe pontos uma vez (NEW!)
 
 ### Tecnologias Utilizadas
 
@@ -685,6 +686,57 @@ export async function checkProfileCompletion(
 
 ---
 
+### 3. Elos/Conexões (ATIVO)
+
+**Arquivo:** `components/profile/connection-button.tsx`
+
+**Pontuação:**
+- **Enviar convite de Elo:** 10 XP base
+- **Aceitar convite de Elo:** 5 XP base
+- **Primeiro Elo aceito:** +5 XP + Medalha "Presente"
+
+**Código para ENVIAR:**
+```typescript
+// Após envio bem-sucedido do convite
+const result = await awardPoints(
+    user.id,
+    10,  // XP base
+    'elo_sent',
+    `Enviou convite de elo para ${targetUserName}`
+)
+```
+
+**Código para ACEITAR:**
+```typescript
+// Após aceite bem-sucedido
+const result = await awardPoints(
+    user.id,
+    5,   // XP base
+    'elo_accepted',
+    `Aceitou elo com ${targetUserName}`
+)
+
+// Verificar primeiro elo para medalha
+const { count } = await supabase
+    .from('user_connections')
+    .select('*', { count: 'exact', head: true })
+    .eq('addressee_id', user.id)
+    .eq('status', 'accepted')
+
+if (count === 1) {
+    await awardBadge(user.id, 'presente')
+}
+```
+
+**Multiplicadores aplicados:**
+| Plano | Enviar (base 10) | Aceitar (base 5) |
+|-------|------------------|------------------|
+| Recruta | 10 pts | 5 pts |
+| Veterano | 15 pts | 8 pts |
+| Elite | 30 pts | 15 pts |
+
+---
+
 ### Como Adicionar Nova Integração
 
 **Template:**
@@ -721,6 +773,69 @@ async function handleAction(userId: string) {
     }
 }
 ```
+
+---
+
+## 🛡️ Anti-Duplicação de Pontos de Elo
+
+### O Problema
+
+Sem proteção, um usuário poderia:
+1. Enviar elo → ganhar 10 pts
+2. Outro desconectar → reconectar
+3. Aceitar novamente → ganhar mais 5 pts (indevido!)
+
+Isso criaria um loop infinito de pontos.
+
+### A Solução
+
+**Função:** `checkEloPointsAlreadyAwarded()`
+
+```typescript
+import { checkEloPointsAlreadyAwarded } from '@/lib/api/gamification'
+
+// Antes de dar pontos, verificar se já foi creditado
+const alreadyAwarded = await checkEloPointsAlreadyAwarded(
+    userId,           // Quem recebe os pontos
+    targetUserId,     // O outro usuário do elo
+    'elo_sent'        // ou 'elo_accepted'
+)
+
+if (!alreadyAwarded) {
+    await awardPoints(userId, 10, 'elo_sent', 'Descrição', {
+        target_user_id: targetUserId  // OBRIGATÓRIO para verificação
+    })
+}
+```
+
+### Variável de Ambiente
+
+```env
+# .env.local (homologação) - desabilitado para testes
+NEXT_PUBLIC_ENABLE_ELO_DEDUP=false
+
+# .env.production (produção) - habilitado para segurança
+NEXT_PUBLIC_ENABLE_ELO_DEDUP=true
+```
+
+### Como Funciona
+
+1. Verifica no `points_history` se existe registro com:
+   - `user_id` = usuário que receberia pontos
+   - `action_type` = 'elo_sent' ou 'elo_accepted'
+   - `metadata.target_user_id` = outro usuário do elo
+
+2. Se encontrar, **bloqueia** nova concessão de pontos.
+
+3. Se `ENABLE_ELO_DEDUP=false`, permite sempre (para desenvolvimento).
+
+### Locais Protegidos
+
+| Arquivo | Ação |
+|---------|------|
+| `connection-button.tsx` | Enviar elo, Aceitar elo (botão perfil) |
+| `notification-center.tsx` | Aceitar elo (sininho) |
+| `chat-widget.tsx` | Aceitar elo (chat) |
 
 ---
 

@@ -17,7 +17,7 @@ interface User {
 interface AuthContextType {
     user: User | null
     loading: boolean
-    signIn: (email: string, password: string) => Promise<void>
+    signIn: (email: string, password: string) => Promise<{ id: string; email: string | undefined; role: string; full_name: string } | null>
     signUp: (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => Promise<void>
     signOut: () => Promise<void>
 }
@@ -43,17 +43,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const emailName = session.user.email!.split('@')[0]
                 const formattedName = emailName.charAt(0).toUpperCase() + emailName.slice(1)
 
-                // Define usuário básico IMEDIATAMENTE
+                // Define usuário básico IMEDIATAMENTE (sem role para aguardar enriquecimento)
                 const basicUser = {
                     id: session.user.id,
                     email: session.user.email!,
                     full_name: formattedName,
                     is_professional: false,
-                    role: 'user' as const
+                    role: undefined as 'admin' | 'user' | 'professional' | undefined
                 }
 
-                setUser(basicUser)
-                setLoading(false) // ✅ UI já liberada - login não trava
+                setUser(basicUser as any)
+                // NÃO setamos loading como false aqui para admins - aguarda o role
 
                 // FASE 2: Enriquecimento NÃO-BLOQUEANTE (com timeout)
                 supabase.from('profiles')
@@ -65,11 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                         if (error) {
                             console.warn('[Auth] Profile fetch error:', error.message)
+                            setLoading(false) // Libera mesmo com erro
                             return
                         }
 
                         if (data) {
-                            console.log('[Auth] Enriching user with profile:', data.full_name)
+                            console.log('[Auth] Enriching user with profile:', data.full_name, 'role:', data.role)
                             // Enriquecer com dados do banco
                             setUser({
                                 ...basicUser,
@@ -81,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 avatar_url: data.avatar_url
                             })
                         }
+                        setLoading(false) // Libera após enriquecer
                     })
             } else {
                 setUser(null)
@@ -88,46 +90,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         })
 
-        // Listen for auth changes - SIMPLE VERSION (no profile fetch here)
+        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log('[Auth] onAuthStateChange:', event)
+
             if (session?.user) {
                 const basicUser = {
                     id: session.user.id,
                     email: session.user.email!,
                     full_name: session.user.email!.split('@')[0],
                     is_professional: false,
-                    role: 'user' as const
+                    role: undefined as 'admin' | 'user' | 'professional' | undefined
                 }
-                setUser(basicUser)
+                setUser(basicUser as any)
 
-                // Enriquecimento assíncrono (não-bloqueante)
-                Promise.race([
-                    supabase.from('profiles')
-                        .select('*')
-                        .eq('id', session.user.id)
-                        .maybeSingle(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-                ])
-                    .then((result: any) => {
-                        if (result?.data) {
+                // Enriquecimento - AGUARDA para pegar o role real
+                supabase.from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .maybeSingle()
+                    .then(({ data, error }) => {
+                        if (data) {
+                            console.log('[Auth] onAuthStateChange - enriched with role:', data.role)
                             setUser({
                                 ...basicUser,
-                                full_name: result.data.full_name || basicUser.full_name,
-                                role: result.data.role || 'user',
-                                is_professional: result.data.role === 'professional',
-                                pista: result.data.pista,
-                                rota_number: result.data.rota_number,
-                                avatar_url: result.data.avatar_url
+                                full_name: data.full_name || basicUser.full_name,
+                                role: data.role || 'user',
+                                is_professional: data.role === 'professional',
+                                pista: data.pista,
+                                rota_number: data.rota_number,
+                                avatar_url: data.avatar_url
                             })
                         }
-                    })
-                    .catch(() => {
-                        // Silently fail - basic user already set
+                        setLoading(false)
                     })
             } else {
                 setUser(null)
+                setLoading(false)
             }
-            setLoading(false)
         })
 
         return () => subscription.unsubscribe()
@@ -135,13 +135,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signIn = async (email: string, password: string) => {
         console.log('🔑 signIn() chamado')
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
         console.log('🔑 signInWithPassword retornou:', { error })
         if (error) {
             console.error('🔑 ERRO no Supabase:', error)
             throw new Error(error.message || 'Email ou senha incorretos')
         }
         console.log('🔑 Login bem-sucedido no Supabase!')
+
+        // Buscar dados do perfil para retornar role
+        if (authData.user) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role, full_name')
+                .eq('id', authData.user.id)
+                .single()
+
+            return {
+                id: authData.user.id,
+                email: authData.user.email,
+                role: profile?.role || 'user',
+                full_name: profile?.full_name
+            }
+        }
+
+        return null
     }
 
     const signUp = async (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => {

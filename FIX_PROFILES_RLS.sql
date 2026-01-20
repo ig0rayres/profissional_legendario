@@ -1,18 +1,20 @@
--- VERIFICAR E CORRIGIR RLS DA TABELA PROFILES
--- Execute no Supabase SQL Editor
+-- =============================================
+-- VERIFICAR E CORRIGIR RLS PARA PROFILES PÚBLICOS
+-- =============================================
 
--- 1. Ver políticas existentes
-SELECT policyname, cmd FROM pg_policies WHERE tablename = 'profiles';
+-- Verificar políticas existentes
+SELECT policyname, cmd, qual 
+FROM pg_policies 
+WHERE tablename = 'profiles';
 
--- 2. Garantir que usuário pode ler seu próprio profile
-DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
-CREATE POLICY "Users can read own profile" ON profiles
-    FOR SELECT USING (auth.uid() = id);
+-- Adicionar política para SELECT público (perfis são públicos)
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
+CREATE POLICY "Public profiles are viewable by everyone"
+ON profiles FOR SELECT
+USING (true);
 
--- 3. Garantir que todos podem ler profiles básicos (para listagem)
-DROP POLICY IF EXISTS "Anyone can read basic profile info" ON profiles;
-CREATE POLICY "Anyone can read basic profile info" ON profiles
-    FOR SELECT USING (true);
-
--- 4. Verificar se RLS está habilitado
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+-- Verificar se há perfis com rota_number
+SELECT id, full_name, rota_number 
+FROM profiles 
+WHERE rota_number IS NOT NULL 
+LIMIT 10;

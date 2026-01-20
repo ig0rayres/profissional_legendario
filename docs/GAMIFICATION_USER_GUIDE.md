@@ -86,6 +86,16 @@ Acesse seu perfil ou a página **Rota do Valente** para ver:
 - **Contratar outro membro:** 75 XP + Medalha "Irmandade"
 - **Indicar 3 novos membros:** 150 XP + Medalha "Recrutador"
 
+#### 🔗 **Elos (Conexões)**
+- **Enviar convite de Elo:** 10 XP (incentiva networking ativo)
+- **Aceitar convite de Elo:** 5 XP
+- **Primeiro Elo aceito:** 5 XP + Medalha "Presente"
+
+> **Nota:** Os pontos de Elo são multiplicados pelo seu plano:
+> - **Recruta:** ×1 (10/5 pts)
+> - **Veterano:** ×1.5 (15/8 pts)
+> - **Elite:** ×3 (30/15 pts)
+
 #### ⚡ **Velocidade e Dedicação**
 - **Responder 5 demandas em <2h:** 50 XP + Medalha "Pronto para a Missão"
 - **Ativo por 30 dias consecutivos:** 200 XP + Medalha "Sentinela Inabalável"

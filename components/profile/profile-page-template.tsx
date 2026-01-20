@@ -11,6 +11,7 @@ import { NaRotaFeed } from '@/components/profile/user-mural'
 import { ElosDaRota } from '@/components/profile/elos-da-rota'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { MedalBadge } from '@/components/gamification/medal-badge'
+import { BattleHistory } from '@/components/gamification/battle-history'
 import { CoverUpload } from '@/components/profile/cover-upload'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -67,7 +68,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                 {/* Header Card */}
                 <Card className="mb-6 overflow-hidden relative shadow-xl shadow-black/10 border border-white/10 backdrop-blur-sm">
                     {/* FOTO DE CAPA - 25% maior */}
-                    <div className="relative h-44 bg-gradient-to-r from-primary/20 to-secondary/20">
+                    <div className="relative h-56 bg-gradient-to-r from-primary/20 to-secondary/20">
                         {profile.cover_url ? (() => {
                             const posMatch = profile.cover_url.match(/pos=(\d+)/)
                             const coverPosition = posMatch ? parseInt(posMatch[1]) : 50
@@ -355,6 +356,9 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
 
                         {/* Próximas Confrarias */}
                         <ConfraternityStats userId={profile.id} />
+
+                        {/* Histórico de Batalha */}
+                        <BattleHistory userId={profile.id} />
 
                         {/* Contact Info */}
                         <Card className="shadow-lg shadow-black/10 border border-white/10 backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">

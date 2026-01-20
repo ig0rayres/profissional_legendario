@@ -161,6 +161,45 @@ export function NotificationCenter() {
                 return
             }
 
+            // 🎮 GAMIFICAÇÃO: +5 XP por ACEITAR elo
+            if (accept && user && fromUserId) {
+                console.log('[Notifications] Gamificação: Aceitou elo, adicionando XP...')
+                try {
+                    const { awardPoints, awardBadge, checkEloPointsAlreadyAwarded } = await import('@/lib/api/gamification')
+
+                    // Verificar se já recebeu pontos por este elo (anti-farming)
+                    const alreadyAwarded = await checkEloPointsAlreadyAwarded(user.id, fromUserId, 'elo_accepted')
+
+                    if (!alreadyAwarded) {
+                        // Dar pontos ao usuário que aceitou
+                        const result = await awardPoints(
+                            user.id,
+                            5,
+                            'elo_accepted',
+                            `Aceitou elo com ${senderName}`,
+                            { target_user_id: fromUserId } // Para verificação de duplicação
+                        )
+                        console.log('[Notifications] awardPoints (aceite elo) resultado:', result)
+
+                        // Verificar se é o primeiro elo (medalha "presente")
+                        const { count } = await supabase
+                            .from('user_connections')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('addressee_id', user.id)
+                            .eq('status', 'accepted')
+
+                        if (count === 1) {
+                            await awardBadge(user.id, 'presente')
+                            console.log('[Notifications] Medalha "Presente" concedida!')
+                        }
+                    } else {
+                        console.log('[Notifications] Pontos de aceite já creditados para este par de usuários')
+                    }
+                } catch (gamifError) {
+                    console.error('[Notifications] Erro de gamificação:', gamifError)
+                }
+            }
+
             // Marcar notificação como lida e remover
             await markAsRead(notification.id)
             setNotifications(prev => prev.filter(n => n.id !== notification.id))
@@ -255,10 +294,15 @@ export function NotificationCenter() {
         <>
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative hover:bg-white/10 transition-colors group">
-                        <Bell className="w-6 h-6 text-slate-300 group-hover:text-primary transition-colors" />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="relative hover:bg-white/10 transition-colors group"
+                        data-notification-trigger
+                    >
+                        <Bell className="w-6 h-6 text-accent fill-accent/20 group-hover:text-accent transition-colors" />
                         {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white glow-orange animate-in zoom-in">
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-black text-white glow-orange animate-in zoom-in">
                                 {unreadCount}
                             </span>
                         )}
@@ -454,7 +498,13 @@ export function NotificationCenter() {
 
                     <DialogFooter className="flex sm:justify-center mt-4">
                         <Button
-                            onClick={() => setResponseModal(prev => ({ ...prev, open: false }))}
+                            onClick={() => {
+                                setResponseModal(prev => ({ ...prev, open: false }))
+                                // Recarregar página se aceitou para atualizar pontos e elos
+                                if (responseModal.accepted) {
+                                    window.location.reload()
+                                }
+                            }}
                             className={responseModal.accepted ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-slate-500 hover:bg-slate-600 text-white'}
                         >
                             <Check className="w-4 h-4 mr-2" />

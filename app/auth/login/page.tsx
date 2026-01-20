@@ -32,15 +32,20 @@ export default function LoginPage() {
 
         try {
             console.log('🔐 Tentando login com:', data.email)
-            await signIn(data.email, data.password)
-            console.log('✅ Login bem-sucedido! Aguardando sincronização...')
+            const userData = await signIn(data.email, data.password)
+            console.log('✅ Login bem-sucedido! userData:', userData)
 
             // Pequeno delay para garantir que o auth state seja sincronizado
             await new Promise(resolve => setTimeout(resolve, 500))
 
-            console.log('✅ Redirecionando para dashboard...')
+            // Verificar role do usuário para redirecionar corretamente
+            console.log('🔍 Verificando role:', userData?.role)
+            const isAdmin = userData?.role === 'admin'
+            const redirectUrl = isAdmin ? '/admin' : '/dashboard'
+
+            console.log(`✅ isAdmin=${isAdmin}, Redirecionando para ${redirectUrl}...`)
             // Force page reload to ensure auth state syncs
-            window.location.href = '/dashboard'
+            window.location.href = redirectUrl
         } catch (err: any) {
             console.error('❌ Erro no login:', err)
             setError(err.message || 'Ocorreu um erro ao fazer login. Tente novamente.')

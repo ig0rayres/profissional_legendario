@@ -5,6 +5,11 @@ import { createClient } from '@/lib/supabase/client'
  * Handles XP, badges, and rank progression
  */
 
+// Flag para habilitar verificação anti-duplicação de pontos de elo
+// Em homologação: false (permite testar várias vezes)
+// Em produção: true (cada elo é único por par de usuários)
+const ENABLE_ELO_DEDUP = process.env.NEXT_PUBLIC_ENABLE_ELO_DEDUP === 'true'
+
 export interface GamificationStats {
     user_id: string
     total_xp: number
@@ -30,6 +35,56 @@ export interface XPLogEntry {
     description: string | null
     metadata: Record<string, any> | null
     created_at: string
+}
+
+/**
+ * Verifica se os pontos de elo já foram creditados para este par de usuários.
+ * Isso previne que usuários acumulem pontos desconectando/reconectando.
+ * 
+ * @param userId - ID do usuário que receberá os pontos
+ * @param targetUserId - ID do outro usuário do elo
+ * @param actionType - 'elo_sent' ou 'elo_accepted'
+ * @returns true se já foi creditado (deve bloquear), false se pode creditar
+ */
+export async function checkEloPointsAlreadyAwarded(
+    userId: string,
+    targetUserId: string,
+    actionType: 'elo_sent' | 'elo_accepted'
+): Promise<boolean> {
+    // Se verificação desabilitada (homologação), sempre permitir
+    if (!ENABLE_ELO_DEDUP) {
+        console.log('[Gamification] Verificação anti-duplicação DESABILITADA (homologação)')
+        return false
+    }
+
+    try {
+        const supabase = createClient()
+
+        // Buscar no histórico se já existe pontos para este par de usuários
+        const { data, error } = await supabase
+            .from('points_history')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('action_type', actionType)
+            .contains('metadata', { target_user_id: targetUserId })
+            .limit(1)
+
+        if (error) {
+            console.error('[Gamification] Erro ao verificar duplicação:', error)
+            return false // Em caso de erro, permitir (fail-open)
+        }
+
+        const alreadyAwarded = data && data.length > 0
+
+        if (alreadyAwarded) {
+            console.log(`[Gamification] ⚠️ Pontos de ${actionType} já creditados para par ${userId} <-> ${targetUserId}`)
+        }
+
+        return alreadyAwarded
+    } catch (error) {
+        console.error('[Gamification] Exceção ao verificar duplicação:', error)
+        return false
+    }
 }
 
 /**
@@ -63,12 +118,32 @@ export async function awardPoints(
 
         console.log('[Gamification] Plan:', planId, 'Multiplier:', multiplier, 'Final:', finalAmount)
 
-        // 2. Obter pontos atuais
-        const { data: currentStats, error: fetchError } = await supabase
+        // 2. Obter pontos atuais (ou criar registro se não existir)
+        let { data: currentStats, error: fetchError } = await supabase
             .from('user_gamification')
             .select('total_points')
             .eq('user_id', userId)
-            .single()
+            .maybeSingle()
+
+        // Se não existe registro, criar um novo
+        if (!currentStats) {
+            console.log('[Gamification] Creating new gamification record for user:', userId)
+            const { error: insertError } = await supabase
+                .from('user_gamification')
+                .insert({
+                    user_id: userId,
+                    total_points: 0,
+                    current_rank_id: 'novato',
+                    monthly_vigor: 0,
+                    last_activity_at: new Date().toISOString()
+                })
+
+            if (insertError) {
+                console.error('[Gamification] Error creating gamification record:', insertError)
+                return { success: false, xpAwarded: 0, error: insertError.message }
+            }
+            currentStats = { total_points: 0 }
+        }
 
         if (fetchError) {
             console.error('[Gamification] Error fetching current stats:', fetchError)
@@ -78,7 +153,7 @@ export async function awardPoints(
         const currentPoints = currentStats?.total_points || 0
         const newPoints = currentPoints + finalAmount
 
-        // 2. Atualizar pontos
+        // 3. Atualizar pontos
         const { error: updateError } = await supabase
             .from('user_gamification')
             .update({
@@ -95,7 +170,30 @@ export async function awardPoints(
 
         console.log('[Gamification] Points updated:', currentPoints, '->', newPoints)
 
-        // 3. Verificar e atualizar rank se necessário
+        // 4. Registrar no histórico de pontos
+        try {
+            await supabase
+                .from('points_history')
+                .insert({
+                    user_id: userId,
+                    points: finalAmount,
+                    action_type: actionType,
+                    description: description || null,
+                    metadata: {
+                        base_amount: baseAmount,
+                        multiplier: multiplier,
+                        plan_id: planId,
+                        previous_total: currentPoints,
+                        new_total: newPoints,
+                        ...metadata
+                    }
+                })
+            console.log('[Gamification] Points history recorded')
+        } catch (historyError) {
+            console.error('[Gamification] Error recording history (non-critical):', historyError)
+        }
+
+        // 5. Verificar e atualizar rank se necessário
         try {
             const { data: ranks } = await supabase
                 .from('ranks')

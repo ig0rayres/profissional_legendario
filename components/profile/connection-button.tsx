@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { Link2, Loader2, Check, X, UserPlus, Clock, CheckCircle2, XCircle, Unlink } from 'lucide-react'
+import { Link2, Loader2, Check, X, UserPlus, Clock, CheckCircle2, XCircle, Unlink, Trophy } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
+import { awardPoints, awardBadge, checkEloPointsAlreadyAwarded } from '@/lib/api/gamification'
 
 interface ConnectionButtonProps {
     targetUserId: string
@@ -49,25 +50,31 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
 
         console.log('[ConnectionButton] Checking connection between', user.id, 'and', targetUserId)
 
-        const { data, error } = await supabase
+        // Buscar todas as conexões entre os dois usuários (exceto rejeitadas sobre novas)
+        const { data: connections, error } = await supabase
             .from('user_connections')
             .select('status, requester_id, addressee_id')
             .or(`and(requester_id.eq.${user.id},addressee_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},addressee_id.eq.${user.id})`)
-            .single()
+            .neq('status', 'rejected') // Ignorar rejeitadas
+            .order('created_at', { ascending: false })
 
-        console.log('[ConnectionButton] Connection result:', { data, error })
+        console.log('[ConnectionButton] Connection result:', { connections, error })
 
-        if (data) {
-            if (data.status === 'accepted') {
+        if (connections && connections.length > 0) {
+            // Priorizar conexão aceita
+            const accepted = connections.find(c => c.status === 'accepted')
+            const pending = connections.find(c => c.status === 'pending')
+
+            if (accepted) {
                 console.log('[ConnectionButton] Status: ACCEPTED (ambos são amigos)')
                 setStatus('accepted')
-            } else if (data.status === 'pending') {
-                const isSender = data.requester_id === user.id
+            } else if (pending) {
+                const isSender = pending.requester_id === user.id
                 console.log('[ConnectionButton] Status: PENDING, isSender:', isSender)
                 setStatus(isSender ? 'sent' : 'pending')
             }
         } else {
-            console.log('[ConnectionButton] No connection found')
+            console.log('[ConnectionButton] No active connection found')
         }
     }
 
@@ -140,6 +147,29 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
             } else {
                 setStatus('sent')
                 setConnectionsUsed(prev => prev + 1)
+
+                // 🎮 GAMIFICAÇÃO: +10 XP por ENVIAR convite de elo
+                console.log('[ConnectionButton] Gamificação: Enviou convite de elo, adicionando XP...')
+                try {
+                    // Verificar se já recebeu pontos por este elo (anti-farming)
+                    const alreadyAwarded = await checkEloPointsAlreadyAwarded(user.id, targetUserId, 'elo_sent')
+
+                    if (!alreadyAwarded) {
+                        const result = await awardPoints(
+                            user.id,
+                            10,
+                            'elo_sent',
+                            `Enviou convite de elo para ${targetUserName}`,
+                            { target_user_id: targetUserId } // Para verificação de duplicação
+                        )
+                        console.log('[ConnectionButton] awardPoints (envio) resultado:', result)
+                    } else {
+                        console.log('[ConnectionButton] Pontos de envio já creditados para este par de usuários')
+                    }
+                } catch (gamifError) {
+                    console.error('[ConnectionButton] Erro de gamificação (envio):', gamifError)
+                }
+
                 setShowSuccessModal(true)
             }
         } catch (err: any) {
@@ -166,6 +196,46 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
 
         if (!updateError) {
             setStatus(accept ? 'accepted' : 'none')
+
+            // 🎮 GAMIFICAÇÃO: +5 XP por aceitar elo
+            if (accept) {
+                console.log('[ConnectionButton] Gamificação: Aceite de elo, adicionando XP...')
+                try {
+                    // Verificar se já recebeu pontos por este elo (anti-farming)
+                    const alreadyAwarded = await checkEloPointsAlreadyAwarded(user.id, targetUserId, 'elo_accepted')
+
+                    if (!alreadyAwarded) {
+                        // Adicionar pontos ao usuário que aceitou
+                        const result = await awardPoints(
+                            user.id,
+                            5,
+                            'elo_accepted',
+                            `Aceitou elo com ${targetUserName}`,
+                            { target_user_id: targetUserId } // Para verificação de duplicação
+                        )
+                        console.log('[ConnectionButton] awardPoints resultado:', result)
+
+                        // Verificar se é o primeiro elo (medalha "presente")
+                        const { count } = await supabase
+                            .from('user_connections')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('addressee_id', user.id)
+                            .eq('status', 'accepted')
+
+                        if (count === 1) {
+                            await awardBadge(user.id, 'presente')
+                            console.log('[ConnectionButton] Medalha "Presente" concedida!')
+                        }
+                    } else {
+                        console.log('[ConnectionButton] Pontos de aceite já creditados para este par de usuários')
+                    }
+                } catch (gamifError) {
+                    console.error('[ConnectionButton] Erro de gamificação:', gamifError)
+                }
+
+                // Mostrar modal de sucesso
+                setShowSuccessModal(true)
+            }
         }
 
         setLoading(false)

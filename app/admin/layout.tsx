@@ -23,11 +23,28 @@ export default function AdminLayout({
             return
         }
 
-        // Simple protection for demo: check if user is logged in AND is admin
+        // Se não tem usuário, redireciona para login
         if (!user) {
             router.push('/auth/login')
-        } else if (user.role !== 'admin') {
-            // If logged in but not admin, redirect to dashboard
+            return
+        }
+
+        // Aguardar o role ser carregado (pode demorar um pouco após o login)
+        // Se o role ainda não foi definido, não redireciona ainda
+        if (user.role === undefined) {
+            // Tentar novamente em 500ms
+            const timeout = setTimeout(() => {
+                if (user.role !== 'admin') {
+                    router.push('/dashboard')
+                } else {
+                    setIsLoading(false)
+                }
+            }, 1000)
+            return () => clearTimeout(timeout)
+        }
+
+        // Verificar se é admin
+        if (user.role !== 'admin') {
             router.push('/dashboard')
         } else {
             setIsLoading(false)

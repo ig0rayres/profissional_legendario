@@ -251,15 +251,34 @@ export async function acceptConfraternityInvite(
         }
 
         // 2. Gamificação: +10 XP por aceitar
+        console.log('[Confraternity] Convite aceito! Iniciando gamificação para userId:', userId)
         try {
-            await awardPoints(
+            console.log('[Confraternity] Chamando awardPoints...')
+            const pointsResult = await awardPoints(
                 userId,
                 10,
                 'confraternity_invite_accepted',
                 'Aceitou convite de confraternização'
             )
+            console.log('[Confraternity] awardPoints resultado:', pointsResult)
+
+            // 3. Verificar medalha "Presente" - primeiro convite aceito
+            const { data: acceptedInvites } = await supabase
+                .from('confraternity_invites')
+                .select('id', { count: 'exact' })
+                .eq('receiver_id', userId)
+                .eq('status', 'accepted')
+
+            console.log('[Confraternity] Total convites aceitos:', acceptedInvites?.length)
+
+            if (acceptedInvites && acceptedInvites.length === 1) {
+                // É o primeiro convite aceito! Conceder medalha
+                console.log('[Confraternity] Concedendo medalha Presente...')
+                await awardBadge(userId, 'presente')
+                console.log('✅ Medalha "Presente" concedida ao usuário:', userId)
+            }
         } catch (gamifError) {
-            console.error('Gamification error:', gamifError)
+            console.error('[Confraternity] Gamification error:', gamifError)
         }
 
         return { success: true }
