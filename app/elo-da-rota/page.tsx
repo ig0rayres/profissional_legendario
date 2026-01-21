@@ -45,7 +45,7 @@ export default function EloRotaPage() {
     const [recentAchievements, setRecentAchievements] = useState<Achievement[]>([])
     const [loading, setLoading] = useState(true)
 
-    const supabase = await createClient()
+    const supabase = createClient()
 
     useEffect(() => {
         loadData()

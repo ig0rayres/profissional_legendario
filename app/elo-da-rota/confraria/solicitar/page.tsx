@@ -40,7 +40,7 @@ export default function SolicitarConfrariaPage() {
     const [showForm, setShowForm] = useState(false)
     const [selectedElo, setSelectedElo] = useState<EloProfile | null>(null)
 
-    const supabase = await createClient()
+    const supabase = createClient()
 
     useEffect(() => {
         if (!authLoading && !user) {
