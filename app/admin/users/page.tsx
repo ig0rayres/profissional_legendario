@@ -228,7 +228,6 @@ export default function UsersPage() {
             email: user.email,
             cpf: user.cpf,
             role: user.role,
-            rota_number: user.rota_number,
             verification_status: user.verification_status,
         })
     }
