@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
+
 /**
  * API Route para extrair ID da gorra usando OpenAI Vision
  * POST /api/ocr/gorra

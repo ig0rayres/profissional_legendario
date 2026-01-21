@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
+
 /**
  * API Route para validar foto de confraternização usando OpenAI Vision
  * POST /api/validate-confraternity
