@@ -107,7 +107,7 @@ export default function UsersPage() {
             const matchesSearch = !searchTerm ||
                 user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (user as any).rota_number?.toLowerCase().includes(searchTerm.toLowerCase())
+                user.cpf?.toLowerCase().includes(searchTerm.toLowerCase())
 
             const matchesRole = roleFilter === 'all' || user.role === roleFilter
             const matchesStatus = statusFilter === 'all' || user.verification_status === statusFilter
@@ -494,7 +494,7 @@ export default function UsersPage() {
                                         <TableCell className="font-medium">{user.full_name}</TableCell>
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell>{user.cpf}</TableCell>
-                                        <TableCell className="font-mono text-xs">{user.rota_number || '-'}</TableCell>
+                                        <TableCell className="font-mono text-xs">{user.top_id || '-'}</TableCell>
                                         <TableCell>
                                             {rankId ? (
                                                 <RankInsignia rankId={rankId} variant="badge" showLabel={true} />
@@ -699,11 +699,11 @@ export default function UsersPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit-rota">ID Rota Business</Label>
+                            <Label htmlFor="edit-top">ID Rota Business</Label>
                             <Input
-                                id="edit-rota"
-                                value={editForm.rota_number || ''}
-                                onChange={(e) => setEditForm({ ...editForm, rota_number: e.target.value })}
+                                id="edit-top"
+                                value={editForm.top_id || ''}
+                                onChange={(e) => setEditForm({ ...editForm, top_id: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
