@@ -52,5 +52,8 @@ coverage/
 # Misc
 *.log
 *.tmp
+
+# Supabase functions (Deno, não Next.js)
+supabase/functions/
 node_modules/
 .next/
