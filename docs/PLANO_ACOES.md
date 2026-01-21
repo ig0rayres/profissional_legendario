@@ -1,6 +1,6 @@
 # 📋 Plano de Ações - Rota Business Club
 
-*Atualizado em: 19/01/2026*
+*Atualizado em: 20/01/2026*
 
 ---
 
@@ -12,6 +12,14 @@
 - [x] Perfil de usuário com slug personalizado
 - [x] Upload de avatar com crop
 - [x] Upload de capa com crop interativo
+- [x] **Verificação de Membro por Foto da Gorra** ✨ *20/01*
+  - [x] OpenAI Vision para extração de ID
+  - [x] Componente GorraOCR com upload/câmera/webcam
+  - [x] Webcam no desktop (modal com preview ao vivo)
+  - [x] Câmera nativa no mobile
+  - [x] Persistência de dados do formulário
+  - [x] Pistas dinâmicas do banco de dados
+  - [x] ID Rota único (constraint + verificação)
 
 ### Gamificação
 - [x] Sistema de XP e níveis
@@ -87,13 +95,25 @@
 - [ ] OPCIONAL: Adicionar domínio customizado
 
 ### 🎮 Triggers de Medalhas
-- [ ] Alistamento Concluído (50 pts)
-- [ ] Batismo de Excelência (150 pts)
-- [ ] Anfitrião (150 pts)
-- [ ] Presente (50 pts)
-- [ ] Cronista (100 pts)
-- [ ] Líder de Confraria (200 pts)
-- [ ] Outras medalhas
+- [x] Alistamento Concluído (100 pts) ✅ *20/01*
+- [x] Batismo de Excelência (200 pts) ✅ *20/01*
+- [x] Anfitrião (150 pts) ✅ *20/01*
+- [x] Presente (50 pts) ✅ *já existia*
+- [x] Cronista (50 pts) ✅ *20/01*
+- [x] Primeira Confraria (100 pts) ✅ *21/01*
+- [x] Networker Ativo (200 pts) - **2 confrarias/mês** ✅ *21/01*
+- [x] Líder de Confraria (500 pts) - **5 confrarias/mês** ✅ *21/01*
+- [x] Mestre das Conexões (1000 pts) - **10 confrarias/mês** ✅ *21/01*
+- [x] Cinegrafista de Campo (100 pts) ✅ *já existia*
+- [ ] Primeiro Sangue (50 pts) - Primeira venda
+- [ ] Missão Cumprida (100 pts) - Primeiro serviço
+- [ ] Irmandade (75 pts) - Contratar membro
+- [ ] Pronto para Missão (50 pts) - Responder rápido
+- [ ] Inabalável (150 pts) - Média 5★ após 5 trabalhos
+- [ ] Recrutador (150 pts) - Indicar 3 membros
+- [ ] Sentinela Inabalável (200 pts) - Ativo 30 dias
+- [ ] Veterano de Guerra (300 pts) - 20 serviços
+- [ ] Sentinela de Elite (500 pts) - Elite 3 meses
 
 ### 🛒 Marketplace
 - [ ] Listagem de produtos/serviços

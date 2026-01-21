@@ -265,8 +265,13 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                                     {/* Badge da Patente */}
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-primary rounded-md blur-md opacity-60" />
-                                        <Badge className="relative bg-primary hover:bg-primary/90 text-white text-xs font-black gap-1 px-3 py-1.5 shadow-xl shadow-primary/40 border-2 border-secondary/50 uppercase tracking-wide">
-                                            <Shield className="w-3.5 h-3.5" />
+                                        <Badge className="relative bg-primary hover:bg-primary/90 text-white text-xs font-black gap-1.5 px-3 py-1.5 shadow-xl shadow-primary/40 border-2 border-secondary/50 uppercase tracking-wide">
+                                            <RankInsignia
+                                                rankId={gamification?.current_rank_id || 'novato'}
+                                                size="xs"
+                                                variant="icon-only"
+                                                className="w-4 h-4 text-white"
+                                            />
                                             {gamification?.current_rank_id ?
                                                 gamification.current_rank_id.charAt(0).toUpperCase() + gamification.current_rank_id.slice(1).replace('_', ' ')
                                                 : 'Recruta'}
@@ -357,7 +362,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                         {/* Próximas Confrarias */}
                         <ConfraternityStats userId={profile.id} />
 
-                        {/* Histórico de Batalha */}
+                        {/* Histórico de Batalha (inclui atividades/pontos no dropdown) */}
                         <BattleHistory userId={profile.id} />
 
                         {/* Contact Info */}

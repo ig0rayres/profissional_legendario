@@ -1,24 +1,75 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { UserPlus, Loader2 } from 'lucide-react'
+import { UserPlus, Loader2, CheckCircle } from 'lucide-react'
 import { registerSchema, type RegisterFormData } from '@/lib/validations/auth'
 import { useAuth } from '@/lib/auth/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { LOCATIONS } from '@/lib/data/locations'
+import { createClient } from '@/lib/supabase/client'
+import { GorraOCR } from '@/components/auth/gorra-ocr'
+
+// Tipo para pistas do banco de dados
+interface Pista {
+    id: string
+    name: string
+    city: string
+    state: string
+}
 
 export default function RegisterPage() {
     const router = useRouter()
     const { signUp } = useAuth()
+    const supabase = createClient()
+
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [gorraPhoto, setGorraPhoto] = useState<File | null>(null)
+    const [idVerified, setIdVerified] = useState(false)
+    const [pistas, setPistas] = useState<Pista[]>([])
+    const [loadingPistas, setLoadingPistas] = useState(true)
+
+    // Carregar pistas do banco de dados
+    useEffect(() => {
+        async function loadPistas() {
+            setLoadingPistas(true)
+            const { data, error } = await supabase
+                .from('pistas')
+                .select('id, name, city, state')
+                .eq('active', true)
+                .order('state')
+                .order('city')
+
+            if (data) {
+                setPistas(data)
+            }
+            setLoadingPistas(false)
+        }
+        loadPistas()
+    }, [])
+
+    // Restaurar dados do formulário do sessionStorage
+    const getSavedFormData = () => {
+        if (typeof window !== 'undefined') {
+            const saved = sessionStorage.getItem('registerFormData')
+            if (saved) {
+                try {
+                    return JSON.parse(saved)
+                } catch {
+                    return {}
+                }
+            }
+        }
+        return {}
+    }
+
+    const savedData = getSavedFormData()
 
     const {
         register,
@@ -29,9 +80,43 @@ export default function RegisterPage() {
     } = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
-            isProfessional: false
+            isProfessional: false,
+            fullName: savedData.fullName || '',
+            email: savedData.email || '',
+            cpf: savedData.cpf || '',
+            pista: savedData.pista || '',
+            rotaNumber: savedData.rotaNumber || '',
         }
     })
+
+    // Observar mudanças e salvar no sessionStorage
+    const formValues = watch()
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const dataToSave = {
+                fullName: formValues.fullName,
+                email: formValues.email,
+                cpf: formValues.cpf,
+                pista: formValues.pista,
+                rotaNumber: formValues.rotaNumber,
+            }
+            sessionStorage.setItem('registerFormData', JSON.stringify(dataToSave))
+        }
+    }, [formValues.fullName, formValues.email, formValues.cpf, formValues.pista, formValues.rotaNumber])
+
+    // Restaurar pista selecionada
+    useEffect(() => {
+        if (savedData.pista && pistas.length > 0) {
+            setValue('pista', savedData.pista)
+        }
+    }, [pistas, savedData.pista, setValue])
+
+    // Restaurar ID verificado
+    useEffect(() => {
+        if (savedData.rotaNumber) {
+            setIdVerified(true)
+        }
+    }, [])
 
     const onSubmit = async (data: RegisterFormData) => {
         setIsLoading(true)
@@ -54,6 +139,12 @@ export default function RegisterPage() {
 
             // Pass rotaNumber (now required)
             await signUp(data.email, data.password, data.fullName, data.cpf, data.pista, 'recruta', data.rotaNumber)
+
+            // Limpar dados salvos após cadastro bem-sucedido
+            if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('registerFormData')
+            }
+
             router.push('/dashboard')
             router.refresh()
         } catch (err: any) {
@@ -143,16 +234,38 @@ export default function RegisterPage() {
                         <label htmlFor="pista" className="text-sm font-medium">
                             Unidade (Pista)
                         </label>
-                        <Select onValueChange={(value) => setValue('pista', value)}>
+                        <Select onValueChange={(value) => setValue('pista', value)} disabled={loadingPistas}>
                             <SelectTrigger className={errors.pista ? "border-destructive" : ""}>
-                                <SelectValue placeholder="Selecione sua unidade" />
+                                <SelectValue placeholder={loadingPistas ? "Carregando..." : "Selecione sua unidade"} />
                             </SelectTrigger>
-                            <SelectContent className="bg-background">
-                                {LOCATIONS.map((location) => (
-                                    <SelectItem key={location.id} value={location.value}>
-                                        {location.label}
-                                    </SelectItem>
-                                ))}
+                            <SelectContent className="bg-background max-h-60">
+                                {pistas.length === 0 ? (
+                                    <div className="p-2 text-center text-sm text-muted-foreground">
+                                        Nenhuma pista disponível
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Agrupar por estado */}
+                                        {Object.entries(
+                                            pistas.reduce((acc, pista) => {
+                                                if (!acc[pista.state]) acc[pista.state] = []
+                                                acc[pista.state].push(pista)
+                                                return acc
+                                            }, {} as Record<string, Pista[]>)
+                                        ).sort().map(([state, statePistas]) => (
+                                            <div key={state}>
+                                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                                                    {state}
+                                                </div>
+                                                {statePistas.map((pista) => (
+                                                    <SelectItem key={pista.id} value={pista.id}>
+                                                        {pista.city} - {pista.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
                             </SelectContent>
                         </Select>
                         {errors.pista && (
@@ -160,21 +273,42 @@ export default function RegisterPage() {
                         )}
                     </div>
 
+                    {/* Verificação por Foto da Gorra */}
                     <div className="space-y-2">
-                        <label htmlFor="rotaNumber" className="text-sm font-medium">
-                            ID Rota Business *
+                        <label className="text-sm font-medium">
+                            Verificação de Membro *
                         </label>
-                        <Input
-                            id="rotaNumber"
-                            type="text"
-                            placeholder="Ex: ROT-12345"
-                            {...register('rotaNumber')}
-                            error={errors.rotaNumber?.message}
+                        <GorraOCR
+                            onIdExtracted={(id) => {
+                                setValue('rotaNumber', id)
+                                setIdVerified(true)
+                            }}
+                            onPhotoCapture={(file) => setGorraPhoto(file)}
                             disabled={isLoading}
                         />
-                        <p className="text-xs text-muted-foreground">
-                            Obrigatório para todos os membros.
-                        </p>
+
+                        {/* Campo ID (preenchido automaticamente pelo OCR) */}
+                        <div className="mt-3">
+                            <label htmlFor="rotaNumber" className="text-sm font-medium flex items-center gap-2">
+                                ID Rota Business
+                                {idVerified && <CheckCircle className="w-4 h-4 text-green-500" />}
+                            </label>
+                            <Input
+                                id="rotaNumber"
+                                type="text"
+                                placeholder="Será preenchido automaticamente"
+                                {...register('rotaNumber')}
+                                error={errors.rotaNumber?.message}
+                                disabled={isLoading}
+                                className={idVerified ? 'border-green-500 bg-green-500/10' : ''}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {idVerified
+                                    ? '✅ ID verificado pela foto da gorra'
+                                    : 'Tire uma foto da aba da sua gorra para verificar seu ID'
+                                }
+                            </p>
+                        </div>
                     </div>
 
                     <div className="space-y-2">

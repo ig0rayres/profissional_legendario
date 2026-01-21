@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Briefcase, Menu, X, LogOut, Store, Shield, Settings, Users, User } from 'lucide-react'
+import { Briefcase, Menu, X, LogOut, Store, Shield, Settings, Users, User, Flame } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 import { RotabusinessLogo } from '@/components/branding/logo'
 import Image from 'next/image'
@@ -63,6 +63,10 @@ export function Header() {
                                 Elo da Rota
                             </Link>
                         )}
+                        <Link href="/na-rota" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2">
+                            <Flame className="w-4 h-4 text-orange-500" />
+                            Na Rota
+                        </Link>
                         <Link href="/projects/create" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2">
                             <Briefcase className="w-4 h-4" />
                             Lançar Projeto
@@ -195,6 +199,10 @@ export function Header() {
                                     Elo da Rota
                                 </Link>
                             )}
+                            <Link href="/na-rota" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+                                <Flame className="w-4 h-4 text-orange-500" />
+                                Na Rota
+                            </Link>
                             <Link href="/projects/create" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                                 <Briefcase className="w-4 h-4" />
                                 Lançar Projeto

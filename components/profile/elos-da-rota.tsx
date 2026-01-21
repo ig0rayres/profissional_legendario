@@ -95,14 +95,14 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
         // Buscar patentes dos amigos
         const { data: gamificationData } = await supabase
             .from('user_gamification')
-            .select('user_id, rank_id, ranks(name)')
+            .select('user_id, current_rank_id, ranks:current_rank_id(name)')
             .in('user_id', friendIds)
 
         // Criar mapa de patentes (rank_id para usar com RankInsignia)
         const rankMap = new Map<string, { rank_id: string, name: string }>()
         gamificationData?.forEach((g: any) => {
             rankMap.set(g.user_id, {
-                rank_id: g.rank_id || 'novato',
+                rank_id: g.current_rank_id || 'novato',
                 name: g.ranks?.name || 'Novato'
             })
         })

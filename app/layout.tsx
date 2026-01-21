@@ -16,6 +16,7 @@ import { BrandingProvider } from "@/lib/branding/context";
 import { AuthProvider } from "@/lib/auth/context";
 import { Header } from "@/components/layout/header";
 import { ChatWidget } from "@/components/chat/chat-widget";
+import { BadgeUnlockModal } from "@/components/gamification/badge-unlock-modal";
 
 export default function RootLayout({
     children,
@@ -30,6 +31,7 @@ export default function RootLayout({
                         <Header />
                         {children}
                         <ChatWidget />
+                        <BadgeUnlockModal />
                     </BrandingProvider>
                 </AuthProvider>
             </body>

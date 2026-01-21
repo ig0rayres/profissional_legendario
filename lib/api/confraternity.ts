@@ -330,7 +330,7 @@ export async function completeConfraternity(
         testimonial: string
         visibility: 'private' | 'connections' | 'public'
     }
-): Promise<{ success: boolean; confraternity?: Confraternity; error?: string }> {
+): Promise<{ success: boolean; confraternity?: Confraternity; confraternityId?: string; error?: string }> {
     try {
         const supabase = createClient()
 
@@ -437,6 +437,20 @@ export async function completeConfraternity(
                     'confraternity_photos',
                     `Adicionou ${data.photos.length} fotos`
                 )
+
+                // 🎖️ MEDALHA: Cronista - Primeiro upload de foto em confraria
+                const { data: previousPhotos } = await supabase
+                    .from('confraternities')
+                    .select('photos')
+                    .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
+                    .not('photos', 'eq', '{}')
+
+                // Se este é o primeiro registro com fotos, conceder medalha
+                const totalWithPhotos = previousPhotos?.filter(c => c.photos && c.photos.length > 0).length || 0
+                if (totalWithPhotos <= 1) {
+                    console.log('[Confraternity] 🎖️ Concedendo medalha Cronista...')
+                    await awardBadge(userId, 'cronista')
+                }
             }
 
             // +15 XP por depoimento
@@ -449,22 +463,61 @@ export async function completeConfraternity(
                 )
             }
 
-            // Verificar badges
-            const { data: userConfs } = await supabase
+            // Verificar badges baseadas em quantidade de confrarias
+            // 🎖️ PRIMEIRA CONFRARIA: total geral (não mensal)
+            const { data: allUserConfs } = await supabase
                 .from('confraternities')
                 .select('id')
                 .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
 
-            const totalConfs = userConfs?.length || 0
+            const totalConfs = allUserConfs?.length || 0
 
             if (totalConfs === 1) {
-                // Primeira confraternização
+                // Primeira confraternização (geral, não mensal)
                 await awardBadge(userId, 'primeira_confraria')
-            } else if (totalConfs === 5) {
-                // 5 confraternizações
+            }
+
+            // 🎖️ MEDALHA: Anfitrião - Quem enviou o convite (sender/member1) e realizou a confraria
+            if (userId === invite.sender_id) {
+                // É o anfitrião (quem enviou o convite)
+                const { data: hostedConfs } = await supabase
+                    .from('confraternities')
+                    .select('id')
+                    .eq('member1_id', userId)
+
+                if (hostedConfs && hostedConfs.length === 1) {
+                    console.log('[Confraternity] 🎖️ Concedendo medalha Anfitrião...')
+                    await awardBadge(userId, 'anfitriao')
+                }
+            }
+
+            // 🎖️ MEDALHAS MENSAIS - Rota do Valente
+            // Contar apenas confrarias realizadas NESTE MÊS
+            const startOfMonth = new Date()
+            startOfMonth.setDate(1)
+            startOfMonth.setHours(0, 0, 0, 0)
+
+            const { data: monthlyConfs } = await supabase
+                .from('confraternities')
+                .select('id')
+                .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
+                .gte('date_occurred', startOfMonth.toISOString())
+
+            const monthlyCount = monthlyConfs?.length || 0
+            console.log('[Confraternity] 📊 Confrarias este mês:', monthlyCount)
+
+            // networker_ativo: 2 confrarias no mês
+            if (monthlyCount >= 2) {
                 await awardBadge(userId, 'networker_ativo')
-            } else if (totalConfs === 20) {
-                // 20 confraternizações
+            }
+            // lider_confraria: 5 confrarias no mês
+            if (monthlyCount >= 5) {
+                console.log('[Confraternity] 🎖️ Concedendo medalha Líder de Confraria...')
+                await awardBadge(userId, 'lider_confraria')
+            }
+            // mestre_conexoes: 10 confrarias no mês
+            if (monthlyCount >= 10) {
+                console.log('[Confraternity] 🎖️ Concedendo medalha Mestre das Conexões...')
                 await awardBadge(userId, 'mestre_conexoes')
             }
         } catch (gamifError) {
@@ -480,7 +533,8 @@ export async function completeConfraternity(
 
         return {
             success: true,
-            confraternity: confraternity as Confraternity
+            confraternity: confraternity as Confraternity,
+            confraternityId: confraternityId
         }
     } catch (error: any) {
         console.error('Exception completing confraternity:', error)

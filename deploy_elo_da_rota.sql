@@ -323,9 +323,13 @@ $$;
 INSERT INTO public.badges (id, name, description, xp_reward, criteria_type, benefit_description, icon_key, is_active)
 VALUES
 ('primeira_confraria', 'Primeiro Encontro', 'Complete sua primeira confraternização', 100, 'first_confraternity', 'Destaque no perfil + Acesso a eventos exclusivos', 'Handshake', true),
-('networker_ativo', 'Networker Ativo', 'Realize 5 confraternizações', 150, 'confraternities_5', 'Badge exclusiva + Prioridade em buscas', 'Network', true),
-('mestre_conexoes', 'Mestre das Conexões', 'Complete 20 confraternizações', 500, 'confraternities_20', 'Hall da Fama + Selo "Expert em Networking"', 'Crown', true)
-ON CONFLICT (id) DO NOTHING;
+('networker_ativo', 'Networker Ativo', 'Realize 2 confrarias no mês', 200, 'confraternities_monthly_2', 'Badge exclusiva + Prioridade em buscas', 'Network', true),
+('lider_confraria', 'Líder de Confraria', 'Realize 5 confrarias no mês', 500, 'confraternities_monthly_5', 'Badge de Líder + Destaque no ranking', 'Trophy', true),
+('mestre_conexoes', 'Mestre das Conexões', 'Realize 10 confrarias no mês', 1000, 'confraternities_monthly_10', 'Hall da Fama + Selo "Expert em Networking"', 'Crown', true)
+ON CONFLICT (id) DO UPDATE SET
+    description = EXCLUDED.description,
+    xp_reward = EXCLUDED.xp_reward,
+    criteria_type = EXCLUDED.criteria_type;
 
 -- ====================================
 -- TRIGGERS

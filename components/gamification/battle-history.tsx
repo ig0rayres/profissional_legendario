@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Swords, Calendar, Loader2, ChevronDown, ChevronUp, Flame, ChevronRight, Users, Trophy } from 'lucide-react'
+import { Swords, Calendar, Loader2, ChevronDown, ChevronUp, Flame, ChevronRight, Users, Trophy, Award, MessageCircle, Star, Camera, TrendingUp, Clock, Medal } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { MedalBadge } from '@/components/gamification/medal-badge'
@@ -23,6 +23,15 @@ interface SeasonHistory {
     is_active: boolean
     badges?: { badge_id: string; badge_name: string; badge_description?: string; earned_at: string }[]
     confraternities_count?: number
+    activities?: PointsActivity[]
+}
+
+interface PointsActivity {
+    id: string
+    points: number
+    action_type: string
+    description: string | null
+    created_at: string
 }
 
 interface BattleHistoryProps {
@@ -54,6 +63,26 @@ function getRankName(rankId: string): string {
         'lenda': 'Lenda'
     }
     return names[rankId] || rankId
+}
+
+// Mapear tipo de ação para ícone correspondente
+function getActivityIcon(actionType: string) {
+    const icons: Record<string, any> = {
+        medal_reward: Award,
+        badge_reward: Award,
+        elo_accepted: Users,
+        elo_sent: Users,
+        connection_accepted: Users,
+        connection_request: Users,
+        confraternity_participation: Users,
+        confraternity_host: Star,
+        confraternity_photo: Camera,
+        message_sent: MessageCircle,
+        rating_received: Star,
+        profile_complete: Award,
+        daily_login: Flame
+    }
+    return icons[actionType] || TrendingUp
 }
 
 export function BattleHistory({ userId }: BattleHistoryProps) {
@@ -126,10 +155,57 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
 
                         confraternities_count = count || 0
 
+                        // Carregar histórico de pontos do mês (FONTE ÚNICA DE VERDADE)
+                        let activities: PointsActivity[] = []
+
+                        // Buscar atividades do mês para exibir (NÃO recalcular total)
+                        const { data: allPointsData } = await supabase
+                            .from('points_history')
+                            .select('id, points, action_type, description, created_at')
+                            .eq('user_id', userId)
+                            .gte('created_at', startDate.toISOString())
+                            .lte('created_at', endDate.toISOString())
+                            .order('created_at', { ascending: false })
+
+                        if (allPointsData && allPointsData.length > 0) {
+                            // Limitar as atividades exibidas a 10
+                            const limitedActivities = allPointsData.slice(0, 10)
+
+                            // Enriquecer atividades de medalha com descrição da badge
+                            for (const activity of limitedActivities) {
+                                if (activity.action_type === 'badge_unlocked' && activity.description) {
+                                    // Extrair nome da badge da descrição (ex: "Conquistou medalha: Presente")
+                                    const badgeNameMatch = activity.description.match(/medalha:\s*(.+)/)
+                                    if (badgeNameMatch) {
+                                        const badgeName = badgeNameMatch[1]
+
+                                        // Buscar descrição da badge
+                                        const { data: badgeData } = await supabase
+                                            .from('badges')
+                                            .select('description')
+                                            .eq('name', badgeName)
+                                            .single()
+
+
+                                        // Formato: "Nome - Descrição" (sem "Conquistou medalha:")
+                                        if (badgeData?.description) {
+                                            activity.description = `${badgeName} - ${badgeData.description}`
+                                        } else {
+                                            activity.description = badgeName
+                                        }
+                                    }
+                                }
+                            }
+
+                            activities = limitedActivities
+                        }
+
                         return {
                             ...season,
+                            // Manter total_xp da RPC (fonte única de verdade)
                             badges,
-                            confraternities_count
+                            confraternities_count,
+                            activities
                         }
                     })
                 )
@@ -155,7 +231,8 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
         })
     }
 
-    // Filtrar temporadas passadas (não a atual)
+    // Separar temporada atual das passadas
+    const currentSeason = history.find(h => h.is_active)
     const pastSeasons = history.filter(h => !h.is_active)
     const visibleSeasons = expanded ? pastSeasons : pastSeasons.slice(0, 6)
 
@@ -177,25 +254,6 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
         )
     }
 
-    if (pastSeasons.length === 0) {
-        return (
-            <Card className="glass-card border-primary/10 shadow-lg">
-                <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                        <Swords className="w-4 h-4 text-accent" />
-                        Histórico de Batalha
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center py-4 text-muted-foreground">
-                        <Calendar className="w-6 h-6 mx-auto mb-2 opacity-30" />
-                        <p className="text-[10px] uppercase tracking-wide">Nenhuma temporada anterior</p>
-                    </div>
-                </CardContent>
-            </Card>
-        )
-    }
-
     return (
         <Card className="glass-card border-primary/10 shadow-lg shadow-black/10 hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-accent/5">
@@ -210,19 +268,120 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-                {/* Header da tabela */}
-                <div className="grid grid-cols-[65px_1fr_40px_55px_60px] gap-1 px-3 py-1.5 bg-muted/40 border-b border-border/50 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <div>Período</div>
-                    <div className="text-center">Patente</div>
-                    <div className="text-center">Rank</div>
-                    <div className="text-center">Confraria</div>
-                    <div className="text-right">Vigor</div>
-                </div>
+                {/* Temporada Atual - Formato Dropdown */}
+                {currentSeason && (
+                    <div className="border-b-2 border-accent/30">
+                        <button
+                            onClick={() => toggleSeasonExpand('current')}
+                            className={cn(
+                                "w-full px-3 py-3 text-left",
+                                "transition-all duration-300 ease-out",
+                                "bg-gradient-to-r from-accent/10 to-primary/10",
+                                "hover:from-accent/20 hover:to-primary/20",
+                                "cursor-pointer group"
+                            )}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ChevronRight className={cn(
+                                        "w-4 h-4 text-accent",
+                                        "transition-all duration-300 ease-out",
+                                        expandedSeasons.has('current') && "rotate-90"
+                                    )} />
+                                    <Flame className="w-4 h-4 text-accent animate-pulse" />
+                                    <span className="text-sm font-bold uppercase tracking-wider">
+                                        {MONTH_NAMES[currentSeason.season_month]}/{currentSeason.season_year}
+                                    </span>
+                                    <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">
+                                        ATUAL
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <RankInsignia
+                                        rankId={getRankFromXP(currentSeason.total_xp)}
+                                        size="xs"
+                                        variant="avatar"
+                                        className="w-6 h-6 !p-0.5"
+                                    />
+                                    {currentSeason.ranking_position && (
+                                        <div className="flex items-center gap-1 font-bold text-xs">
+                                            {currentSeason.ranking_position === 1 && <span className="text-base leading-none">🥇</span>}
+                                            {currentSeason.ranking_position === 2 && <span className="text-base leading-none">🥈</span>}
+                                            {currentSeason.ranking_position === 3 && <span className="text-base leading-none">🥉</span>}
+                                            <span className="text-muted-foreground">#{currentSeason.ranking_position}</span>
+                                        </div>
+                                    )}
+                                    <span className="text-sm font-bold text-accent">
+                                        🔥 {currentSeason.total_xp.toLocaleString('pt-BR')} pts
+                                    </span>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Dropdown de atividades */}
+                        <div className={cn(
+                            "overflow-hidden transition-all duration-400 ease-out",
+                            expandedSeasons.has('current') ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                        )}>
+                            <div className="px-4 pb-3 pt-2 bg-gradient-to-b from-accent/5 to-transparent">
+                                {currentSeason.activities && currentSeason.activities.length > 0 ? (
+                                    <>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                                            <TrendingUp className="w-3 h-3" />
+                                            Atividades do Mês ({currentSeason.activities.length})
+                                        </p>
+                                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                            {currentSeason.activities.map((activity) => {
+                                                const IconComponent = getActivityIcon(activity.action_type)
+                                                const activityDate = new Date(activity.created_at)
+                                                return (
+                                                    <div
+                                                        key={activity.id}
+                                                        className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1.5"
+                                                    >
+                                                        <IconComponent className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                                        <span className="flex-1 truncate text-muted-foreground">
+                                                            {activity.description || activity.action_type}
+                                                        </span>
+                                                        <span className="text-[10px] text-muted-foreground/60 flex-shrink-0">
+                                                            {activityDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                                        </span>
+                                                        <span className="text-accent font-bold flex-shrink-0 min-w-[45px] text-right">
+                                                            +{activity.points}
+                                                        </span>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground text-center py-3">
+                                        Nenhuma atividade registrada este mês
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Header da tabela de temporadas passadas */}
+                {pastSeasons.length > 0 && (
+                    <>
+                        <div className="grid grid-cols-[65px_1fr_40px_55px_60px] gap-1 px-3 py-1.5 bg-muted/40 border-b border-border/50 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <div>Período</div>
+                            <div className="text-center">Patente</div>
+                            <div className="text-center">Rank</div>
+                            <div className="text-center">Confraria</div>
+                            <div className="text-right">Vigor</div>
+                        </div>
+                    </>
+                )}
 
                 <div className="divide-y divide-border/30">
                     {visibleSeasons.map((season) => {
                         const isOpen = expandedSeasons.has(season.season_id)
                         const hasBadges = season.badges && season.badges.length > 0
+                        const hasActivities = season.activities && season.activities.length > 0
                         // Calcular rank correto baseado no XP
                         const correctRankId = getRankFromXP(season.total_xp)
                         const correctRankName = getRankName(correctRankId)
@@ -231,19 +390,19 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                             <div key={season.season_id}>
                                 {/* Linha principal - clicável */}
                                 <button
-                                    onClick={() => hasBadges && toggleSeasonExpand(season.season_id)}
+                                    onClick={() => (hasBadges || hasActivities) && toggleSeasonExpand(season.season_id)}
                                     className={cn(
                                         "w-full grid grid-cols-[65px_1fr_40px_55px_60px] gap-1 px-3 py-2.5 text-left items-center",
                                         "transition-all duration-300 ease-out",
                                         "hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5",
                                         "hover:shadow-[inset_0_0_20px_rgba(var(--primary),0.05)]",
-                                        hasBadges ? "cursor-pointer group" : "cursor-default",
+                                        (hasBadges || hasActivities) ? "cursor-pointer group" : "cursor-default",
                                         isOpen && "bg-muted/20"
                                     )}
                                 >
                                     {/* Período */}
                                     <div className="flex items-center gap-1">
-                                        {hasBadges && (
+                                        {(hasBadges || hasActivities) && (
                                             <ChevronRight className={cn(
                                                 "w-3 h-3 text-muted-foreground flex-shrink-0",
                                                 "transition-all duration-300 ease-out",
@@ -251,7 +410,7 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                                 isOpen && "rotate-90 text-primary"
                                             )} />
                                         )}
-                                        {!hasBadges && <div className="w-3 flex-shrink-0" />}
+                                        {!(hasBadges || hasActivities) && <div className="w-3 flex-shrink-0" />}
                                         <span className={cn(
                                             "text-xs font-bold text-foreground",
                                             "transition-colors duration-200",
@@ -290,24 +449,20 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <div className={cn(
-                                                            "flex items-center gap-0.5 font-bold text-xs",
+                                                            "flex items-center gap-1 font-bold text-xs",
                                                             "transition-all duration-300",
-                                                            // Destaque APENAS para Top 3
-                                                            season.ranking_position <= 3 && "group-hover:scale-110",
-                                                            season.ranking_position === 1 && "text-yellow-500 group-hover:drop-shadow-[0_0_6px_rgba(234,179,8,0.6)]",
-                                                            season.ranking_position === 2 && "text-slate-400 group-hover:drop-shadow-[0_0_6px_rgba(148,163,184,0.6)]",
-                                                            season.ranking_position === 3 && "text-amber-600 group-hover:drop-shadow-[0_0_6px_rgba(217,119,6,0.6)]",
-                                                            season.ranking_position > 3 && "text-muted-foreground/60"
+                                                            season.ranking_position <= 3 && "group-hover:scale-110"
                                                         )}>
-                                                            {season.ranking_position <= 3 && (
-                                                                <Trophy className={cn(
-                                                                    "w-3.5 h-3.5",
-                                                                    season.ranking_position === 1 && "text-yellow-500 animate-pulse",
-                                                                    season.ranking_position === 2 && "text-slate-400",
-                                                                    season.ranking_position === 3 && "text-amber-600"
-                                                                )} />
+                                                            {season.ranking_position === 1 && (
+                                                                <span className="text-base leading-none">🥇</span>
                                                             )}
-                                                            <span>#{season.ranking_position}</span>
+                                                            {season.ranking_position === 2 && (
+                                                                <span className="text-base leading-none">🥈</span>
+                                                            )}
+                                                            {season.ranking_position === 3 && (
+                                                                <span className="text-base leading-none">🥉</span>
+                                                            )}
+                                                            <span className="text-muted-foreground">#{season.ranking_position}</span>
                                                         </div>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
@@ -371,54 +526,87 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                     </div>
                                 </button>
 
-                                {/* Dropdown de medalhas - com animação de entrada */}
+                                {/* Dropdown de medalhas e atividades - com animação de entrada */}
                                 <div className={cn(
                                     "overflow-hidden transition-all duration-400 ease-out",
-                                    isOpen && hasBadges ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
+                                    isOpen && (hasBadges || hasActivities) ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
                                 )}>
-                                    <div className="px-4 pb-3 pt-2 bg-gradient-to-b from-muted/30 to-muted/10 border-t border-border/20">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
-                                            <span className="w-8 h-px bg-gradient-to-r from-transparent to-border" />
-                                            Medalhas conquistadas
-                                            <span className="w-8 h-px bg-gradient-to-l from-transparent to-border" />
-                                        </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            <TooltipProvider>
-                                                {season.badges!.map((badge, index) => (
-                                                    <Tooltip key={badge.badge_id}>
-                                                        <TooltipTrigger asChild>
+                                    <div className="px-4 pb-3 pt-2 bg-gradient-to-b from-muted/30 to-muted/10 border-t border-border/20 space-y-4">
+                                        {/* Medalhas */}
+                                        {hasBadges && (
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
+                                                    <Award className="w-3 h-3" />
+                                                    Medalhas conquistadas
+                                                </p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <TooltipProvider>
+                                                        {season.badges!.map((badge, index) => (
+                                                            <Tooltip key={badge.badge_id}>
+                                                                <TooltipTrigger asChild>
+                                                                    <div
+                                                                        className={cn(
+                                                                            "cursor-pointer transition-all duration-300",
+                                                                            "hover:scale-125 hover:-translate-y-1",
+                                                                            "hover:drop-shadow-[0_4px_12px_rgba(var(--accent),0.4)]"
+                                                                        )}
+                                                                        style={{
+                                                                            animationDelay: `${index * 50}ms`,
+                                                                            animation: isOpen ? 'slideInUp 0.3s ease-out forwards' : 'none'
+                                                                        }}
+                                                                    >
+                                                                        <MedalBadge
+                                                                            medalId={badge.badge_id}
+                                                                            size="sm"
+                                                                            variant="icon-only"
+                                                                            className="w-7 h-7 shadow-md"
+                                                                        />
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent
+                                                                    className="max-w-[220px] bg-background/95 backdrop-blur-sm border-primary/20"
+                                                                    sideOffset={8}
+                                                                >
+                                                                    <p className="font-bold text-sm text-primary">{badge.badge_name}</p>
+                                                                    {badge.badge_description && (
+                                                                        <p className="text-xs text-muted-foreground mt-1">{badge.badge_description}</p>
+                                                                    )}
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        ))}
+                                                    </TooltipProvider>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Atividades/Pontos */}
+                                        {hasActivities && (
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                                                    <TrendingUp className="w-3 h-3" />
+                                                    Atividades ({season.activities!.length})
+                                                </p>
+                                                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                                                    {season.activities!.map((activity) => {
+                                                        const IconComponent = getActivityIcon(activity.action_type)
+                                                        return (
                                                             <div
-                                                                className={cn(
-                                                                    "cursor-pointer transition-all duration-300",
-                                                                    "hover:scale-125 hover:-translate-y-1",
-                                                                    "hover:drop-shadow-[0_4px_12px_rgba(var(--accent),0.4)]"
-                                                                )}
-                                                                style={{
-                                                                    animationDelay: `${index * 50}ms`,
-                                                                    animation: isOpen ? 'slideInUp 0.3s ease-out forwards' : 'none'
-                                                                }}
+                                                                key={activity.id}
+                                                                className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1.5"
                                                             >
-                                                                <MedalBadge
-                                                                    medalId={badge.badge_id}
-                                                                    size="sm"
-                                                                    variant="icon-only"
-                                                                    className="w-7 h-7 shadow-md"
-                                                                />
+                                                                <IconComponent className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                                                <span className="flex-1 truncate text-muted-foreground">
+                                                                    {activity.description || activity.action_type}
+                                                                </span>
+                                                                <span className="text-accent font-bold flex-shrink-0">
+                                                                    +{activity.points}
+                                                                </span>
                                                             </div>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent
-                                                            className="max-w-[220px] bg-background/95 backdrop-blur-sm border-primary/20"
-                                                            sideOffset={8}
-                                                        >
-                                                            <p className="font-bold text-sm text-primary">{badge.badge_name}</p>
-                                                            {badge.badge_description && (
-                                                                <p className="text-xs text-muted-foreground mt-1">{badge.badge_description}</p>
-                                                            )}
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                ))}
-                                            </TooltipProvider>
-                                        </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

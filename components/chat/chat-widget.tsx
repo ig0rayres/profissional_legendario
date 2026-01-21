@@ -22,12 +22,16 @@ import {
     Paperclip,
     Image as ImageIcon,
     Link2,
-    XCircle
+    XCircle,
+    Bot
 } from 'lucide-react'
 import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+
+// ID do usuário sistema
+const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
 
 interface Conversation {
     id: string
@@ -339,12 +343,14 @@ export function ChatWidget() {
         loadConversations()
     }
 
-    // Listener de realtime para novas mensagens
+    // Listener de realtime para novas mensagens (funciona mesmo com chat fechado)
     useEffect(() => {
-        if (!user || !isOpen) return
+        if (!user) return
+
+        console.log('[Chat] 🔌 Conectando listener de mensagens para:', user.id)
 
         const channel = supabase
-            .channel('messages-realtime')
+            .channel('messages-realtime-' + user.id)
             .on(
                 'postgres_changes',
                 {
@@ -354,8 +360,23 @@ export function ChatWidget() {
                 },
                 (payload) => {
                     const newMsg = payload.new as Message
+                    console.log('[Chat] 📬 Nova mensagem recebida:', newMsg.sender_id, newMsg.content?.substring(0, 30))
 
-                    // Se estamos na conversa, adicionar mensagem
+                    // Se for mensagem de outro usuário (não sou eu quem enviou)
+                    if (newMsg.sender_id !== user.id) {
+                        console.log('[Chat] 🔔 Notificando nova mensagem!')
+                        setShowNotification(true)
+                        setNotificationMessage('Nova mensagem recebida!')
+                        setTimeout(() => setShowNotification(false), 3000)
+
+                        // Incrementar contador de não lidas
+                        setUnreadTotal(prev => prev + 1)
+
+                        // Atualizar lista de conversas
+                        loadConversations()
+                    }
+
+                    // Se estamos na conversa aberta, adicionar mensagem
                     if (selectedConversation && newMsg.conversation_id === selectedConversation.id) {
                         setMessages(prev => [...prev, newMsg])
                         scrollToBottom()
@@ -367,23 +388,18 @@ export function ChatWidget() {
                                 .update({ read_at: new Date().toISOString() })
                                 .eq('id', newMsg.id)
                         }
-                    } else if (newMsg.sender_id !== user.id) {
-                        // Nova mensagem de outra conversa - mostrar notificação
-                        setShowNotification(true)
-                        setNotificationMessage('Nova mensagem recebida!')
-                        setTimeout(() => setShowNotification(false), 3000)
-
-                        // Atualizar lista de conversas
-                        loadConversations()
                     }
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                console.log('[Chat] 📡 Status do canal de mensagens:', status)
+            })
 
         return () => {
+            console.log('[Chat] 🔌 Desconectando listener de mensagens')
             supabase.removeChannel(channel)
         }
-    }, [user, isOpen, selectedConversation, supabase, scrollToBottom, loadConversations])
+    }, [user])
 
     // Carregar conversas e elos quando abrir
     useEffect(() => {
@@ -584,12 +600,21 @@ export function ChatWidget() {
 
     return (
         <>
-            {/* Notificação de Nova Mensagem */}
+            {/* Notificação de Nova Mensagem/Medalha */}
             {showNotification && (
-                <div className="fixed bottom-24 right-6 z-50 bg-primary text-white px-4 py-3 rounded-lg shadow-lg animate-bounce">
+                <div className={cn(
+                    "fixed bottom-24 right-6 z-[60] px-4 py-3 rounded-lg shadow-2xl animate-bounce max-w-xs",
+                    notificationMessage.includes('🏅')
+                        ? "bg-gradient-to-r from-accent to-orange-600 text-white border-2 border-accent/50"
+                        : "bg-primary text-white"
+                )}>
                     <div className="flex items-center gap-2">
-                        <MessageCircle className="w-5 h-5" />
-                        <span className="text-sm font-medium">{notificationMessage}</span>
+                        {notificationMessage.includes('🏅') ? (
+                            <span className="text-xl">🏅</span>
+                        ) : (
+                            <MessageCircle className="w-5 h-5" />
+                        )}
+                        <span className="text-sm font-bold">{notificationMessage}</span>
                     </div>
                 </div>
             )}
@@ -883,84 +908,94 @@ export function ChatWidget() {
                                         </div>
                                     </ScrollArea>
 
-                                    {/* Input de mensagem */}
+                                    {/* Input de mensagem ou aviso de sistema */}
                                     <div className="p-3 border-t border-border relative">
-                                        {/* Emoji Picker */}
-                                        {showEmojiPicker && (
-                                            <div className="absolute bottom-16 left-3 bg-white border border-border rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1 z-10">
-                                                {commonEmojis.map(emoji => (
-                                                    <button
-                                                        key={emoji}
-                                                        type="button"
-                                                        onClick={() => addEmoji(emoji)}
-                                                        className="text-xl hover:bg-muted p-1 rounded"
-                                                    >
-                                                        {emoji}
-                                                    </button>
-                                                ))}
+                                        {/* Conversa com sistema - não permite resposta */}
+                                        {selectedConversation?.other_user.id === SYSTEM_USER_ID ? (
+                                            <div className="flex items-center justify-center gap-2 text-muted-foreground py-2">
+                                                <Bot className="w-4 h-4" />
+                                                <span className="text-sm">Notificações da plataforma • Apenas leitura</span>
                                             </div>
+                                        ) : (
+                                            <>
+                                                {/* Emoji Picker */}
+                                                {showEmojiPicker && (
+                                                    <div className="absolute bottom-16 left-3 bg-white border border-border rounded-lg shadow-lg p-2 grid grid-cols-6 gap-1 z-10">
+                                                        {commonEmojis.map(emoji => (
+                                                            <button
+                                                                key={emoji}
+                                                                type="button"
+                                                                onClick={() => addEmoji(emoji)}
+                                                                className="text-xl hover:bg-muted p-1 rounded"
+                                                            >
+                                                                {emoji}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Input hidden para upload */}
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    onChange={handleFileUpload}
+                                                    className="hidden"
+                                                    accept="image/*,.pdf,.doc,.docx,.txt"
+                                                />
+
+                                                <form
+                                                    onSubmit={(e) => {
+                                                        e.preventDefault()
+                                                        sendMessage()
+                                                    }}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    {/* Botão Emoji */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                                        className="p-2 hover:bg-muted rounded-full transition-colors"
+                                                    >
+                                                        <Smile className="w-5 h-5 text-muted-foreground" />
+                                                    </button>
+
+                                                    {/* Botão Upload */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        disabled={uploadingFile}
+                                                        className="p-2 hover:bg-muted rounded-full transition-colors"
+                                                    >
+                                                        {uploadingFile ? (
+                                                            <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                                                        ) : (
+                                                            <Paperclip className="w-5 h-5 text-muted-foreground" />
+                                                        )}
+                                                    </button>
+
+                                                    <Input
+                                                        ref={inputRef}
+                                                        value={newMessage}
+                                                        onChange={(e) => setNewMessage(e.target.value)}
+                                                        placeholder="Digite sua mensagem..."
+                                                        className="flex-1"
+                                                        disabled={sending}
+                                                        onFocus={() => setShowEmojiPicker(false)}
+                                                    />
+                                                    <Button
+                                                        type="submit"
+                                                        size="icon"
+                                                        disabled={!newMessage.trim() || sending}
+                                                    >
+                                                        {sending ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Send className="w-4 h-4" />
+                                                        )}
+                                                    </Button>
+                                                </form>
+                                            </>
                                         )}
-
-                                        {/* Input hidden para upload */}
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            onChange={handleFileUpload}
-                                            className="hidden"
-                                            accept="image/*,.pdf,.doc,.docx,.txt"
-                                        />
-
-                                        <form
-                                            onSubmit={(e) => {
-                                                e.preventDefault()
-                                                sendMessage()
-                                            }}
-                                            className="flex items-center gap-2"
-                                        >
-                                            {/* Botão Emoji */}
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                className="p-2 hover:bg-muted rounded-full transition-colors"
-                                            >
-                                                <Smile className="w-5 h-5 text-muted-foreground" />
-                                            </button>
-
-                                            {/* Botão Upload */}
-                                            <button
-                                                type="button"
-                                                onClick={() => fileInputRef.current?.click()}
-                                                disabled={uploadingFile}
-                                                className="p-2 hover:bg-muted rounded-full transition-colors"
-                                            >
-                                                {uploadingFile ? (
-                                                    <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
-                                                ) : (
-                                                    <Paperclip className="w-5 h-5 text-muted-foreground" />
-                                                )}
-                                            </button>
-
-                                            <Input
-                                                ref={inputRef}
-                                                value={newMessage}
-                                                onChange={(e) => setNewMessage(e.target.value)}
-                                                placeholder="Digite sua mensagem..."
-                                                className="flex-1"
-                                                disabled={sending}
-                                                onFocus={() => setShowEmojiPicker(false)}
-                                            />
-                                            <Button
-                                                type="submit"
-                                                size="icon"
-                                                disabled={!newMessage.trim() || sending}
-                                            >
-                                                {sending ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <Send className="w-4 h-4" />
-                                                )}
-                                            </Button>
-                                        </form>
                                     </div>
                                 </>
                             )}

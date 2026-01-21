@@ -1,6 +1,7 @@
 // ============================================
 // Component: ConfraternityCompleteForm
 // Formulário para marcar confraria como realizada
+// COM VALIDAÇÃO POR IA
 // ============================================
 
 'use client'
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Calendar,
     MapPin,
@@ -19,10 +21,14 @@ import {
     Loader2,
     CheckCircle2,
     Upload,
-    X
+    X,
+    AlertCircle,
+    Bot,
+    Sparkles
 } from 'lucide-react'
 import { completeConfraternity } from '@/lib/api/confraternity'
 import { uploadPortfolioImage } from '@/lib/supabase/storage'
+import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
 interface ConfraternityCompleteFormProps {
@@ -33,6 +39,15 @@ interface ConfraternityCompleteFormProps {
     proposedLocation?: string
     onSuccess?: () => void
     onCancel?: () => void
+}
+
+interface AIValidationResult {
+    success: boolean
+    approved: boolean
+    people_count: number
+    confidence: string
+    reason: string
+    error?: string
 }
 
 export function ConfraternityCompleteForm({
@@ -46,13 +61,18 @@ export function ConfraternityCompleteForm({
 }: ConfraternityCompleteFormProps) {
     const [loading, setLoading] = useState(false)
     const [uploadingPhotos, setUploadingPhotos] = useState(false)
+    const [validating, setValidating] = useState(false)
+    const [validationResult, setValidationResult] = useState<AIValidationResult | null>(null)
+    const [publishToFeed, setPublishToFeed] = useState(true)
+    const [photoFile, setPhotoFile] = useState<File | null>(null)
+
     const [formData, setFormData] = useState({
         date: proposedDate?.split('T')[0] || '',
         time: proposedDate?.split('T')[1]?.substring(0, 5) || '',
         location: proposedLocation || '',
         description: '',
         testimonial: '',
-        visibility: 'connections' as 'private' | 'connections' | 'public',
+        visibility: 'public' as 'private' | 'connections' | 'public',
         photos: [] as string[]
     })
 
@@ -65,6 +85,11 @@ export function ConfraternityCompleteForm({
             toast.error('Máximo de 5 fotos permitidas')
             return
         }
+
+        // Guardar o primeiro arquivo para validação
+        const firstFile = files[0]
+        setPhotoFile(firstFile)
+        setValidationResult(null) // Reset validação anterior
 
         setUploadingPhotos(true)
 
@@ -81,10 +106,58 @@ export function ConfraternityCompleteForm({
             }))
 
             toast.success(`${urls.length} foto(s) enviada(s)`)
+
+            // Validar automaticamente a primeira foto
+            if (firstFile) {
+                await validatePhoto(firstFile)
+            }
         } catch (error) {
             toast.error('Erro ao enviar fotos')
         } finally {
             setUploadingPhotos(false)
+        }
+    }
+
+    const validatePhoto = async (file: File) => {
+        setValidating(true)
+        setValidationResult(null)
+
+        try {
+            const formDataToSend = new FormData()
+            formDataToSend.append('image', file)
+
+            const response = await fetch('/api/validate-confraternity', {
+                method: 'POST',
+                body: formDataToSend
+            })
+
+            const result = await response.json()
+            console.log('[AI Validation] Result:', result)
+
+            setValidationResult(result)
+
+            if (result.approved) {
+                toast.success('Foto aprovada pela IA!', {
+                    description: `${result.people_count} pessoa(s) detectada(s)`
+                })
+            } else {
+                toast.error('Foto não aprovada', {
+                    description: result.reason || 'Envie uma foto com 2+ pessoas'
+                })
+            }
+        } catch (error) {
+            console.error('[AI Validation] Error:', error)
+            setValidationResult({
+                success: false,
+                approved: false,
+                people_count: 0,
+                confidence: 'low',
+                reason: 'Erro ao validar foto',
+                error: 'Erro de conexão'
+            })
+            toast.error('Erro ao validar foto')
+        } finally {
+            setValidating(false)
         }
     }
 
@@ -93,10 +166,30 @@ export function ConfraternityCompleteForm({
             ...prev,
             photos: prev.photos.filter((_, i) => i !== index)
         }))
+        // Se removeu todas as fotos, limpar validação
+        if (formData.photos.length <= 1) {
+            setValidationResult(null)
+            setPhotoFile(null)
+        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        // Validações
+        if (formData.photos.length === 0) {
+            toast.error('Foto obrigatória!', {
+                description: 'Adicione pelo menos uma foto da confraria'
+            })
+            return
+        }
+
+        if (!validationResult?.approved) {
+            toast.error('Foto não validada', {
+                description: 'A foto precisa ser aprovada pela IA (mostrar 2+ pessoas)'
+            })
+            return
+        }
 
         if (!formData.testimonial.trim()) {
             toast.error('Por favor, adicione seu depoimento')
@@ -106,8 +199,10 @@ export function ConfraternityCompleteForm({
         setLoading(true)
 
         try {
+            const supabase = createClient()
             const dateTime = `${formData.date}T${formData.time}:00`
 
+            // 1. Completar a confraria
             const result = await completeConfraternity(
                 inviteId,
                 currentUserId,
@@ -121,16 +216,54 @@ export function ConfraternityCompleteForm({
                 }
             )
 
-            if (result.success) {
-                const totalXP = 50 + (formData.photos.length * 20) + 15
-                toast.success('Confraria registrada!', {
-                    description: `+${totalXP} XP ganhos!`
-                })
-                onSuccess?.()
-            } else {
+            if (!result.success) {
                 toast.error('Erro ao registrar', { description: result.error })
+                return
             }
+
+            // 2. Criar post no feed "Na Rota" (se publicar habilitado)
+            if (publishToFeed && result.confraternityId) {
+                const postContent = formData.description
+                    ? `${formData.description}\n\n📝 ${formData.testimonial}`
+                    : formData.testimonial
+
+                const { data: post, error: postError } = await supabase
+                    .from('posts')
+                    .insert({
+                        user_id: currentUserId,
+                        content: postContent,
+                        media_urls: formData.photos,
+                        confraternity_id: result.confraternityId,
+                        ai_validation: validationResult,
+                        visibility: formData.visibility
+                    })
+                    .select('id')
+                    .single()
+
+                if (postError) {
+                    console.error('[Post] Error creating:', postError)
+                } else {
+                    console.log('[Post] Created:', post.id)
+
+                    // Atualizar a confraria com o ID do post
+                    await supabase
+                        .from('confraternities')
+                        .update({
+                            ai_validated: true,
+                            ai_validation_result: validationResult,
+                            post_id: post.id
+                        })
+                        .eq('id', result.confraternityId)
+                }
+            }
+
+            const totalXP = 50 + (formData.photos.length * 20) + 15
+            toast.success('🎉 Confraria registrada!', {
+                description: `+${totalXP} XP ganhos! ${publishToFeed ? '📱 Publicado no Na Rota!' : ''}`
+            })
+            onSuccess?.()
         } catch (error) {
+            console.error('[Submit] Error:', error)
             toast.error('Erro ao registrar confraria')
         } finally {
             setLoading(false)
@@ -143,6 +276,12 @@ export function ConfraternityCompleteForm({
         xp += formData.testimonial ? 15 : 0 // Depoimento
         return xp
     }
+
+    const canSubmit = formData.photos.length > 0 &&
+        validationResult?.approved &&
+        !loading &&
+        !uploadingPhotos &&
+        !validating
 
     return (
         <div className="space-y-6">
@@ -230,12 +369,15 @@ export function ConfraternityCompleteForm({
                     />
                 </div>
 
-                {/* Fotos */}
+                {/* Fotos - OBRIGATÓRIO */}
                 <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                         <ImageIcon className="h-4 w-4" />
-                        Fotos (até 5) +20 XP cada
+                        Foto da Confraria <span className="text-red-500">*OBRIGATÓRIO</span>
                     </Label>
+                    <p className="text-xs text-muted-foreground">
+                        📸 A foto será validada por IA. Deve mostrar você e seu parceiro de confraria (2+ pessoas).
+                    </p>
 
                     {/* Grid de fotos */}
                     {formData.photos.length > 0 && (
@@ -259,6 +401,60 @@ export function ConfraternityCompleteForm({
                         </div>
                     )}
 
+                    {/* Resultado da validação por IA */}
+                    {validating && (
+                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div className="flex items-center gap-3">
+                                <Bot className="h-5 w-5 text-blue-500 animate-pulse" />
+                                <div>
+                                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                        Validando foto com IA...
+                                    </p>
+                                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                                        Verificando se há 2+ pessoas na imagem
+                                    </p>
+                                </div>
+                                <Loader2 className="h-5 w-5 animate-spin text-blue-500 ml-auto" />
+                            </div>
+                        </div>
+                    )}
+
+                    {validationResult && !validating && (
+                        <div className={`rounded-lg p-4 ${validationResult.approved
+                                ? 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800'
+                                : 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'
+                            }`}>
+                            <div className="flex items-center gap-3">
+                                {validationResult.approved ? (
+                                    <>
+                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                                                ✅ Foto Aprovada!
+                                            </p>
+                                            <p className="text-xs text-green-700 dark:text-green-300">
+                                                {validationResult.people_count} pessoa(s) detectada(s) • {validationResult.reason}
+                                            </p>
+                                        </div>
+                                        <Sparkles className="h-5 w-5 text-green-500 ml-auto" />
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertCircle className="h-5 w-5 text-red-500" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-red-900 dark:text-red-100">
+                                                ❌ Foto Não Aprovada
+                                            </p>
+                                            <p className="text-xs text-red-700 dark:text-red-300">
+                                                {validationResult.reason || 'Envie uma foto que mostre você e seu parceiro de confraria'}
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Upload button */}
                     {formData.photos.length < 5 && (
                         <div>
@@ -269,21 +465,27 @@ export function ConfraternityCompleteForm({
                                 onChange={handlePhotoUpload}
                                 className="hidden"
                                 id="photo-upload"
-                                disabled={uploadingPhotos}
+                                disabled={uploadingPhotos || validating}
                             />
                             <Label
                                 htmlFor="photo-upload"
-                                className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-4 cursor-pointer hover:bg-accent"
+                                className={`flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-4 cursor-pointer hover:bg-accent ${formData.photos.length === 0 ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20' : ''
+                                    }`}
                             >
                                 {uploadingPhotos ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                         Enviando...
                                     </>
+                                ) : validating ? (
+                                    <>
+                                        <Bot className="h-4 w-4 animate-pulse" />
+                                        Validando...
+                                    </>
                                 ) : (
                                     <>
                                         <Upload className="h-4 w-4" />
-                                        Adicionar Fotos
+                                        {formData.photos.length === 0 ? 'Adicionar Foto (obrigatório)' : 'Adicionar Mais Fotos'}
                                     </>
                                 )}
                             </Label>
@@ -308,6 +510,23 @@ export function ConfraternityCompleteForm({
                         }))}
                         rows={4}
                     />
+                </div>
+
+                {/* Publicar no Na Rota */}
+                <div className="flex items-center space-x-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                    <Checkbox
+                        id="publish-feed"
+                        checked={publishToFeed}
+                        onCheckedChange={(checked) => setPublishToFeed(checked === true)}
+                    />
+                    <div className="flex-1">
+                        <Label htmlFor="publish-feed" className="cursor-pointer font-semibold text-orange-900 dark:text-orange-100">
+                            🔥 Publicar no "Na Rota"
+                        </Label>
+                        <p className="text-xs text-orange-700 dark:text-orange-300">
+                            Compartilhe esta confraria no feed da comunidade
+                        </p>
+                    </div>
                 </div>
 
                 {/* Visibilidade */}
@@ -360,6 +579,18 @@ export function ConfraternityCompleteForm({
                     </ul>
                 </div>
 
+                {/* Warning se foto não validada */}
+                {formData.photos.length > 0 && !validationResult?.approved && !validating && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-yellow-500" />
+                            <p className="text-sm text-yellow-900 dark:text-yellow-100">
+                                <span className="font-semibold">Atenção:</span> Sua foto precisa ser aprovada pela IA para confirmar a confraria.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-3 pt-4">
                     <Button
@@ -373,7 +604,7 @@ export function ConfraternityCompleteForm({
                     </Button>
                     <Button
                         type="submit"
-                        disabled={loading || uploadingPhotos}
+                        disabled={!canSubmit}
                         className="flex-1"
                     >
                         {loading ? (

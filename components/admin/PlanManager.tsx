@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { formatCurrency } from '@/lib/api/financial'
-import { Save, Edit, Check, X } from 'lucide-react'
+import { Save, Edit, Check, X, Zap, Link2, Users, ShoppingBag, Infinity } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Plan {
@@ -17,6 +18,12 @@ interface Plan {
     name: string
     price: number
     features: string[]
+    xp_multiplier: number
+    max_elos: number | null
+    max_confraternities_month: number
+    can_send_confraternity: boolean
+    max_marketplace_ads: number
+    can_send_elo: boolean
     is_active: boolean
     display_order: number
 }
@@ -57,6 +64,11 @@ export function PlanManager() {
             name: plan.name,
             price: plan.price,
             features: plan.features,
+            xp_multiplier: plan.xp_multiplier,
+            max_elos: plan.max_elos,
+            max_confraternities_month: plan.max_confraternities_month,
+            can_send_confraternity: plan.can_send_confraternity,
+            max_marketplace_ads: plan.max_marketplace_ads,
             is_active: plan.is_active
         })
     }
@@ -74,6 +86,11 @@ export function PlanManager() {
                     name: editForm.name,
                     price: editForm.price,
                     features: editForm.features,
+                    xp_multiplier: editForm.xp_multiplier,
+                    max_elos: editForm.max_elos,
+                    max_confraternities_month: editForm.max_confraternities_month,
+                    can_send_confraternity: editForm.can_send_confraternity,
+                    max_marketplace_ads: editForm.max_marketplace_ads,
                     is_active: editForm.is_active,
                     updated_at: new Date().toISOString()
                 })
@@ -126,15 +143,16 @@ export function PlanManager() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {plans.map((plan) => {
                 const isEditing = editingId === plan.id
 
                 return (
                     <div
                         key={plan.id}
-                        className="p-4 border border-primary/20 rounded-lg bg-background/50 space-y-4"
+                        className="p-6 border border-primary/20 rounded-lg bg-background/50 space-y-4"
                     >
+                        {/* Header */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Badge
@@ -145,6 +163,7 @@ export function PlanManager() {
                                                 ? 'secondary'
                                                 : 'outline'
                                     }
+                                    className="text-sm px-3 py-1"
                                 >
                                     {plan.tier.toUpperCase()}
                                 </Badge>
@@ -163,8 +182,8 @@ export function PlanManager() {
                                     <>
                                         <Button
                                             size="sm"
-                                            variant="ghost"
                                             onClick={() => savePlan(plan.id)}
+                                            className="bg-green-600 hover:bg-green-700"
                                         >
                                             <Check className="w-4 h-4 mr-1" />
                                             Salvar
@@ -201,30 +220,123 @@ export function PlanManager() {
                         </div>
 
                         {isEditing ? (
-                            <div className="space-y-4">
-                                <div>
-                                    <Label>Nome do Plano</Label>
-                                    <Input
-                                        value={editForm.name || ''}
-                                        onChange={(e) =>
-                                            setEditForm({ ...editForm, name: e.target.value })
-                                        }
-                                    />
+                            /* Modo Edição */
+                            <div className="grid gap-6">
+                                {/* Linha 1: Nome e Preço */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Nome do Plano</Label>
+                                        <Input
+                                            value={editForm.name || ''}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, name: e.target.value })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Preço (R$)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={editForm.price || 0}
+                                            onChange={(e) =>
+                                                setEditForm({
+                                                    ...editForm,
+                                                    price: parseFloat(e.target.value)
+                                                })
+                                            }
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label>Preço (R$)</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={editForm.price || 0}
-                                        onChange={(e) =>
-                                            setEditForm({
-                                                ...editForm,
-                                                price: parseFloat(e.target.value)
-                                            })
-                                        }
-                                    />
+
+                                {/* Linha 2: Limites */}
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div>
+                                        <Label className="flex items-center gap-1">
+                                            <Zap className="w-4 h-4 text-yellow-500" />
+                                            Multiplicador XP
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            step="0.1"
+                                            min="1"
+                                            max="10"
+                                            value={editForm.xp_multiplier || 1}
+                                            onChange={(e) =>
+                                                setEditForm({
+                                                    ...editForm,
+                                                    xp_multiplier: parseFloat(e.target.value)
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="flex items-center gap-1">
+                                            <Link2 className="w-4 h-4 text-blue-500" />
+                                            Elos Máximos
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Vazio = Ilimitado"
+                                            value={editForm.max_elos ?? ''}
+                                            onChange={(e) =>
+                                                setEditForm({
+                                                    ...editForm,
+                                                    max_elos: e.target.value ? parseInt(e.target.value) : null
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="flex items-center gap-1">
+                                            <Users className="w-4 h-4 text-green-500" />
+                                            Confrarias/Mês
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            value={editForm.max_confraternities_month || 0}
+                                            onChange={(e) =>
+                                                setEditForm({
+                                                    ...editForm,
+                                                    max_confraternities_month: parseInt(e.target.value)
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="flex items-center gap-1">
+                                            <ShoppingBag className="w-4 h-4 text-purple-500" />
+                                            Anúncios Mkt
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            value={editForm.max_marketplace_ads || 0}
+                                            onChange={(e) =>
+                                                setEditForm({
+                                                    ...editForm,
+                                                    max_marketplace_ads: parseInt(e.target.value)
+                                                })
+                                            }
+                                        />
+                                    </div>
                                 </div>
+
+                                {/* Linha 3: Toggles */}
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <Switch
+                                            checked={editForm.can_send_confraternity || false}
+                                            onCheckedChange={(checked) =>
+                                                setEditForm({ ...editForm, can_send_confraternity: checked })
+                                            }
+                                        />
+                                        <Label>Pode enviar confraria</Label>
+                                    </div>
+                                </div>
+
+                                {/* Linha 4: Features */}
                                 <div>
                                     <Label>Features (uma por linha)</Label>
                                     <Textarea
@@ -235,21 +347,64 @@ export function PlanManager() {
                                                 features: e.target.value.split('\n').filter(f => f.trim())
                                             })
                                         }
-                                        rows={6}
+                                        rows={4}
                                     />
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-bold text-primary">
-                                    {plan.name}
-                                </h3>
-                                <p className="text-2xl font-bold text-primary">
-                                    {formatCurrency(plan.price)}
-                                    <span className="text-sm text-muted-foreground font-normal">
-                                        /mês
-                                    </span>
-                                </p>
+                            /* Modo Visualização */
+                            <div className="space-y-4">
+                                <div className="flex items-baseline gap-4">
+                                    <h3 className="text-2xl font-bold text-primary">
+                                        {plan.name}
+                                    </h3>
+                                    <p className="text-3xl font-black text-primary">
+                                        {formatCurrency(plan.price)}
+                                        <span className="text-sm text-muted-foreground font-normal">
+                                            /mês
+                                        </span>
+                                    </p>
+                                </div>
+
+                                {/* Cards de Limites */}
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                                        <div className="flex items-center gap-2 text-yellow-600 mb-1">
+                                            <Zap className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Multiplicador XP</span>
+                                        </div>
+                                        <p className="text-xl font-bold">{plan.xp_multiplier}x</p>
+                                    </div>
+                                    <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                                        <div className="flex items-center gap-2 text-blue-600 mb-1">
+                                            <Link2 className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Elos Máximos</span>
+                                        </div>
+                                        <p className="text-xl font-bold flex items-center gap-1">
+                                            {plan.max_elos === null ? (
+                                                <><Infinity className="w-5 h-5" /> Ilimitado</>
+                                            ) : (
+                                                plan.max_elos
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                                        <div className="flex items-center gap-2 text-green-600 mb-1">
+                                            <Users className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Confrarias/Mês</span>
+                                        </div>
+                                        <p className="text-xl font-bold">{plan.max_confraternities_month}</p>
+                                    </div>
+                                    <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                                        <div className="flex items-center gap-2 text-purple-600 mb-1">
+                                            <ShoppingBag className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Anúncios Mkt</span>
+                                        </div>
+                                        <p className="text-xl font-bold">{plan.max_marketplace_ads}</p>
+                                    </div>
+                                </div>
+
+                                {/* Features */}
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">
                                         Features:

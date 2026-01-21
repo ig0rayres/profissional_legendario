@@ -263,23 +263,20 @@ export default function UsersPage() {
 
         setProcessing(userId)
         try {
-            // 1. Delete from profiles (CASCADE vai deletar subscriptions, gamification, medals)
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .delete()
-                .eq('id', userId)
+            // Usar API Route com service_role_key
+            const response = await fetch('/api/admin/delete-user', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, userEmail })
+            })
 
-            if (profileError) throw profileError
+            const result = await response.json()
 
-            // 2. Delete from auth.users (via admin API)
-            const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-
-            if (authError) {
-                console.warn('Erro ao deletar auth user (pode precisar de permissão admin):', authError)
-                // Continua mesmo se falhar - profile já foi deletado
+            if (!response.ok) {
+                throw new Error(result.error || 'Erro ao deletar usuário')
             }
 
-            // 3. Remove from UI
+            // Remove from UI
             setUsers(users.filter(u => u.id !== userId))
 
             alert(`✅ Usuário ${userEmail} excluído com sucesso!`)
@@ -584,16 +581,21 @@ export default function UsersPage() {
                                                         )}
                                                     </Button>
                                                 )}
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={() => handleDeleteUser(user.id, user.email)}
-                                                    disabled={processing === user.id}
-                                                    title="Excluir usuário permanentemente"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                {/* Não mostrar botão de excluir para usuários do sistema */}
+                                                {user.email !== 'sistema@rotabusiness.club' &&
+                                                    user.email !== 'admin@rotaclub.com' &&
+                                                    user.full_name !== 'Rota Business Club' && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => handleDeleteUser(user.id, user.email)}
+                                                            disabled={processing === user.id}
+                                                            title="Excluir usuário permanentemente"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

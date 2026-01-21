@@ -2,22 +2,27 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getSubscriptionStats, formatCurrency, getPlanDistribution } from '@/lib/api/financial'
-import { TrendingUp, Users, DollarSign, PieChart } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { formatCurrency } from '@/lib/api/financial'
+import { TrendingUp, Users, DollarSign, PieChart, Shield, Zap, Crown } from 'lucide-react'
+
+interface PlanConfig {
+    tier: string
+    name: string
+    price: number
+}
 
 interface Stats {
     totalActive: number
-    byPlan: {
-        recruta: number
-        veterano: number
-        elite: number
-    }
+    byPlan: Record<string, number>
     mrr: number
+    plans: PlanConfig[]
 }
 
 export function FinancialMetrics() {
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
+    const supabase = createClient()
 
     useEffect(() => {
         loadStats()
@@ -25,8 +30,66 @@ export function FinancialMetrics() {
 
     const loadStats = async () => {
         try {
-            const data = await getSubscriptionStats()
-            setStats(data)
+            // Buscar planos do banco
+            const { data: plans } = await supabase
+                .from('plan_config')
+                .select('tier, name, price')
+                .eq('is_active', true)
+                .order('display_order')
+
+            // Buscar subscriptions ativas
+            const { data: subscriptions } = await supabase
+                .from('subscriptions')
+                .select('plan_id, user_id')
+                .eq('status', 'active')
+
+            // Buscar perfis para identificar admins/sistema
+            const { data: allProfiles } = await supabase
+                .from('profiles')
+                .select('id, role, email')
+
+            // Criar Set de IDs a excluir (admins e sistema)
+            const excludeIds = new Set(
+                allProfiles?.filter(p =>
+                    p.role === 'admin' ||
+                    p.email?.includes('sistema@') ||
+                    p.email?.includes('admin@rotaclub')
+                ).map(p => p.id) || []
+            )
+
+            // Filtrar: apenas usuários normais
+            const activeSubscriptions = subscriptions?.filter(s =>
+                !excludeIds.has(s.user_id)
+            ) || []
+
+            // Contar por plano
+            const byPlan: Record<string, number> = {
+                recruta: 0,
+                veterano: 0,
+                elite: 0
+            }
+
+            activeSubscriptions.forEach(sub => {
+                const planId = sub.plan_id || 'recruta'
+                byPlan[planId] = (byPlan[planId] || 0) + 1
+            })
+
+            // Calcular MRR baseado nos preços do banco
+            const planPrices: Record<string, number> = {}
+            plans?.forEach(p => {
+                planPrices[p.tier] = p.price
+            })
+
+            const mrr = Object.entries(byPlan).reduce((total, [plan, count]) => {
+                return total + (planPrices[plan] || 0) * count
+            }, 0)
+
+            setStats({
+                totalActive: activeSubscriptions.length,
+                byPlan,
+                mrr,
+                plans: plans || []
+            })
         } catch (error) {
             console.error('Error loading financial stats:', error)
         } finally {
@@ -65,39 +128,54 @@ export function FinancialMetrics() {
         )
     }
 
+    // Encontrar preços dos planos
+    const getPlanPrice = (tier: string) => {
+        const plan = stats.plans.find(p => p.tier === tier)
+        return plan?.price || 0
+    }
+
+    const totalPaid = stats.byPlan.veterano + stats.byPlan.elite
+
     const metrics = [
         {
             title: 'MRR (Receita Mensal)',
             value: formatCurrency(stats.mrr),
             icon: DollarSign,
             description: 'Receita recorrente mensal',
-            trend: '+12%',
+            trend: totalPaid > 0 ? '+12%' : '0%',
             color: 'text-green-500'
         },
         {
             title: 'Assinaturas Ativas',
             value: stats.totalActive.toString(),
             icon: Users,
-            description: 'Total de usuários pagantes',
-            trend: '+5%',
+            description: 'Total de usuários com plano',
+            trend: stats.totalActive > 0 ? '+5%' : '0%',
             color: 'text-blue-500'
         },
         {
             title: 'Plano Veterano',
             value: stats.byPlan.veterano.toString(),
             icon: TrendingUp,
-            description: 'Assinantes do plano',
-            trend: `${Math.round((stats.byPlan.veterano / stats.totalActive) * 100)}%`,
+            description: `${formatCurrency(getPlanPrice('veterano'))}/mês`,
+            trend: stats.totalActive > 0 ? `${Math.round((stats.byPlan.veterano / stats.totalActive) * 100)}%` : '0%',
             color: 'text-orange-500'
         },
         {
             title: 'Plano Elite',
             value: stats.byPlan.elite.toString(),
             icon: PieChart,
-            description: 'Assinantes premium',
-            trend: `${Math.round((stats.byPlan.elite / stats.totalActive) * 100)}%`,
+            description: `${formatCurrency(getPlanPrice('elite'))}/mês`,
+            trend: stats.totalActive > 0 ? `${Math.round((stats.byPlan.elite / stats.totalActive) * 100)}%` : '0%',
             color: 'text-purple-500'
         }
+    ]
+
+    // Dados dos planos para o gráfico
+    const planDisplay = [
+        { tier: 'recruta', name: 'Recruta', color: 'bg-gray-500', icon: Shield },
+        { tier: 'veterano', name: 'Veterano', color: 'bg-orange-500', icon: Zap },
+        { tier: 'elite', name: 'Elite', color: 'bg-purple-500', icon: Crown }
     ]
 
     return (
@@ -145,65 +223,35 @@ export function FinancialMetrics() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {/* Recruta */}
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-muted-foreground">
-                                    Recruta (Gratuito)
-                                </span>
-                                <span className="text-sm font-bold text-primary">
-                                    {stats.byPlan.recruta} usuários
-                                </span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-2">
-                                <div
-                                    className="bg-gray-500 h-2 rounded-full transition-all"
-                                    style={{
-                                        width: `${(stats.byPlan.recruta / stats.totalActive) * 100}%`
-                                    }}
-                                />
-                            </div>
-                        </div>
+                        {planDisplay.map(({ tier, name, color, icon: Icon }) => {
+                            const count = stats.byPlan[tier] || 0
+                            const price = getPlanPrice(tier)
+                            const percentage = stats.totalActive > 0
+                                ? Math.round((count / stats.totalActive) * 100)
+                                : 0
 
-                        {/* Veterano */}
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-muted-foreground">
-                                    Veterano (R$ 47/mês)
-                                </span>
-                                <span className="text-sm font-bold text-primary">
-                                    {stats.byPlan.veterano} usuários
-                                </span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-2">
-                                <div
-                                    className="bg-orange-500 h-2 rounded-full transition-all"
-                                    style={{
-                                        width: `${(stats.byPlan.veterano / stats.totalActive) * 100}%`
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Elite */}
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-muted-foreground">
-                                    Elite (R$ 147/mês)
-                                </span>
-                                <span className="text-sm font-bold text-primary">
-                                    {stats.byPlan.elite} usuários
-                                </span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-2">
-                                <div
-                                    className="bg-purple-500 h-2 rounded-full transition-all"
-                                    style={{
-                                        width: `${(stats.byPlan.elite / stats.totalActive) * 100}%`
-                                    }}
-                                />
-                            </div>
-                        </div>
+                            return (
+                                <div key={tier}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <Icon className="w-4 h-4 text-muted-foreground" />
+                                            <span className="text-sm font-medium text-muted-foreground">
+                                                {name} ({price === 0 ? 'Gratuito' : formatCurrency(price) + '/mês'})
+                                            </span>
+                                        </div>
+                                        <span className="text-sm font-bold text-primary">
+                                            {count} usuários
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-muted rounded-full h-2">
+                                        <div
+                                            className={`${color} h-2 rounded-full transition-all`}
+                                            style={{ width: `${percentage}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 </CardContent>
             </Card>

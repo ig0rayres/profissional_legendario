@@ -71,6 +71,25 @@ export function RatingForm({ professionalId, professionalName, onSuccess }: Rati
                 return
             }
 
+            // 🎖️ GAMIFICAÇÃO: Verificar medalha "Batismo de Excelência"
+            // Concede ao PROFISSIONAL quando recebe primeira avaliação 5 estrelas
+            if (rating === 5) {
+                try {
+                    const { awardBadge, getUserBadges } = await import('@/lib/api/gamification')
+
+                    // Verificar se profissional já tem a medalha
+                    const profBadges = await getUserBadges(professionalId)
+                    const hasBadge = profBadges.some(b => b.badge_id === 'batismo_excelencia')
+
+                    if (!hasBadge) {
+                        console.log('🎖️ Concedendo medalha Batismo de Excelência ao profissional:', professionalId)
+                        await awardBadge(professionalId, 'batismo_excelencia')
+                    }
+                } catch (gamifError) {
+                    console.error('Erro ao verificar medalha:', gamifError)
+                }
+            }
+
             // Success
             setRating(0)
             setComment('')

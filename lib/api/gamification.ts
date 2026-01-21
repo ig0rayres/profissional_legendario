@@ -5,10 +5,43 @@ import { createClient } from '@/lib/supabase/client'
  * Handles XP, badges, and rank progression
  */
 
+// ID fixo do usuário sistema para mensagens de notificação no chat
+export const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
+
 // Flag para habilitar verificação anti-duplicação de pontos de elo
 // Em homologação: false (permite testar várias vezes)
 // Em produção: true (cada elo é único por par de usuários)
 const ENABLE_ELO_DEDUP = process.env.NEXT_PUBLIC_ENABLE_ELO_DEDUP === 'true'
+
+/**
+ * Envia uma mensagem do sistema para o usuário no chat
+ * Usa API server-side para bypassar RLS
+ */
+export async function sendSystemChatMessage(
+    userId: string,
+    message: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const response = await fetch('/api/system-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, message })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            console.error('[sendSystemChatMessage] Erro da API:', data.error)
+            return { success: false, error: data.error }
+        }
+
+        console.log('[sendSystemChatMessage] ✅ Mensagem enviada para', userId)
+        return { success: true }
+    } catch (error: any) {
+        console.error('[sendSystemChatMessage] Exception:', error)
+        return { success: false, error: error.message }
+    }
+}
 
 export interface GamificationStats {
     user_id: string
@@ -231,61 +264,102 @@ export async function awardPoints(
 }
 
 /**
- * Award a badge to a user
- * Automatically checks if user already has the badge
+ * Award a medal to a user
+ * Automatically checks if user already has the medal
+ * USA TABELA: medals (definida pelo admin) e user_medals (medalhas do usuário)
  */
 export async function awardBadge(
     userId: string,
-    badgeId: string
+    medalId: string
 ): Promise<{ success: boolean; alreadyOwned: boolean; error?: string }> {
     try {
         const supabase = createClient()
 
-        // Check if user already has the badge
+        // Check if user already has the medal (usa user_medals)
         const { data: existing } = await supabase
-            .from('user_badges')
-            .select('badge_id')
+            .from('user_medals')
+            .select('medal_id')
             .eq('user_id', userId)
-            .eq('badge_id', badgeId)
+            .eq('medal_id', medalId)
             .single()
 
         if (existing) {
+            console.log(`[awardBadge] Usuário ${userId} já possui medalha ${medalId}`)
             return { success: true, alreadyOwned: true }
         }
 
-        // Award the badge
+        // Award the medal (insere em user_medals)
         const { error } = await supabase
-            .from('user_badges')
+            .from('user_medals')
             .insert({
                 user_id: userId,
-                badge_id: badgeId
+                medal_id: medalId
             })
 
         if (error) {
-            console.error('Error awarding badge:', error)
+            console.error('[awardBadge] Error:', error)
             return { success: false, alreadyOwned: false, error: error.message }
         }
 
-        // Get badge details to award XP
-        const { data: badge } = await supabase
-            .from('badges')
-            .select('xp_reward, name')
-            .eq('id', badgeId)
+        // Get medal details from medals table (fonte do admin)
+        const { data: medal } = await supabase
+            .from('medals')
+            .select('points_reward, name')
+            .eq('id', medalId)
             .single()
 
-        if (badge) {
-            // Award XP for earning the badge
+        if (medal) {
+            // Buscar plano do usuário para calcular multiplicador
+            const { data: subscription } = await supabase
+                .from('subscriptions')
+                .select('plan_id')
+                .eq('user_id', userId)
+                .eq('status', 'active')
+                .single()
+
+            // Multiplicadores: Recruta x1, Veterano x1.5, Elite x3
+            const planId = subscription?.plan_id || 'recruta'
+            const multiplier = planId === 'elite' ? 3 : planId === 'veterano' ? 1.5 : 1
+            const basePoints = medal.points_reward || 0
+            const finalPoints = Math.round(basePoints * multiplier)
+
+            // Award XP for earning the medal
             await awardPoints(
                 userId,
-                badge.xp_reward,
-                'badge_reward',
-                `Earned badge: ${badge.name}`
+                basePoints,
+                'medal_reward',
+                `Conquistou medalha: ${medal.name}`
             )
+
+            // Criar notificação para o usuário COM VALOR MULTIPLICADO
+            await supabase
+                .from('notifications')
+                .insert({
+                    user_id: userId,
+                    type: 'badge_earned',
+                    title: '🏅 Nova Medalha!',
+                    body: `Você conquistou a medalha "${medal.name}"! +${finalPoints} Vigor`,
+                    priority: 'high',
+                    metadata: { badge_id: medalId, badge_name: medal.name, xp: finalPoints }
+                })
+
+            // Enviar mensagem no chat (conversa com sistema)
+            await sendSystemChatMessage(
+                userId,
+                `🏅 **Nova Medalha Conquistada!**\n\n` +
+                `Parabéns, Valente! Você desbloqueou a medalha **"${medal.name}"**!\n\n` +
+                `💪 +${finalPoints} Vigor creditados na sua conta.\n\n` +
+                `Continue conquistando! 🔥`
+            )
+
+            console.log(`✅ [awardBadge] Medalha concedida: ${medal.name} para usuário ${userId} (+${finalPoints} Vigor, ${multiplier}x)`)
+        } else {
+            console.warn(`⚠️ [awardBadge] Medalha ${medalId} não encontrada na tabela medals`)
         }
 
         return { success: true, alreadyOwned: false }
     } catch (error: any) {
-        console.error('Exception awarding badge:', error)
+        console.error('[awardBadge] Exception:', error)
         return { success: false, alreadyOwned: false, error: error.message }
     }
 }
@@ -318,26 +392,31 @@ export async function getUserGamificationStats(
 }
 
 /**
- * Get user's earned badges
+ * Get user's earned medals
+ * USA TABELA: user_medals (fonte centralizada)
  */
 export async function getUserBadges(userId: string): Promise<UserBadge[]> {
     try {
         const supabase = createClient()
 
         const { data, error } = await supabase
-            .from('user_badges')
+            .from('user_medals')
             .select('*')
             .eq('user_id', userId)
             .order('earned_at', { ascending: false })
 
         if (error) {
-            console.error('Error fetching user badges:', error)
+            console.error('[getUserBadges] Error:', error)
             return []
         }
 
-        return data || []
+        // Mapear medal_id para badge_id para compatibilidade
+        return (data || []).map(item => ({
+            ...item,
+            badge_id: item.medal_id // Compatibilidade com código existente
+        }))
     } catch (error) {
-        console.error('Exception fetching user badges:', error)
+        console.error('[getUserBadges] Exception:', error)
         return []
     }
 }

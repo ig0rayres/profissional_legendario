@@ -384,6 +384,14 @@ export default function EditarPerfilPage() {
             setFormData(prev => ({ ...prev, slug }))
             setSuccess(true)
 
+            // 🎖️ Verificar medalha "Alistamento Concluído" (perfil 100% completo)
+            try {
+                const { checkProfileCompletion } = await import('@/lib/api/profile')
+                await checkProfileCompletion(user.id)
+            } catch (badgeError) {
+                console.error('Erro ao verificar medalha de perfil:', badgeError)
+            }
+
             // Redirecionar para dashboard após 1.5 segundos
             setTimeout(() => {
                 router.push('/dashboard')

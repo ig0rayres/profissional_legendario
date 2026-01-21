@@ -230,6 +230,14 @@ export const MOCK_BADGES: Badge[] = [
     { id: 'veterano_guerra', name: 'Veterano de Guerra', description: 'Completar 20 serviços', xp_reward: 300, criteria_type: 'services_count', benefit_description: 'Acesso ao fórum exclusivo', icon_key: 'mountain' },
     { id: 'sentinela_elite', name: 'Sentinela de Elite', description: 'Manter Plano Elite por 3 meses', xp_reward: 500, criteria_type: 'premium_loyalty', benefit_description: 'Convite ao grupo de líderes', icon_key: 'gem' },
     { id: 'sentinela_inabalavel', name: 'Sentinela Inabalável', description: 'Manter-se ativo por 30 dias consecutivos', xp_reward: 200, criteria_type: 'retention_streak', benefit_description: 'Selo "Membro Resiliente"', icon_key: 'anchor' },
+    // Medalhas de Confraria (Rota do Valente - Mensal)
+    { id: 'primeira_confraria', name: 'Primeira Confraria', description: 'Realizar primeira confraternização', xp_reward: 100, criteria_type: 'first_confraternity', benefit_description: 'Badge de membro ativo', icon_key: 'handshake' },
+    { id: 'networker_ativo', name: 'Networker Ativo', description: 'Realizar 2 confrarias no mês', xp_reward: 200, criteria_type: 'confraternities_monthly_2', benefit_description: 'Destaque em networking', icon_key: 'network' },
+    { id: 'lider_confraria', name: 'Líder de Confraria', description: 'Realizar 5 confrarias no mês', xp_reward: 500, criteria_type: 'confraternities_monthly_5', benefit_description: 'Badge de Líder no perfil', icon_key: 'trophy' },
+    { id: 'mestre_conexoes', name: 'Mestre das Conexões', description: 'Realizar 10 confrarias no mês', xp_reward: 1000, criteria_type: 'confraternities_monthly_10', benefit_description: 'Acesso VIP a eventos', icon_key: 'crown' },
+    { id: 'anfitriao', name: 'Anfitrião', description: 'Ser anfitrião de confraternização', xp_reward: 150, criteria_type: 'first_hosting', benefit_description: 'Badge de Anfitrião no perfil', icon_key: 'party-popper' },
+    { id: 'cronista', name: 'Cronista', description: 'Adicionar fotos em confraternização', xp_reward: 50, criteria_type: 'first_confraternity_photo', benefit_description: 'Badge de Cronista no perfil', icon_key: 'camera' },
+    { id: 'presente', name: 'Presente', description: 'Aceitar primeiro elo (conexão)', xp_reward: 50, criteria_type: 'first_connection', benefit_description: 'Badge de presença no perfil', icon_key: 'users' },
 ]
 
 export const MOCK_POINTS_ACTIONS: PointsAction[] = [

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Bell, Check, Trash2, ShieldAlert, MessageSquare, Info, Star, Clock, Link2, CheckCheck, Briefcase, CheckCircle2, XCircle, Swords } from 'lucide-react'
+import { Bell, Check, Trash2, ShieldAlert, MessageSquare, Info, Star, Clock, Link2, CheckCheck, Briefcase, CheckCircle2, XCircle, Swords, Award } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     Popover,
@@ -216,6 +216,7 @@ export function NotificationCenter() {
         if (priority === 'critical') return <ShieldAlert className="w-5 h-5 text-red-500" />
 
         switch (type) {
+            case 'badge_earned': return <Award className="w-5 h-5 text-yellow-500" />
             case 'connection_request': return <Link2 className="w-5 h-5 text-secondary" />
             case 'connection_accepted': return <Link2 className="w-5 h-5 text-green-500" />
             case 'confraternity_invite': return <Swords className="w-5 h-5 text-primary" />
@@ -241,6 +242,37 @@ export function NotificationCenter() {
         }
 
         try {
+            // IMPORTANTE: Verificar se o convite ainda está pendente (anti-farming)
+            const { data: currentInvite, error: checkError } = await supabase
+                .from('confraternity_invites')
+                .select('status')
+                .eq('id', inviteId)
+                .single()
+
+            if (checkError || !currentInvite) {
+                console.log('[Confraternity] Convite não encontrado, removendo notificação...')
+                // Convite não existe mais, remover notificação silenciosamente
+                setNotifications(prev => prev.filter(n => n.id !== notification.id))
+                await supabase.from('notifications').delete().eq('id', notification.id)
+                return
+            }
+
+            if (currentInvite.status !== 'pending') {
+                console.log('[Confraternity] Convite já foi processado (status:', currentInvite.status, '), removendo notificação...')
+                // Convite já foi aceito/rejeitado, remover notificação sem dar pontos
+                setNotifications(prev => prev.filter(n => n.id !== notification.id))
+                await supabase.from('notifications').delete().eq('id', notification.id)
+                // Mostrar mensagem informativa
+                setResponseModal({
+                    open: true,
+                    accepted: currentInvite.status === 'accepted',
+                    userName: `Convite já ${currentInvite.status === 'accepted' ? 'aceito' : 'processado'}`,
+                    type: 'confraternity'
+                })
+                return
+            }
+
+            // Convite está pendente, processar normalmente
             const { error } = await supabase
                 .from('confraternity_invites')
                 .update({
@@ -249,6 +281,7 @@ export function NotificationCenter() {
                 })
                 .eq('id', inviteId)
                 .eq('receiver_id', user?.id)
+                .eq('status', 'pending') // Só atualizar se ainda estiver pendente
 
             if (error) {
                 console.error('[Notifications] respondToConfraternity error:', error)
@@ -259,16 +292,21 @@ export function NotificationCenter() {
             // Se aceite, dar pontos ao receptor
             if (accept && user) {
                 // Dar pontos ao receptor (quem aceitou) - 10 XP base
+                console.log('[Confraternity] Iniciando gamificação para receptor:', user.id)
                 try {
                     const { awardPoints } = await import('@/lib/api/gamification')
+                    console.log('[Confraternity] awardPoints importado, chamando...')
                     const result = await awardPoints(user.id, 10, 'confraternity_accepted', 'Aceitou convite de confraria')
-                    console.log('[Confraternity] Points result:', result)
+                    console.log('[Confraternity] Points result:', JSON.stringify(result))
+
+                    if (!result.success) {
+                        console.error('[Confraternity] Falha ao dar pontos:', result.error)
+                    }
                 } catch (e) {
                     console.error('[Confraternity] Error awarding points to receiver:', e)
                 }
-
-                // TODO: Feed e Medalha - implementar depois
-                // Ver arquivo PENDENCIAS_CONFRARIA.md
+            } else {
+                console.log('[Confraternity] Condição não atendida - accept:', accept, 'user:', !!user)
             }
 
             // Remover notificação IMEDIATAMENTE do estado local (evitar farming)
