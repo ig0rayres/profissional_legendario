@@ -14,7 +14,7 @@ export const metadata = {
 }
 
 async function getConfraternities(userId?: string) {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Públicas
     const { data: publicConfs } = await supabase
@@ -51,7 +51,7 @@ async function getConfraternities(userId?: string) {
 }
 
 export default async function ConfraternitiesGalleryPage() {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
 

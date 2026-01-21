@@ -36,7 +36,7 @@ export default function HomePage() {
     const [professionals, setProfessionals] = useState<Professional[]>([])
     const [loadingProfessionals, setLoadingProfessionals] = useState(true)
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Carregar profissionais reais do banco
     useEffect(() => {

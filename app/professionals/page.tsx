@@ -29,7 +29,7 @@ interface Professional {
 export default function ProfessionalsPage() {
     const searchParams = useSearchParams()
     const categoryParam = searchParams.get('category')
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedPista, setSelectedPista] = useState<string | null>(null)

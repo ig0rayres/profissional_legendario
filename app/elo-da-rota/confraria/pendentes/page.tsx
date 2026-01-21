@@ -16,7 +16,7 @@ export const metadata = {
 }
 
 async function getInvites(userId: string) {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Convites recebidos
     const { data: received } = await supabase
@@ -47,7 +47,7 @@ async function getInvites(userId: string) {
 }
 
 export default async function ConfraternitiesPendingPage() {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
 
