@@ -51,9 +51,9 @@ export async function checkProfileCompletion(userId: string): Promise<boolean> {
             // Check if user already has the medal
             const { awardBadge, getUserBadges } = await import('@/lib/api/gamification')
             const medals = await getUserBadges(userId)
-            console.log('[checkProfileCompletion] Medalhas do usuário:', medals.map(m => m.badge_id || m.medal_id))
+            console.log('[checkProfileCompletion] Medalhas do usuário:', medals.map(m => m.badge_id))
 
-            const hasMedal = medals.some(m => (m.badge_id || m.medal_id) === 'alistamento_concluido')
+            const hasMedal = medals.some(m => m.badge_id === 'alistamento_concluido')
             console.log('[checkProfileCompletion] Já tem alistamento_concluido?', hasMedal)
 
             if (!hasMedal) {
