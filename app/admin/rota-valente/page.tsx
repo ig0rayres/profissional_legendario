@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { DynamicIcon, AVAILABLE_ICONS } from '@/components/rota-valente/dynamic-icon'
+import { RankInsignia } from '@/components/gamification/rank-insignia'
 
 // ============================================
 // TIPOS
@@ -405,9 +406,7 @@ export default function RotaValenteAdminPage() {
                                         <TableCell className="font-bold">{rank.rank_level}</TableCell>
                                         <TableCell className="font-medium">{rank.name}</TableCell>
                                         <TableCell>
-                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                                                <DynamicIcon name={rank.icon || 'Shield'} size="sm" className="text-white" />
-                                            </div>
+                                            <RankInsignia rankId={rank.id} rankName={rank.name} iconName={rank.icon} size="md" variant="avatar" />
                                         </TableCell>
                                         <TableCell>{rank.points_required.toLocaleString()} pts</TableCell>
                                         <TableCell className="text-right">

@@ -2,22 +2,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-    Crown, Sword, Flame, Sparkles,
-    UserCheck, Video, Flag, Hammer, HeartHandshake,
-    Megaphone, Gem, Zap, Trophy, Medal, ArrowRight, Mountain, Anchor
+    Zap, Trophy, Medal, ArrowRight, Flame
 } from 'lucide-react'
 import Link from 'next/link'
-import { MOCK_RANKS, MOCK_BADGES } from '@/lib/data/mock'
-import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { cn } from '@/lib/utils'
 import { Metadata } from 'next'
 import { RotabusinessLogo } from '@/components/branding/logo'
 import { createClient } from '@/lib/supabase/server'
+import * as LucideIcons from 'lucide-react'
 
 export const metadata: Metadata = {
     title: 'Rota do Valente | Sistema de Mérito e Elite Business',
     description: 'A Rota do Valente é o sistema definitivo de hierarquia do Rota Business Club. Conquiste autoridade, eleve seu multiplicador de vigor e destaque-se como um profissional de alta performance.',
     keywords: 'networking business, elite profissional, sistema de merito, rota business club, valor profissional, autoridade',
+}
+
+// Componente para renderizar ícone Lucide dinamicamente
+function DynamicIconServer({ name, className }: { name: string, className?: string }) {
+    const Icon = (LucideIcons as any)[name] || LucideIcons.Award
+    return <Icon className={className} strokeWidth={2} />
 }
 
 export default async function RotaDoValentePublicPage() {
@@ -29,14 +32,24 @@ export default async function RotaDoValentePublicPage() {
         .select('*')
         .order('rank_level', { ascending: true })
 
-    // Fetch real medals from database  
+    // Fetch real medals from database (permanentes)
     const { data: medals } = await supabase
         .from('medals')
         .select('*')
-        .order('points_reward', { ascending: false })
+        .eq('is_permanent', true)
+        .order('display_order')
 
-    const RANKS = ranks || MOCK_RANKS
-    const MEDALS = medals || MOCK_BADGES
+    // Fetch proezas (mensais)
+    const { data: proezas } = await supabase
+        .from('proezas')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order')
+        .limit(12)
+
+    const RANKS = ranks || []
+    const MEDALS = medals || []
+    const PROEZAS = proezas || []
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -85,9 +98,9 @@ export default async function RotaDoValentePublicPage() {
                             desc: 'Níveis de autoridade que aumentam seu multiplicador de vigor e visibilidade na plataforma.'
                         },
                         {
-                            icon: Medal,
-                            title: 'Conquistas',
-                            desc: 'Medalhas exclusivas que comprovam suas habilidades e marcos na jornada.'
+                            icon: Flame,
+                            title: 'Proezas',
+                            desc: 'Conquistas mensais que comprovam suas habilidades e dedicação na jornada.'
                         }
                     ].map((pillar, i) => (
                         <div key={i} className={cn("p-12 border-slate-100", i < 2 ? "md:border-r" : "")}>
@@ -100,7 +113,7 @@ export default async function RotaDoValentePublicPage() {
                     ))}
                 </div>
 
-                {/* Ranks Section - Clean & Structured */}
+                {/* Ranks Section */}
                 <div className="mb-32">
                     <div className="flex items-center gap-4 mb-12">
                         <div className="h-px flex-1 bg-slate-300" />
@@ -112,7 +125,9 @@ export default async function RotaDoValentePublicPage() {
                         {RANKS.map((rank: any) => (
                             <div key={rank.id} className="bg-white p-10 hover:bg-slate-50 transition-colors group">
                                 <div className="flex items-center justify-between mb-8">
-                                    <RankInsignia rankId={rank.id} size="lg" variant="icon-only" />
+                                    <div className="w-14 h-14 bg-secondary rounded-full flex items-center justify-center">
+                                        <DynamicIconServer name={rank.icon || 'Shield'} className="w-8 h-8 text-white" />
+                                    </div>
                                     <div className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 border border-primary/20">
                                         VIGOR DESDE {rank.points_required}
                                     </div>
@@ -134,34 +149,57 @@ export default async function RotaDoValentePublicPage() {
                     </div>
                 </div>
 
-                {/* Badges Section - Solid Grid with Orange Theme */}
+                {/* Proezas Section (Mensais) */}
                 <div className="mb-32">
                     <div className="flex flex-col md:flex-row items-end gap-6 mb-16">
                         <div className="max-w-xl">
-                            <h2 className="text-4xl font-black uppercase mb-4 text-slate-900">Quadro de Medalhas</h2>
-                            <p className="text-slate-600 font-medium">Conquistas específicas que conferem status e bônus permanentes ao seu perfil profissional.</p>
+                            <h2 className="text-4xl font-black uppercase mb-4 text-slate-900">Proezas Mensais</h2>
+                            <p className="text-slate-600 font-medium">Conquistas que resetam todo mês. Prove sua dedicação consistente e ganhe Vigor extra!</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {MEDALS.map((medal: any) => {
-                            return (
-                                <div key={medal.id} className="p-8 bg-white border border-slate-200 hover:border-secondary/50 transition-all flex flex-col items-center text-center group shadow-sm">
-                                    <div className="w-14 h-14 bg-secondary flex items-center justify-center mb-6 text-white shadow-lg shadow-secondary/20 group-hover:scale-110 transition-transform text-2xl">
-                                        {medal.icon}
-                                    </div>
-                                    <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-slate-900">{medal.name}</h4>
-                                    <div className="text-[10px] font-black text-slate-400 uppercase mb-4">{medal.description}</div>
-                                    <div className="mt-auto px-3 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-400">
-                                        VALOR: {medal.points_reward} Vigor
-                                    </div>
+                        {PROEZAS.map((proeza: any) => (
+                            <div key={proeza.id} className="p-8 bg-white border border-slate-200 hover:border-secondary/50 transition-all flex flex-col items-center text-center group shadow-sm">
+                                <div className="w-14 h-14 bg-secondary rounded-full flex items-center justify-center mb-6 text-white shadow-lg shadow-secondary/20 group-hover:scale-110 transition-transform">
+                                    <DynamicIconServer name={proeza.icon || 'Flame'} className="w-7 h-7" />
                                 </div>
-                            )
-                        })}
+                                <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-slate-900">{proeza.name}</h4>
+                                <div className="text-[10px] font-black text-slate-400 uppercase mb-4">{proeza.description}</div>
+                                <div className="mt-auto px-3 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-400">
+                                    VALOR: {proeza.points_base} Vigor
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* Join Section - Bold & Massive */}
+                {/* Medals Section (Permanentes) */}
+                <div className="mb-32">
+                    <div className="flex flex-col md:flex-row items-end gap-6 mb-16">
+                        <div className="max-w-xl">
+                            <h2 className="text-4xl font-black uppercase mb-4 text-slate-900">Medalhas Permanentes</h2>
+                            <p className="text-slate-600 font-medium">Conquistas ad aeternum que ficam para sempre no seu perfil. Marcos da sua jornada.</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {MEDALS.map((medal: any) => (
+                            <div key={medal.id} className="p-8 bg-white border border-slate-200 hover:border-primary/50 transition-all flex flex-col items-center text-center group shadow-sm">
+                                <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6 text-white shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
+                                    <DynamicIconServer name={medal.icon || 'Award'} className="w-7 h-7" />
+                                </div>
+                                <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-slate-900">{medal.name}</h4>
+                                <div className="text-[10px] font-black text-slate-400 uppercase mb-4">{medal.description}</div>
+                                <div className="mt-auto px-3 py-1 bg-primary/5 border border-primary/10 text-[9px] font-black text-primary">
+                                    VALOR: {medal.points_reward} Vigor
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Join Section */}
                 <div className="bg-primary p-12 md:p-24 text-center">
                     <h2 className="text-4xl md:text-6xl font-black uppercase text-white mb-8 tracking-tighter">O Convite é para Poucos. A Glória é para os Fortes.</h2>
                     <p className="text-white/90 text-lg mb-12 max-w-xl mx-auto font-black uppercase tracking-tight">

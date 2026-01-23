@@ -1,70 +1,151 @@
 'use client'
 
-import { useState } from 'react'
-import { XPProgress } from '@/components/gamification/xp-progress'
-import { BadgeCard } from '@/components/gamification/badge-card'
-import { RankingsBoard } from '@/components/gamification/rankings-board'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
-    Flag, Target, Shield, Award, Users,
-    ArrowRight, History, Info, AlertTriangle
+    Flag, Target, Shield, Award, Users, Flame,
+    ArrowRight, History, Info, AlertTriangle, Zap,
+    Trophy, Medal, CheckCircle
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth/context'
+import { DynamicIcon } from '@/components/rota-valente/dynamic-icon'
+import { cn } from '@/lib/utils'
+import { getCurrentSeasonMonth } from '@/lib/api/rota-valente'
 
-import {
-    MOCK_BADGES,
-    MOCK_USER_GAMIFICATION,
-    MOCK_RANKS,
-    MOCK_PROFESSIONALS
-} from '@/lib/data/mock'
+interface UserGamification {
+    total_points: number
+    current_rank_id: string
+    monthly_vigor: number
+}
 
-export default function RotaDoValentePage() {
-    // In a real app, we'd get the current user's ID from auth
-    const currentUserId = '5' // Paulo Júnior for this demo
+interface Rank {
+    id: string
+    name: string
+    icon: string
+    points_required: number
+    rank_level: number
+    description: string
+}
 
-    const userGamification = MOCK_USER_GAMIFICATION.find(g => g.user_id === currentUserId) || {
-        user_id: currentUserId,
-        total_xp: 0,
-        current_rank_id: 'recruta',
-        badges_earned: []
+interface Proeza {
+    id: string
+    name: string
+    icon: string
+    points_base: number
+    description: string
+    category: string
+}
+
+interface UserProeza {
+    proeza_id: string
+    points_earned: number
+    earned_at: string
+    proezas: Proeza
+}
+
+interface PointHistory {
+    id: string
+    points: number
+    action_type: string
+    description: string
+    created_at: string
+}
+
+export default function RotaDoValenteDashboardPage() {
+    const { user } = useAuth()
+    const [loading, setLoading] = useState(true)
+    const [gamification, setGamification] = useState<UserGamification | null>(null)
+    const [currentRank, setCurrentRank] = useState<Rank | null>(null)
+    const [nextRank, setNextRank] = useState<Rank | null>(null)
+    const [allRanks, setAllRanks] = useState<Rank[]>([])
+    const [proezas, setProezas] = useState<Proeza[]>([])
+    const [userProezas, setUserProezas] = useState<UserProeza[]>([])
+    const [history, setHistory] = useState<PointHistory[]>([])
+    const [multiplier, setMultiplier] = useState(1)
+    const [planName, setPlanName] = useState('Recruta')
+
+    const supabase = createClient()
+    const seasonMonth = getCurrentSeasonMonth()
+
+    useEffect(() => {
+        if (user?.id) {
+            loadData()
+        }
+    }, [user?.id])
+
+    async function loadData() {
+        setLoading(true)
+
+        const userId = user?.id
+
+        // Buscar todos os dados em paralelo
+        const [
+            gamifResult,
+            ranksResult,
+            proezasResult,
+            userProezasResult,
+            historyResult,
+            subscriptionResult
+        ] = await Promise.all([
+            supabase.from('user_gamification').select('*').eq('user_id', userId).maybeSingle(),
+            supabase.from('ranks').select('*').order('rank_level'),
+            supabase.from('proezas').select('*').eq('is_active', true).order('display_order'),
+            supabase.from('user_proezas').select('*, proezas(*)').eq('user_id', userId).eq('season_month', seasonMonth),
+            supabase.from('points_history').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
+            supabase.from('subscriptions').select('plan_id').eq('user_id', userId).eq('status', 'active').maybeSingle()
+        ])
+
+        // Gamification
+        const gamif = gamifResult.data || { total_points: 0, current_rank_id: 'novato', monthly_vigor: 0 }
+        setGamification(gamif)
+
+        // Ranks
+        const ranks = ranksResult.data || []
+        setAllRanks(ranks)
+
+        // Determinar rank atual e próximo
+        const current = ranks.find((r: Rank) => r.id === gamif.current_rank_id) || ranks[0]
+        setCurrentRank(current)
+        const next = ranks.find((r: Rank) => r.rank_level === (current?.rank_level || 0) + 1)
+        setNextRank(next || null)
+
+        // Proezas
+        setProezas(proezasResult.data || [])
+        setUserProezas(userProezasResult.data || [])
+
+        // Histórico
+        setHistory(historyResult.data || [])
+
+        // Multiplicador
+        const planId = subscriptionResult.data?.plan_id || 'recruta'
+        const multipliers: Record<string, number> = { recruta: 1, veterano: 1.5, elite: 3 }
+        setMultiplier(multipliers[planId] || 1)
+        setPlanName(planId === 'elite' ? 'Elite' : planId === 'veterano' ? 'Veterano' : 'Recruta')
+
+        setLoading(false)
     }
 
-    const currentRank = MOCK_RANKS.find(r => r.id === userGamification.current_rank_id) || MOCK_RANKS[0]
-    const nextRank = MOCK_RANKS.find(r => r.display_order === currentRank.display_order + 1)
+    // Calcular progresso para próxima patente
+    const totalXP = gamification?.total_points || 0
+    const currentRequired = currentRank?.points_required || 0
+    const nextRequired = nextRank?.points_required || totalXP + 1000
+    const progressPercent = Math.min(100, ((totalXP - currentRequired) / (nextRequired - currentRequired)) * 100)
 
-    const userBadges = MOCK_BADGES.map(badge => {
-        const earnedInfo = userGamification.badges_earned?.find(eb => eb.badge_id === badge.id)
-        return {
-            ...badge,
-            earned: !!earnedInfo,
-            earnedAt: earnedInfo?.earned_at
-        }
-    })
+    // Proezas conquistadas vs total
+    const earnedProezaIds = userProezas.map(up => up.proeza_id)
+    const proezasEarnedCount = userProezas.length
+    const proezasTotalCount = proezas.length
 
-    const nationalRankings = MOCK_PROFESSIONALS.map(prof => {
-        const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === prof.user_id)
-        return {
-            id: prof.id,
-            name: prof.full_name,
-            xp: gamif?.total_xp || 0,
-            rank: MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)?.name || 'Recruta',
-            location: prof.location,
-            avatar_url: prof.avatar_url,
-            position: 0
-        }
-    }).sort((a, b) => b.xp - a.xp).map((item, idx) => ({ ...item, position: idx + 1 }))
-
-    const rankingData = {
-        local: nationalRankings.filter(r => r.location.includes('Ribeirão Preto')),
-        regional: nationalRankings.filter(r => r.location.includes('SP')),
-        national: nationalRankings
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-adventure flex items-center justify-center">
+                <div className="text-primary animate-pulse font-bold">Carregando Rota do Valente...</div>
+            </div>
+        )
     }
-
-    const MOCK_HISTORY = [
-        { id: '1', action: 'Avaliação 5 Estrelas', xp: 50, date: 'Hoje, 10:30' },
-        { id: '2', action: 'Badge Desbloqueada: Irmandade', xp: 75, date: '14 Jan' },
-        { id: '3', action: 'Atualização de Perfil', xp: 100, date: '10 Jan' },
-    ]
 
     return (
         <div className="min-h-screen bg-adventure pb-20">
@@ -80,14 +161,13 @@ export default function RotaDoValentePage() {
                             Honra, Vigor e Progresso. Bem-vindo à sua jornada de ascensão.
                         </p>
                     </div>
-                    <div className="flex gap-3">
-                        <Button variant="outline" className="border-primary/20 bg-card/50">
-                            <Info className="w-4 h-4 mr-2" />
-                            Como Funciona
-                        </Button>
+                    <div className="flex gap-3 items-center">
+                        <Badge variant="outline" className="text-sm px-3 py-1">
+                            Plano {planName} • {multiplier}x XP
+                        </Badge>
                         <Button className="glow-orange bg-secondary hover:bg-secondary/90 text-white">
                             <Flag className="w-4 h-4 mr-2" />
-                            Temporada Atual
+                            {seasonMonth}
                         </Button>
                     </div>
                 </div>
@@ -96,11 +176,49 @@ export default function RotaDoValentePage() {
                     {/* Left Column: Stats & Progress */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* XP and Rank Card */}
-                        <XPProgress
-                            xp={userGamification.total_xp}
-                            rank={currentRank as any}
-                            nextRank={nextRank as any}
-                        />
+                        <Card className="border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden">
+                            <CardContent className="p-6">
+                                <div className="flex items-center gap-6 mb-6">
+                                    {/* Rank Icon */}
+                                    <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                                        <DynamicIcon name={currentRank?.icon || 'Shield'} size="xl" className="text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-xs font-black uppercase text-muted-foreground mb-1">Patente Atual</div>
+                                        <h2 className="text-3xl font-black text-primary">{currentRank?.name || 'Recruta'}</h2>
+                                        <div className="flex items-center gap-3 mt-2">
+                                            <div className="text-sm">
+                                                <span className="font-black text-secondary">{totalXP.toLocaleString()}</span>
+                                                <span className="text-muted-foreground"> Vigor Total</span>
+                                            </div>
+                                            <div className="text-sm">
+                                                <span className="font-black text-green-500">{(gamification?.monthly_vigor || 0).toLocaleString()}</span>
+                                                <span className="text-muted-foreground"> este mês</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Progress to Next Rank */}
+                                {nextRank && (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-xs font-bold uppercase">
+                                            <span className="text-muted-foreground">Próxima Patente: {nextRank.name}</span>
+                                            <span className="text-primary">{totalXP}/{nextRequired} Vigor</span>
+                                        </div>
+                                        <div className="h-3 w-full bg-primary/10 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+                                                style={{ width: `${progressPercent}%` }}
+                                            />
+                                        </div>
+                                        <div className="text-xs text-muted-foreground text-right">
+                                            Faltam {(nextRequired - totalXP).toLocaleString()} Vigor
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
 
                         {/* Recent Activity */}
                         <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
@@ -112,91 +230,135 @@ export default function RotaDoValentePage() {
                             </CardHeader>
                             <CardContent className="p-0">
                                 <div className="divide-y divide-primary/5">
-                                    {MOCK_HISTORY.map((item) => (
-                                        <div key={item.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
-                                            <div>
-                                                <p className="font-bold text-sm text-foreground">{item.action}</p>
-                                                <p className="text-xs text-muted-foreground">{item.date}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="font-black text-secondary">+{item.xp} Vigor</span>
-                                            </div>
+                                    {history.length === 0 ? (
+                                        <div className="p-4 text-center text-muted-foreground text-sm">
+                                            Nenhuma atividade ainda. Comece a conquistar Vigor!
                                         </div>
-                                    ))}
+                                    ) : (
+                                        history.slice(0, 5).map((item) => (
+                                            <div key={item.id} className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
+                                                <div>
+                                                    <p className="font-bold text-sm text-foreground">{item.description || item.action_type}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="font-black text-secondary">+{item.points} Vigor</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
-                                <Button variant="ghost" className="w-full h-10 text-xs font-bold uppercase text-muted-foreground hover:text-primary">
-                                    Ver Histórico Completo
-                                </Button>
                             </CardContent>
                         </Card>
 
-                        {/* Badges Section */}
+                        {/* Proezas Section */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xl font-bold text-impact text-primary flex items-center gap-2">
-                                    <Award className="w-6 h-6 text-secondary" />
-                                    Conquistas (Badges)
+                                    <Flame className="w-6 h-6 text-secondary" />
+                                    Proezas do Mês
                                 </h3>
                                 <span className="text-xs font-bold text-muted-foreground uppercase px-3 py-1 bg-primary/10 rounded-full">
-                                    {userGamification.badges_earned?.length || 0} de {MOCK_BADGES.length} Desbloqueadas
+                                    {proezasEarnedCount} de {proezasTotalCount} Conquistadas
                                 </span>
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                {userBadges.map((badge) => (
-                                    <BadgeCard
-                                        key={badge.id}
-                                        badge={badge as any}
-                                        isEarned={badge.earned}
-                                        earnedAt={badge.earnedAt}
-                                    />
-                                ))}
+                                {proezas.slice(0, 8).map((proeza) => {
+                                    const isEarned = earnedProezaIds.includes(proeza.id)
+                                    return (
+                                        <Card
+                                            key={proeza.id}
+                                            className={cn(
+                                                "border transition-all",
+                                                isEarned
+                                                    ? "border-secondary/50 bg-secondary/10"
+                                                    : "border-primary/10 bg-card/30 opacity-60"
+                                            )}
+                                        >
+                                            <CardContent className="p-4 text-center">
+                                                <div className={cn(
+                                                    "w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3",
+                                                    isEarned ? "bg-secondary" : "bg-muted"
+                                                )}>
+                                                    <DynamicIcon name={proeza.icon} size="md" className="text-white" />
+                                                </div>
+                                                <h4 className="text-xs font-bold uppercase mb-1">{proeza.name}</h4>
+                                                <p className="text-[10px] text-muted-foreground">{proeza.description}</p>
+                                                {isEarned && (
+                                                    <Badge variant="secondary" className="mt-2 text-[10px]">
+                                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                                        +{proeza.points_base} pts
+                                                    </Badge>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    )
+                                })}
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column: Challenges & Rankings */}
+                    {/* Right Column: Ranking & Info */}
                     <div className="space-y-8">
-                        {/* Monthly Challenge */}
-                        <Card className="border-secondary/30 bg-secondary/5 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <Target className="w-20 h-20" />
-                            </div>
-                            <CardHeader>
-                                <CardTitle className="text-lg font-bold text-impact text-secondary flex items-center gap-2">
-                                    <Target className="w-5 h-5 animate-pulse" />
-                                    Desafio do Mês
-                                </CardTitle>
-                                <CardDescription className="text-secondary/80">
-                                    Missão: Infiltrado de Elite
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <p className="text-sm font-medium text-foreground">
-                                    Responda a 5 demandas em menos de 2 horas cada para provar sua prontidão.
+                        {/* Multiplicador Card */}
+                        <Card className="border-secondary/30 bg-gradient-to-br from-secondary/10 to-secondary/5">
+                            <CardContent className="p-6 text-center">
+                                <Zap className="w-12 h-12 text-secondary mx-auto mb-4" />
+                                <h3 className="text-2xl font-black text-secondary mb-2">{multiplier}x MULTIPLICADOR</h3>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    Seu plano {planName} multiplica todo Vigor conquistado!
                                 </p>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between text-[10px] font-black uppercase">
-                                        <span>Progresso</span>
-                                        <span>2 / 5</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-secondary/20 rounded-full overflow-hidden">
-                                        <div className="h-full bg-secondary w-[40%]" />
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="p-2 rounded bg-secondary/10 text-secondary text-xs font-black">
-                                        +500 Vigor
-                                    </div>
-                                    <div className="text-[10px] text-muted-foreground font-bold uppercase">
-                                        + Badge Sentinela
-                                    </div>
-                                </div>
+                                {multiplier < 3 && (
+                                    <Button variant="outline" className="w-full border-secondary text-secondary hover:bg-secondary hover:text-white">
+                                        Upgrade para Elite (3x)
+                                    </Button>
+                                )}
                             </CardContent>
                         </Card>
 
-                        {/* Rankings Board */}
-                        <RankingsBoard data={rankingData as any} />
+                        {/* Patentes Hierarchy */}
+                        <Card className="border-primary/20 bg-card/50">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                    <Trophy className="w-5 h-5 text-secondary" />
+                                    Hierarquia de Patentes
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {allRanks.map((rank) => {
+                                    const isCurrent = rank.id === currentRank?.id
+                                    const isAchieved = totalXP >= rank.points_required
+                                    return (
+                                        <div
+                                            key={rank.id}
+                                            className={cn(
+                                                "flex items-center gap-3 p-3 rounded-lg transition-all",
+                                                isCurrent && "bg-primary/10 border border-primary/20",
+                                                !isCurrent && isAchieved && "opacity-50",
+                                                !isAchieved && !isCurrent && "opacity-30"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "w-10 h-10 rounded-full flex items-center justify-center",
+                                                isAchieved ? "bg-secondary" : "bg-muted"
+                                            )}>
+                                                <DynamicIcon name={rank.icon || 'Shield'} size="sm" className="text-white" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-bold text-sm">{rank.name}</div>
+                                                <div className="text-xs text-muted-foreground">{rank.points_required.toLocaleString()} Vigor</div>
+                                            </div>
+                                            {isCurrent && (
+                                                <Badge className="bg-primary text-white text-[10px]">ATUAL</Badge>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </CardContent>
+                        </Card>
 
                         {/* Anti-Fraud Notice */}
                         <Card className="border-amber-500/20 bg-amber-500/5">
@@ -205,7 +367,8 @@ export default function RotaDoValentePage() {
                                 <div className="space-y-1">
                                     <p className="text-xs font-bold text-amber-500 uppercase">Aviso de Moderação</p>
                                     <p className="text-[11px] text-muted-foreground leading-tight">
-                                        Para manter a honra da guilda, o ganho diário de vigor por ações repetitivas é limitado a 500. Contratos e serviços não entram no teto.
+                                        Para manter a honra do sistema, ações repetitivas têm limite diário.
+                                        Contratos e serviços concluídos não entram no teto.
                                     </p>
                                 </div>
                             </CardContent>
