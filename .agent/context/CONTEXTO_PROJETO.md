@@ -19,6 +19,13 @@
 - **Hospedagem:** Vercel (plano Hobby)
 - **DNS + CDN:** Cloudflare (ativo)
 - **Email:** Resend (domínio verificado)
+- **Banco de Dados:** Supabase PostgreSQL ✅
+
+**🔌 Acesso Direto ao Banco:**
+- **Credenciais:** `/home/igor/.gemini/supabase_credentials.env`
+- **Host:** db.erzprkocwzgdjrsictps.supabase.co
+- **Porta:** 5432
+- **Comando:** `psql -h db.erzprkocwzgdjrsictps.supabase.co -p 5432 -d postgres -U postgres`
 
 ---
 

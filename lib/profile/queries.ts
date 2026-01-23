@@ -39,7 +39,7 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             .from('user_gamification')
             .select(`
                 *,
-                ranks!current_rank_id(*)
+                rank:ranks!current_rank_id(*)
             `)
             .eq('user_id', userId)
             .single()
@@ -159,7 +159,7 @@ export async function getUserGamification(userId: string) {
         .from('user_gamification')
         .select(`
             *,
-            ranks!current_rank_id(*),
+            rank:ranks!current_rank_id(*),
             user_medals(
                 medal_id,
                 earned_at,

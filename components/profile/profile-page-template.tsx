@@ -123,6 +123,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                                     <div className="absolute bottom-0 right-0">
                                         <RankInsignia
                                             rankId={gamification?.current_rank_id || 'recruta'}
+                                            iconName={gamification?.rank?.icon}
                                             size="sm"
                                             variant="avatar"
                                         />
@@ -276,6 +277,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                                         <Badge className="relative bg-primary hover:bg-primary/90 text-white text-xs font-black gap-1.5 px-3 py-1.5 shadow-xl shadow-primary/40 border-2 border-secondary/50 uppercase tracking-wide">
                                             <RankInsignia
                                                 rankId={gamification?.current_rank_id || 'novato'}
+                                                iconName={gamification?.rank?.icon}
                                                 size="xs"
                                                 variant="icon-only"
                                                 className="w-4 h-4 text-white"
