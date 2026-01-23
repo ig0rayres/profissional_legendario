@@ -1,6 +1,6 @@
 # 🧠 CONTEXTO DO PROJETO - ROTA BUSINESS CLUB
 
-*Última atualização: 21/01/2026 - 20:45*
+*Última atualização: 23/01/2026 - 13:00*
 
 > **INSTRUÇÃO:** No início de cada sessão, peça para o assistente ler este arquivo:
 > `"leia o arquivo CONTEXTO_PROJETO.md"`
@@ -36,18 +36,18 @@
 9. **Histórico de Batalha** - Card com histórico mensal, patentes, ranking, medalhas
 10. **Verificação por Gorra** - OpenAI Vision, webcam, câmera mobile, extração de ID
 11. **Sistema de Medalhas Completo** - Modal, chat, sino, multiplicadores
-12. **Deploy Production** 🆕 - Vercel + Cloudflare configurados
+12. **Deploy Production** - Vercel + Cloudflare configurados
+13. **Stripe Checkout** 🆕 - Assinaturas, webhooks, portal do cliente
 
 ### 🔨 Em Desenvolvimento:
 1. **Na Rota (Feed Social)** - Posts de confrarias, likes, comentários
 2. **Validação por IA** - OpenAI Vision valida fotos de confrarias (2+ pessoas)
 
 ### 🚧 Pendentes:
-1. **Stripe** - Gateway de pagamento (próxima sessão)
-2. **Resend upgrade** - Pro ($20/mês) antes do evento de lançamento
-3. **Marketplace** - Produtos/serviços
-4. **Eventos** - Criação e inscrições
-5. **Primary Domain** - Marcar rotabusinessclub.com.br como primário no Vercel
+1. **Resend upgrade** - Pro ($20/mês) antes do evento de lançamento
+2. **Marketplace** - Produtos/serviços
+3. **Eventos** - Criação e inscrições
+4. **Primary Domain** - Marcar rotabusinessclub.com.br como primário no Vercel
 
 ---
 
@@ -186,6 +186,18 @@ npm run build
 ---
 
 ## 📅 HISTÓRICO RECENTE
+
+### 23/01/2026: 💳 STRIPE INTEGRADO!
+- **Checkout de Assinaturas** ✅
+  - Stripe Checkout funcionando
+  - Webhooks processando eventos corretamente
+  - Tabela `subscriptions` atualizada via webhook
+  - Planos (Veterano/Elite) sendo creditados automaticamente
+  - Redirecionamento para URL correta após pagamento
+- **Correções técnicas:**
+  - Campo `plan_id` usa TIER (string), não UUID
+  - API version atualizada para `2024-12-18.acacia`
+  - Variável `NEXT_PUBLIC_APP_URL` configurada
 
 ### 21/01/2026 (Tarde): 🚀
 - **DEPLOY EM PRODUÇÃO** ✅
