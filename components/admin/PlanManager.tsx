@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { formatCurrency } from '@/lib/api/financial'
-import { Save, Edit, Check, X, Zap, Link2, Users, ShoppingBag, Infinity } from 'lucide-react'
+import { Save, Edit, Check, X, Zap, Link2, Users, ShoppingBag, Infinity, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Plan {
@@ -26,6 +26,9 @@ interface Plan {
     can_send_elo: boolean
     is_active: boolean
     display_order: number
+    // Campos Stripe
+    stripe_product_id?: string | null
+    stripe_price_id?: string | null
 }
 
 export function PlanManager() {
@@ -69,7 +72,9 @@ export function PlanManager() {
             max_confraternities_month: plan.max_confraternities_month,
             can_send_confraternity: plan.can_send_confraternity,
             max_marketplace_ads: plan.max_marketplace_ads,
-            is_active: plan.is_active
+            is_active: plan.is_active,
+            stripe_product_id: plan.stripe_product_id,
+            stripe_price_id: plan.stripe_price_id
         })
     }
 
@@ -92,6 +97,8 @@ export function PlanManager() {
                     can_send_confraternity: editForm.can_send_confraternity,
                     max_marketplace_ads: editForm.max_marketplace_ads,
                     is_active: editForm.is_active,
+                    stripe_product_id: editForm.stripe_product_id || null,
+                    stripe_price_id: editForm.stripe_price_id || null,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', planId)
@@ -336,7 +343,46 @@ export function PlanManager() {
                                     </div>
                                 </div>
 
-                                {/* Linha 4: Features */}
+                                {/* Linha 4: Integração Stripe */}
+                                <div className="p-4 border border-orange-500/30 rounded-lg bg-orange-500/5">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <CreditCard className="w-5 h-5 text-orange-500" />
+                                        <Label className="text-orange-500 font-semibold">Integração Stripe</Label>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <Label className="text-sm text-muted-foreground">Product ID</Label>
+                                            <Input
+                                                placeholder="prod_XXXX..."
+                                                value={editForm.stripe_product_id || ''}
+                                                onChange={(e) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        stripe_product_id: e.target.value
+                                                    })
+                                                }
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-sm text-muted-foreground">Price ID</Label>
+                                            <Input
+                                                placeholder="price_XXXX..."
+                                                value={editForm.stripe_price_id || ''}
+                                                onChange={(e) =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        stripe_price_id: e.target.value
+                                                    })
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        Copie os IDs do Stripe Dashboard → Products
+                                    </p>
+                                </div>
+
+                                {/* Linha 5: Features */}
                                 <div>
                                     <Label>Features (uma por linha)</Label>
                                     <Textarea
