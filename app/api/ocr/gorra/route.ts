@@ -49,16 +49,37 @@ export async function POST(request: NextRequest) {
                         content: [
                             {
                                 type: 'text',
-                                text: `Analise esta imagem de uma gorra (boné) que contém um número de identificação impresso na aba.
-                                
-O número é composto por 5 a 7 dígitos e está em cor laranja/terracota sobre fundo camuflado.
+                                text: `Você é um sistema de validação de ID_ROTA do Rota Business Club.
 
-Extraia APENAS o número de identificação. Responda SOMENTE com os dígitos numéricos, sem texto adicional.
+CONTEXTO:
+- Membros possuem um número de identificação impresso em cor LARANJA sobre fundo CAMUFLADO marrom/bege
+- O número tem entre 5 e 7 dígitos
 
-Se não conseguir identificar um número, responda: ERRO
+TAREFA:
+Analise a imagem e responda no formato JSON:
+{
+  "valid": true/false,
+  "id": "123456" ou null,
+  "reason": "motivo se inválido"
+}
 
-Exemplos de resposta correta: 141018, 123456, 9876543
-Exemplo de resposta incorreta: O número é 141018`
+VALIDAÇÕES (ambas obrigatórias):
+1. O número DEVE estar em COR LARANJA (tons de laranja/terracota/coral)
+2. O fundo DEVE ser CAMUFLADO (padrão militar marrom/bege, tons terrosos)
+
+Se o número NÃO estiver em cor laranja:
+{"valid": false, "id": null, "reason": "Número não está na cor laranja oficial"}
+
+Se o fundo NÃO for camuflado marrom/bege:
+{"valid": false, "id": null, "reason": "Fundo não é o padrão camuflado oficial"}
+
+Se ambas validações passarem:
+{"valid": true, "id": "123456", "reason": null}
+
+Se não conseguir ver um número:
+{"valid": false, "id": null, "reason": "Não foi possível identificar um número na imagem"}
+
+Responda APENAS com o JSON, sem markdown ou texto adicional.`
                             },
                             {
                                 type: 'image_url',
@@ -70,7 +91,7 @@ Exemplo de resposta incorreta: O número é 141018`
                         ]
                     }
                 ],
-                max_tokens: 50,
+                max_tokens: 200,
                 temperature: 0 // Resposta determinística
             })
         })
@@ -97,24 +118,57 @@ Exemplo de resposta incorreta: O número é 141018`
         const data = await response.json()
         const extractedText = data.choices?.[0]?.message?.content?.trim() || ''
 
-        console.log('[OCR API] Texto extraído:', extractedText)
+        console.log('[OCR API] Resposta IA:', extractedText)
 
-        // Validar se é um número válido
-        const cleanNumber = extractedText.replace(/\D/g, '')
+        // Tentar parsear como JSON
+        try {
+            // Limpar possíveis caracteres extras (markdown, etc)
+            const cleanJson = extractedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+            const result = JSON.parse(cleanJson)
 
-        if (extractedText === 'ERRO' || cleanNumber.length < 5 || cleanNumber.length > 7) {
+            console.log('[OCR API] Resultado parseado:', result)
+
+            if (result.valid === true && result.id) {
+                // Validação passou!
+                const cleanNumber = result.id.replace(/\D/g, '')
+
+                if (cleanNumber.length >= 5 && cleanNumber.length <= 7) {
+                    return NextResponse.json({
+                        success: true,
+                        id: cleanNumber,
+                        raw: extractedText
+                    })
+                }
+            }
+
+            // Validação falhou - retornar motivo específico
+            return NextResponse.json({
+                success: false,
+                error: result.reason || 'Imagem não reconhecida como boné oficial',
+                code: 'VALIDATION_FAILED',
+                raw: extractedText
+            })
+
+        } catch (jsonError) {
+            // Fallback: tentar extrair número do texto (compatibilidade)
+            console.log('[OCR API] Fallback: extraindo número do texto')
+            const cleanNumber = extractedText.replace(/\D/g, '')
+
+            if (cleanNumber.length >= 5 && cleanNumber.length <= 7) {
+                return NextResponse.json({
+                    success: true,
+                    id: cleanNumber,
+                    raw: extractedText,
+                    warning: 'Validação de autenticidade não realizada'
+                })
+            }
+
             return NextResponse.json({
                 success: false,
                 error: 'Não foi possível identificar o número na imagem',
                 raw: extractedText
             })
         }
-
-        return NextResponse.json({
-            success: true,
-            id: cleanNumber,
-            raw: extractedText
-        })
 
     } catch (error) {
         console.error('[OCR API] Erro:', error)
