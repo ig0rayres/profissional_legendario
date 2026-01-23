@@ -81,7 +81,7 @@ export function RankInsignia({
                 borderRadius: '50%'
             }}
         >
-            <IconComponent className={cn(sizeMap[size])} strokeWidth={2.5} />
+            <IconComponent className={cn(sizeMap[size], "text-white")} strokeWidth={2.5} />
             {showLabel && <span className="ml-1 uppercase font-bold text-[10px] sm:text-xs">{rankName || rankId}</span>}
         </div>
     )
