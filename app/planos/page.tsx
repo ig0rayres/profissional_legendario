@@ -27,12 +27,12 @@ const TIER_CONFIG: Record<string, { icon: typeof Shield, popular: boolean, gradi
     },
     veterano: {
         icon: Zap,
-        popular: true,
+        popular: false,
         gradient: 'from-orange-500/20 to-amber-500/20'
     },
     elite: {
         icon: Crown,
-        popular: false,
+        popular: true,
         gradient: 'from-primary/20 to-emerald-500/20'
     }
 }
@@ -176,14 +176,14 @@ export default function PlansPage() {
                             <Card
                                 key={plan.id}
                                 className={`relative overflow-hidden border-2 transition-all duration-300 hover:scale-105 ${isPopular
-                                        ? 'border-orange-500 shadow-lg shadow-orange-500/20'
-                                        : 'border-primary/20 hover:border-primary/40'
+                                    ? 'border-primary shadow-lg shadow-primary/20'
+                                    : 'border-primary/20 hover:border-primary/40'
                                     }`}
                             >
                                 {/* Popular Badge */}
                                 {isPopular && (
-                                    <div className="absolute top-0 right-0 bg-orange-500 text-white px-4 py-1 text-sm font-bold rounded-bl-lg">
-                                        MAIS POPULAR
+                                    <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-sm font-bold rounded-bl-lg">
+                                        RECOMENDADO
                                     </div>
                                 )}
 
@@ -233,7 +233,7 @@ export default function PlansPage() {
                                         </Button>
                                     ) : (
                                         <Button
-                                            className={`w-full ${isPopular ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                                            className={`w-full ${isPopular ? 'bg-primary hover:bg-primary/90' : ''}`}
                                             onClick={() => handleSubscribe(plan)}
                                             disabled={subscribing === plan.id}
                                         >

@@ -6,6 +6,7 @@ import { Star, Briefcase, MapPin, Mail, Phone, ArrowLeft, Shield, Settings, Edit
 import { RotaValenteCard } from '@/components/profile/rota-valente-card'
 import { ConfraternityStats } from '@/components/profile/confraternity-stats'
 import { ProfileActionButtons, ProfileSecondaryButtons } from '@/components/profile/profile-action-buttons'
+import { UpgradeCTA } from '@/components/UpgradeCTA'
 import { ProjectsCounter } from '@/components/profile/projects-counter'
 import { NaRotaFeed } from '@/components/profile/user-mural'
 import { ElosDaRota } from '@/components/profile/elos-da-rota'
@@ -64,6 +65,13 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                         </a>
                     </Button>
                 </div>
+
+                {/* Banner de Upgrade para donos do perfil */}
+                {isOwner && (
+                    <div className="mb-6">
+                        <UpgradeCTA variant="banner" />
+                    </div>
+                )}
 
                 {/* Header Card */}
                 <Card className="mb-6 overflow-hidden relative shadow-xl shadow-black/10 border border-white/10 backdrop-blur-sm">
@@ -383,6 +391,11 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                                 )}
                             </CardContent>
                         </Card>
+
+                        {/* CTA de Upgrade na Sidebar */}
+                        {isOwner && (
+                            <UpgradeCTA variant="card" />
+                        )}
                     </div>
                 </div>
             </div >
