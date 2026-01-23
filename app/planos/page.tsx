@@ -78,15 +78,25 @@ export default function PlansPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
+            // Buscar subscription
             const { data: sub } = await supabase
                 .from('subscriptions')
-                .select('plan_id, plans:plan_config(tier)')
+                .select('plan_id')
                 .eq('user_id', user.id)
                 .eq('status', 'active')
                 .maybeSingle()
 
-            if (sub?.plans) {
-                setCurrentPlan((sub.plans as any).tier)
+            if (sub?.plan_id) {
+                // Buscar tier do plano
+                const { data: plan } = await supabase
+                    .from('plan_config')
+                    .select('tier')
+                    .eq('id', sub.plan_id)
+                    .maybeSingle()
+
+                if (plan) {
+                    setCurrentPlan(plan.tier)
+                }
             }
         } catch (error) {
             console.error('Error loading subscription:', error)

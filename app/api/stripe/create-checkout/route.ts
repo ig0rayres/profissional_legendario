@@ -32,14 +32,33 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Buscar plano no banco
-        const { data: plan, error: planError } = await supabase
+        // Buscar plano no banco - tentar por ID primeiro, depois por tier
+        let plan = null
+        let planError = null
+
+        // Tentar buscar por ID (UUID)
+        const { data: planById, error: errorById } = await supabase
             .from('plan_config')
             .select('*')
             .eq('id', planId)
-            .single()
+            .maybeSingle()
 
-        if (planError || !plan) {
+        if (planById) {
+            plan = planById
+        } else {
+            // Tentar buscar por tier (string: recruta, veterano, elite)
+            const { data: planByTier, error: errorByTier } = await supabase
+                .from('plan_config')
+                .select('*')
+                .eq('tier', planId)
+                .maybeSingle()
+
+            plan = planByTier
+            planError = errorByTier
+        }
+
+        if (!plan) {
+            console.error('[Stripe] Plano não encontrado. planId:', planId)
             return NextResponse.json(
                 { error: 'Plano não encontrado' },
                 { status: 404 }
