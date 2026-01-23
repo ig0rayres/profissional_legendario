@@ -58,7 +58,7 @@ export default function AdminLayout({
         { name: 'Pistas', href: '/admin/pistas', icon: MapPin },
         { name: 'Marketplace', href: '/admin/marketplace', icon: ShoppingBag },
         { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign },
-        { name: 'Game', href: '/admin/game', icon: Trophy },
+        { name: 'Rota do Valente', href: '/admin/rota-valente', icon: Trophy },
         { name: 'Usuários', href: '/admin/users', icon: Users },
         { name: 'Verificações', href: '/admin/verifications', icon: ShieldCheck },
         { name: 'Configurações', href: '/admin/settings', icon: Settings },
