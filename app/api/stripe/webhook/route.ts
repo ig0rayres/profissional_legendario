@@ -116,14 +116,40 @@ export async function POST(request: NextRequest) {
  */
 async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Session) {
     const userId = session.metadata?.supabase_user_id
-    const planId = session.metadata?.plan_id
+    let planId = session.metadata?.plan_id
+    const planTier = session.metadata?.plan_tier
 
-    if (!userId || !planId) {
-        console.error('[Stripe Webhook] Missing metadata in checkout session')
+    if (!userId) {
+        console.error('[Stripe Webhook] Missing user_id in checkout session metadata')
         return
     }
 
-    console.log('[Stripe Webhook] Checkout complete for user:', userId, 'plan:', planId)
+    console.log('[Stripe Webhook] Checkout complete for user:', userId, 'planId:', planId, 'tier:', planTier)
+
+    // Se planId não for um UUID válido, buscar pelo tier
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!planId || !uuidRegex.test(planId)) {
+        // Tentar buscar pelo tier
+        const tierToSearch = planTier || planId
+        if (tierToSearch) {
+            const { data: planData, error: planError } = await supabase
+                .from('plan_config')
+                .select('id')
+                .eq('tier', tierToSearch)
+                .maybeSingle()
+
+            if (planData?.id) {
+                planId = planData.id
+                console.log('[Stripe Webhook] Found plan by tier:', tierToSearch, '-> id:', planId)
+            } else {
+                console.error('[Stripe Webhook] Plan not found for tier:', tierToSearch, 'error:', planError)
+                return
+            }
+        } else {
+            console.error('[Stripe Webhook] No valid planId or tier provided')
+            return
+        }
+    }
 
     // Verificar se já tem subscription
     const { data: existingSub } = await supabase
@@ -134,27 +160,58 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
 
     const now = new Date().toISOString()
 
-    // Calcular período (30 dias)
-    const periodEnd = new Date()
-    periodEnd.setDate(periodEnd.getDate() + 30)
+    // Calcular período usando a subscription do Stripe se disponível
+    let periodEnd: string
+    try {
+        if (session.subscription) {
+            // Buscar a subscription do Stripe para pegar o current_period_end real
+            const stripe = getStripe()
+            const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription as string)
+            if (stripeSubscription.current_period_end) {
+                periodEnd = new Date(stripeSubscription.current_period_end * 1000).toISOString()
+            } else {
+                // Fallback: calcular 30 dias
+                const endDate = new Date()
+                endDate.setDate(endDate.getDate() + 30)
+                periodEnd = endDate.toISOString()
+            }
+        } else {
+            // Fallback: calcular 30 dias
+            const endDate = new Date()
+            endDate.setDate(endDate.getDate() + 30)
+            periodEnd = endDate.toISOString()
+        }
+    } catch (error) {
+        console.error('[Stripe Webhook] Error getting period end, using fallback:', error)
+        const endDate = new Date()
+        endDate.setDate(endDate.getDate() + 30)
+        periodEnd = endDate.toISOString()
+    }
+
+    console.log('[Stripe Webhook] Period end:', periodEnd)
 
     if (existingSub) {
         // Atualizar existente
-        await supabase
+        const { error: updateError } = await supabase
             .from('subscriptions')
             .update({
                 plan_id: planId,
                 status: 'active',
                 stripe_customer_id: session.customer as string,
                 stripe_subscription_id: session.subscription as string,
-                current_period_end: periodEnd.toISOString(),
+                current_period_end: periodEnd,
                 cancel_at_period_end: false,
                 updated_at: now
             })
             .eq('id', existingSub.id)
+
+        if (updateError) {
+            console.error('[Stripe Webhook] Error updating subscription:', updateError)
+            throw updateError
+        }
     } else {
         // Criar nova
-        await supabase
+        const { error: insertError } = await supabase
             .from('subscriptions')
             .insert({
                 user_id: userId,
@@ -162,12 +219,17 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
                 status: 'active',
                 stripe_customer_id: session.customer as string,
                 stripe_subscription_id: session.subscription as string,
-                current_period_end: periodEnd.toISOString(),
+                current_period_end: periodEnd,
                 cancel_at_period_end: false
             })
+
+        if (insertError) {
+            console.error('[Stripe Webhook] Error inserting subscription:', insertError)
+            throw insertError
+        }
     }
 
-    console.log('[Stripe Webhook] Subscription created/updated for user:', userId)
+    console.log('[Stripe Webhook] Subscription created/updated successfully for user:', userId)
 }
 
 /**
@@ -175,27 +237,124 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
  */
 async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subscription) {
     const userId = subscription.metadata?.supabase_user_id
+    let planId = subscription.metadata?.plan_id
+    const planTier = subscription.metadata?.plan_tier
 
     if (!userId) {
         console.error('[Stripe Webhook] Missing user_id in subscription metadata')
         return
     }
 
+    console.log('[Stripe Webhook] Subscription update for user:', userId, 'planId:', planId, 'tier:', planTier, 'status:', subscription.status)
+
+    // Se planId não for um UUID válido, buscar pelo tier
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!planId || !uuidRegex.test(planId)) {
+        const tierToSearch = planTier || planId
+        if (tierToSearch) {
+            const { data: planData } = await supabase
+                .from('plan_config')
+                .select('id')
+                .eq('tier', tierToSearch)
+                .maybeSingle()
+
+            if (planData?.id) {
+                planId = planData.id
+                console.log('[Stripe Webhook] Found plan by tier:', tierToSearch, '-> id:', planId)
+            }
+        }
+    }
+
     const status = subscription.status === 'active' ? 'active' :
         subscription.status === 'past_due' ? 'past_due' :
             subscription.status === 'canceled' ? 'canceled' : 'inactive'
 
-    await supabase
-        .from('subscriptions')
-        .update({
-            status,
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
-            updated_at: new Date().toISOString()
-        })
-        .eq('stripe_subscription_id', subscription.id)
+    // Converter timestamp para ISO string com validação
+    let periodEnd: string | null = null
+    if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
+        periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+        console.log('[Stripe Webhook] Period end from subscription:', periodEnd)
+    } else {
+        // Tentar pegar de items.data[0] se disponível
+        const firstItem = subscription.items?.data?.[0]
+        if (firstItem && (firstItem as any).current_period_end) {
+            const itemPeriodEnd = (firstItem as any).current_period_end
+            if (typeof itemPeriodEnd === 'number') {
+                periodEnd = new Date(itemPeriodEnd * 1000).toISOString()
+                console.log('[Stripe Webhook] Period end from item:', periodEnd)
+            }
+        }
+    }
 
-    console.log('[Stripe Webhook] Subscription updated:', subscription.id, 'status:', status)
+    // Verificar se já existe subscription para este usuário
+    const { data: existingSub } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+    const now = new Date().toISOString()
+
+    if (existingSub) {
+        // Atualizar existente
+        const updateData: any = {
+            status,
+            cancel_at_period_end: subscription.cancel_at_period_end || false,
+            stripe_customer_id: subscription.customer as string,
+            stripe_subscription_id: subscription.id,
+            updated_at: now
+        }
+
+        if (periodEnd) {
+            updateData.current_period_end = periodEnd
+        }
+
+        if (planId) {
+            updateData.plan_id = planId
+        }
+
+        const { error: updateError } = await supabase
+            .from('subscriptions')
+            .update(updateData)
+            .eq('id', existingSub.id)
+
+        if (updateError) {
+            console.error('[Stripe Webhook] Error updating subscription:', updateError)
+            throw updateError
+        }
+
+        console.log('[Stripe Webhook] Subscription updated for user:', userId, 'status:', status)
+    } else {
+        // Criar nova subscription se não existir
+        if (!planId) {
+            console.error('[Stripe Webhook] Cannot create subscription without plan_id')
+            return
+        }
+
+        const insertData: any = {
+            user_id: userId,
+            plan_id: planId,
+            status,
+            stripe_customer_id: subscription.customer as string,
+            stripe_subscription_id: subscription.id,
+            cancel_at_period_end: subscription.cancel_at_period_end || false
+        }
+
+        if (periodEnd) {
+            insertData.current_period_end = periodEnd
+        }
+
+        const { error: insertError } = await supabase
+            .from('subscriptions')
+            .insert(insertData)
+
+        if (insertError) {
+            console.error('[Stripe Webhook] Error inserting subscription:', insertError)
+            throw insertError
+        }
+
+        console.log('[Stripe Webhook] Subscription CREATED for user:', userId, 'status:', status)
+    }
 }
 
 /**

@@ -103,9 +103,13 @@ export async function POST(request: NextRequest) {
             customerId = customer.id
         }
 
-        // URL base para redirecionamento
+        // URL base para redirecionamento - priorizar domínio de produção
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null) ||
             (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+
+        console.log('[Stripe] Using baseUrl:', baseUrl)
 
         // Criar sessão de checkout
         const session = await stripe.checkout.sessions.create({
@@ -123,25 +127,26 @@ export async function POST(request: NextRequest) {
             subscription_data: {
                 metadata: {
                     supabase_user_id: user.id,
-                    plan_id: planId,
+                    plan_id: plan.id,  // Usar o UUID do plano, não o planId que pode ser tier
                     plan_tier: plan.tier
                 }
             },
             metadata: {
                 supabase_user_id: user.id,
-                plan_id: planId
+                plan_id: plan.id  // Usar o UUID do plano
             },
             allow_promotion_codes: true,
             billing_address_collection: 'auto',
             locale: 'pt-BR',
         })
 
-        console.log('[Stripe] Checkout session created:', session.id, 'for user:', user.id)
+        console.log('[Stripe] Checkout session created:', session.id, 'for user:', user.id, 'plan:', plan.id, 'tier:', plan.tier)
 
         return NextResponse.json({
             sessionId: session.id,
             url: session.url
         })
+
 
     } catch (error: any) {
         console.error('[Stripe] Error creating checkout:', error)
