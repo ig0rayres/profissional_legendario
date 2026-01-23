@@ -323,12 +323,12 @@ export async function awardBadge(
             const basePoints = medal.points_reward || 0
             const finalPoints = Math.round(basePoints * multiplier)
 
-            // Award XP for earning the medal
+            // Award XP for earning the medal - USAR finalPoints COM MULTIPLICADOR!
             await awardPoints(
                 userId,
-                basePoints,
+                finalPoints,  // ✅ Corrigido: usar finalPoints com multiplicador aplicado
                 'medal_reward',
-                `Conquistou medalha: ${medal.name}`
+                `Conquistou medalha: ${medal.name} (${multiplier}x)`
             )
 
             // Criar notificação para o usuário COM VALOR MULTIPLICADO
