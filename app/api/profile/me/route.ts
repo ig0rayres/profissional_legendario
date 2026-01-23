@@ -30,17 +30,10 @@ export async function GET() {
             .from('user_gamification')
             .select(`
                 *,
-                ranks:current_rank_id(*)
+                rank:ranks!current_rank_id(*)
             `)
             .eq('user_id', user.id)
             .single()
-
-        // Renomear ranks para rank (singular) para manter compatibilidade
-        const gamificationFormatted = gamification ? {
-            ...gamification,
-            rank: gamification.ranks,
-            ranks: undefined
-        } : null
 
         // 3. Medalhas conquistadas
         const { data: userMedals } = await supabase
@@ -109,7 +102,7 @@ export async function GET() {
             .eq('status', 'in_progress')
 
         // 11. Próxima patente
-        const currentRankLevel = gamificationFormatted?.rank?.rank_level || 1
+        const currentRankLevel = gamification?.rank?.rank_level || 1
         const { data: nextRank } = await supabase
             .from('ranks')
             .select('*')
@@ -119,7 +112,7 @@ export async function GET() {
         // Montar objeto completo
         const profileData = {
             profile,
-            gamification: gamificationFormatted,
+            gamification,
             subscription,
             allMedals: allMedals || [],
             earnedMedals: userMedals || [],

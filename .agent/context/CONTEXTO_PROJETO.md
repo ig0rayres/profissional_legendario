@@ -22,10 +22,14 @@
 - **Banco de Dados:** Supabase PostgreSQL ✅
 
 **🔌 Acesso Direto ao Banco:**
-- **Credenciais:** `/home/igor/.gemini/supabase_credentials.env`
+- **Credenciais (criptografadas):** `/home/igor/.gemini/credentials.enc`
 - **Host:** db.erzprkocwzgdjrsictps.supabase.co
 - **Porta:** 5432
-- **Comando:** `psql -h db.erzprkocwzgdjrsictps.supabase.co -p 5432 -d postgres -U postgres`
+- **Decodificar:** `cat /home/igor/.gemini/credentials.enc | base64 -d`
+- **Conectar:** `source <(cat ~/.gemini/credentials.enc | base64 -d) && PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $SUPABASE_DB_HOST -p 5432 -d postgres -U postgres`
+
+**🔐 Credenciais do Sistema:**
+- **Sudo password:** Armazenado em `~/.gemini/credentials.enc` (base64)
 
 ---
 
