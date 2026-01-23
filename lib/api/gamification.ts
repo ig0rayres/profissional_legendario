@@ -129,25 +129,33 @@ export async function awardPoints(
     baseAmount: number,
     actionType: string,
     description?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
+    skipMultiplier: boolean = false  // Se true, não aplica multiplicador (já foi aplicado externamente)
 ): Promise<{ success: boolean; xpAwarded: number; error?: string }> {
     try {
         const supabase = createClient()
 
-        console.log('[Gamification] Awarding', baseAmount, 'points to user', userId, 'for', actionType)
+        console.log('[Gamification] Awarding', baseAmount, 'points to user', userId, 'for', actionType, skipMultiplier ? '(skip multiplier)' : '')
 
-        // 1. Buscar plano do usuário para aplicar multiplicador
-        const { data: subscription } = await supabase
-            .from('subscriptions')
-            .select('plan_id')
-            .eq('user_id', userId)
-            .eq('status', 'active')
-            .single()
+        let multiplier = 1
+        let planId = 'recruta'
+        let finalAmount = baseAmount
 
-        // Multiplicadores: Recruta x1, Veterano x1.5, Elite x3
-        const planId = subscription?.plan_id || 'recruta'
-        const multiplier = planId === 'elite' ? 3 : planId === 'veterano' ? 1.5 : 1
-        const finalAmount = Math.round(baseAmount * multiplier) // Arredondar para inteiro
+        // Aplicar multiplicador apenas se não foi skipado
+        if (!skipMultiplier) {
+            // 1. Buscar plano do usuário para aplicar multiplicador
+            const { data: subscription } = await supabase
+                .from('subscriptions')
+                .select('plan_id')
+                .eq('user_id', userId)
+                .eq('status', 'active')
+                .single()
+
+            // Multiplicadores: Recruta x1, Veterano x1.5, Elite x3
+            planId = subscription?.plan_id || 'recruta'
+            multiplier = planId === 'elite' ? 3 : planId === 'veterano' ? 1.5 : 1
+            finalAmount = Math.round(baseAmount * multiplier)
+        }
 
         console.log('[Gamification] Plan:', planId, 'Multiplier:', multiplier, 'Final:', finalAmount)
 
@@ -310,25 +318,35 @@ export async function awardBadge(
 
         if (medal) {
             // Buscar plano do usuário para calcular multiplicador
-            const { data: subscription } = await supabase
+            const { data: subscription, error: subError } = await supabase
                 .from('subscriptions')
-                .select('plan_id')
+                .select('plan_id, status')
                 .eq('user_id', userId)
-                .eq('status', 'active')
-                .single()
+                .maybeSingle()  // Usar maybeSingle para não dar erro se não existir
+
+            // Log detalhado para debug
+            console.log('[awardBadge] Subscription query result:', { subscription, error: subError?.message })
 
             // Multiplicadores: Recruta x1, Veterano x1.5, Elite x3
-            const planId = subscription?.plan_id || 'recruta'
+            let planId = 'recruta'
+            if (subscription && subscription.status === 'active') {
+                planId = subscription.plan_id || 'recruta'
+            }
+
             const multiplier = planId === 'elite' ? 3 : planId === 'veterano' ? 1.5 : 1
             const basePoints = medal.points_reward || 0
             const finalPoints = Math.round(basePoints * multiplier)
 
-            // Award XP for earning the medal - USAR finalPoints COM MULTIPLICADOR!
+            console.log('[awardBadge] Multiplicador calc:', { planId, multiplier, basePoints, finalPoints })
+
+            // Award XP for earning the medal - passar finalPoints E skipMultiplier=true
             await awardPoints(
                 userId,
-                finalPoints,  // ✅ Corrigido: usar finalPoints com multiplicador aplicado
+                finalPoints,  // Já com multiplicador aplicado
                 'medal_reward',
-                `Conquistou medalha: ${medal.name} (${multiplier}x)`
+                `Conquistou medalha: ${medal.name} (${multiplier}x)`,
+                undefined,
+                true  // Skip multiplier - já foi aplicado aqui!
             )
 
             // Criar notificação para o usuário COM VALOR MULTIPLICADO
