@@ -25,6 +25,14 @@ const nextConfig = {
     experimental: {
         missingSuspenseWithCSRBailout: false,
     },
+    // Excluir Edge Functions do Supabase (usam Deno, não Node)
+    webpack: (config) => {
+        config.watchOptions = {
+            ...config.watchOptions,
+            ignored: ['**/supabase/functions/**'],
+        }
+        return config
+    },
 }
 
 module.exports = nextConfig

@@ -4,12 +4,19 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-// Usar service_role_key para ter permissões admin
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-)
+// Função para criar cliente admin (chamada dentro da request, não no build)
+function getSupabaseAdmin() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !serviceRoleKey) {
+        throw new Error('Variáveis de ambiente do Supabase não configuradas')
+    }
+
+    return createClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    })
+}
 
 export async function DELETE(request: NextRequest) {
     try {
@@ -20,6 +27,9 @@ export async function DELETE(request: NextRequest) {
         }
 
         console.log('[Admin] Deletando usuário:', userEmail, userId)
+
+        // Criar cliente admin dentro da request
+        const supabaseAdmin = getSupabaseAdmin()
 
         // 1. Deletar profile (CASCADE vai deletar relacionados)
         const { error: profileError } = await supabaseAdmin
@@ -45,6 +55,7 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ success: true })
     } catch (error: any) {
         console.error('[Admin] Erro geral:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: error.message || 'Erro interno' }, { status: 500 })
     }
 }
+

@@ -7,12 +7,19 @@ import { NextRequest, NextResponse } from 'next/server'
 // ID do usuário sistema
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
 
-// Cliente com Service Role (bypassa RLS)
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-)
+// Função para criar cliente admin (chamada dentro da request, não no build)
+function getSupabaseAdmin() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !serviceRoleKey) {
+        throw new Error('Variáveis de ambiente do Supabase não configuradas')
+    }
+
+    return createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false }
+    })
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -24,6 +31,9 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             )
         }
+
+        // Criar cliente admin dentro da request
+        const supabaseAdmin = getSupabaseAdmin()
 
         // Buscar ou criar conversa com o sistema
         let conversationId: string | null = null
@@ -97,8 +107,9 @@ export async function POST(request: NextRequest) {
     } catch (error: any) {
         console.error('[API system-message] Exception:', error)
         return NextResponse.json(
-            { error: error.message },
+            { error: error.message || 'Erro interno' },
             { status: 500 }
         )
     }
 }
+
