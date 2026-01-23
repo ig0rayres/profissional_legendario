@@ -1,6 +1,6 @@
 'use client'
 
-import { Star, Shield, Award, Medal, Crown, Flame } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
@@ -11,6 +11,7 @@ interface XPProgressProps {
         name: string
         min_xp: number
         max_xp: number | null
+        icon?: string  // Ícone vem do banco
     }
     nextRank?: {
         name: string
@@ -19,13 +20,11 @@ interface XPProgressProps {
     className?: string
 }
 
-const rankIcons: Record<string, any> = {
-    recruta: Shield,
-    especialista: Star,
-    veterano: Award,
-    comandante: Medal,
-    general: Crown,
-    lenda: Flame,
+// Função para obter ícone Lucide dinamicamente do nome
+function getLucideIcon(iconName?: string): any {
+    if (!iconName) return LucideIcons.Shield
+    const Icon = (LucideIcons as any)[iconName]
+    return Icon || LucideIcons.Shield
 }
 
 export function XPProgress({ xp, rank, nextRank, className }: XPProgressProps) {
@@ -33,7 +32,8 @@ export function XPProgress({ xp, rank, nextRank, className }: XPProgressProps) {
     const maxXp = rank.max_xp || rank.min_xp + 1000 // Fallback for last rank
     const progress = Math.min(Math.max(((xp - minXp) / (maxXp - minXp)) * 100, 0), 100)
 
-    const RankIcon = rankIcons[rank.id] || Shield
+    // Ícone vem do banco, não de hardcode
+    const RankIcon = getLucideIcon(rank.icon)
 
     return (
         <Card className={cn("overflow-hidden border-primary/20 bg-card/50 backdrop-blur-sm", className)}>

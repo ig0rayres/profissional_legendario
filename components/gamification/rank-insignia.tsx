@@ -3,34 +3,11 @@
 import * as LucideIcons from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Mapa de ícones padrão por ID (Fallback robusto)
-const RANK_ID_MAP: Record<string, keyof typeof LucideIcons> = {
-    'novato': 'Shield',
-    'especialista': 'Target',
-    'guardiao': 'ShieldCheck',
-    'comandante': 'Medal',
-    'general': 'Flame',
-    'lenda': 'Crown',
-    'recruta': 'Shield',
-    'pro': 'Zap',
-    'veterano': 'ShieldCheck',
-    'elite': 'Star', // Adicionado Elite por segurança
-}
-
-// Mapa por Nome (caso o ID seja UUID e falhe)
-const RANK_NAME_MAP: Record<string, keyof typeof LucideIcons> = {
-    'novato': 'Shield',
-    'especialista': 'Target',
-    'guardião': 'ShieldCheck',
-    'guardiao': 'ShieldCheck',
-    'comandante': 'Medal',
-    'general': 'Flame',
-    'lenda': 'Crown',
-    'recruta': 'Shield',
-    'pro': 'Zap',
-    'veterano': 'ShieldCheck',
-    'elite': 'Star',
-}
+// ============================================
+// FALLBACK REMOVIDO - ÍCONES VEM 100% DO BANCO
+// ============================================
+// O iconName deve sempre ser passado pelo componente pai
+// Se não vier, usa Shield como fallback genérico
 
 interface RankInsigniaProps {
     rankId: string
@@ -51,34 +28,13 @@ export function RankInsignia({
     className,
     variant = 'badge'
 }: RankInsigniaProps) {
-    let IconComponent = LucideIcons.Shield; // Ícone padrão
+    let IconComponent = LucideIcons.Shield; // Fallback genérico
 
-    let found = false;
-
-    // 1. Tentar pelo iconName direto (do banco)
+    // Usar iconName do banco (fonte única de verdade)
     if (iconName) {
         const lucideKey = Object.keys(LucideIcons).find(key => key.toLowerCase() === iconName.toLowerCase());
         if (lucideKey) {
             IconComponent = LucideIcons[lucideKey as keyof typeof LucideIcons] as any;
-            found = true;
-        }
-    }
-
-    // 2. Tentar pelo rankName (se disponível)
-    if (!found && rankName) {
-        const mappedIconName = RANK_NAME_MAP[rankName.toLowerCase()];
-        if (mappedIconName && LucideIcons[mappedIconName]) {
-            IconComponent = LucideIcons[mappedIconName] as any;
-            found = true;
-        }
-    }
-
-    // 3. Tentar pelo rankId
-    if (!found && rankId) {
-        const mappedIconName = RANK_ID_MAP[rankId.toLowerCase()];
-        if (mappedIconName && LucideIcons[mappedIconName]) {
-            IconComponent = LucideIcons[mappedIconName] as any;
-            found = true;
         }
     }
 

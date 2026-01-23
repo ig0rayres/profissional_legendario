@@ -54,60 +54,10 @@ const CONTAINER_SIZES = {
 }
 
 // ============================================
-// MAPA DE ÍCONES PADRÃO (fallback)
+// FALLBACK REMOVIDO - ÍCONES VEM 100% DO BANCO
 // ============================================
-
-const DEFAULT_ICONS: Record<string, string> = {
-    // Proezas
-    'primeiro_sangue': 'Sword',
-    'missao_cumprida': 'Target',
-    'irmandade': 'UserPlus',
-    'lancador': 'Rocket',
-    'empreendedor': 'Briefcase',
-    'maquina_negocios': 'Zap',
-    'presente': 'Gift',
-    'recrutador': 'Megaphone',
-    'embaixador': 'Trophy',
-    'primeira_confraria': 'PartyPopper',
-    'networker_ativo': 'Flame',
-    'lider_confraria': 'Crown',
-    'anfitriao': 'Home',
-    'cronista': 'Camera',
-    'pronto_missao': 'Zap',
-    'sentinela_inabalavel': 'Shield',
-    'sentinela_elite': 'Gem',
-    'engajado': 'Smartphone',
-    'comunicador': 'MessageCircle',
-    'batismo_excelencia': 'Star',
-    'colaborador': 'PenLine',
-    'avaliador_ativo': 'Target',
-    'cinegrafista': 'Video',
-    'influenciador': 'Megaphone',
-    'voz_da_rota': 'Mic',
-    'viral': 'Flame',
-    'engajador_feed': 'MessageSquare',
-
-    // Medalhas
-    'alistamento_concluido': 'CheckCircle',
-    'veterano_guerra': 'Shield',
-    'fechador_elite': 'DollarSign',
-    'primeira_venda_mkt': 'ShoppingCart',
-    'vendedor_ativo': 'Store',
-    'comerciante': 'Building',
-    'mestre_marketplace': 'Crown',
-    'mestre_conexoes': 'Globe',
-    'inabalavel': 'Gem',
-    'portfolio_premium': 'Image',
-    'veterano_rota': 'Trophy',
-
-    // Patentes
-    'novato': 'Shield',
-    'aprendiz': 'BookOpen',
-    'profissional': 'Briefcase',
-    'especialista': 'Star',
-    'mestre': 'Award',
-    'lenda': 'Crown',
-}
+// Se precisar de fallback, é porque o banco não foi configurado
+const DEFAULT_ICONS: Record<string, string> = {}
 
 // ============================================
 // FUNÇÃO PARA OBTER ÍCONE LUCIDE
