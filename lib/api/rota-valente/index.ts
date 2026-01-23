@@ -316,16 +316,16 @@ export async function awardProeza(
             base_points: basePoints
         })
 
-        // 6. Criar notificação
+        // 6. Criar notificação COM DESCRIÇÃO
         await supabase
             .from('notifications')
             .insert({
                 user_id: userId,
                 type: 'proeza_earned',
                 title: `🔥 Proeza Conquistada!`,
-                body: `Você desbloqueou "${proeza.name}"! +${finalPoints} Vigor`,
+                body: `Você desbloqueou "${proeza.name}"!\n${proeza.description || ''}\n+${finalPoints} Vigor`,
                 priority: 'high',
-                metadata: { proeza_id: proezaId, points: finalPoints }
+                metadata: { proeza_id: proezaId, points: finalPoints, description: proeza.description }
             })
 
         console.log(`[RotaValente] ✅ Proeza concedida: ${proeza.name} (+${finalPoints} Vigor)`)
