@@ -26,11 +26,12 @@ import {
 } from '@/components/ui/dialog'
 import {
     Trophy, Medal, Flame, Zap, Target,
-    Plus, Edit, Trash2, Loader2, Check, X
+    Plus, Edit, Trash2, Loader2, Check, X, Users, Crown, RefreshCw
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { DynamicIcon, AVAILABLE_ICONS } from '@/components/rota-valente/dynamic-icon'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 // ============================================
 // TIPOS
@@ -86,6 +87,19 @@ type DailyMission = {
     is_active: boolean
 }
 
+type RankingUser = {
+    id: string
+    user_id: string
+    full_name: string
+    avatar_url: string | null
+    total_points: number
+    monthly_vigor: number
+    current_rank_id: string
+    plan_id: string
+    proezas_count: number
+    medals_count: number
+}
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -96,7 +110,9 @@ export default function RotaValenteAdminPage() {
     const [proezas, setProezas] = useState<Proeza[]>([])
     const [actions, setActions] = useState<PointAction[]>([])
     const [missions, setMissions] = useState<DailyMission[]>([])
+    const [ranking, setRanking] = useState<RankingUser[]>([])
     const [loading, setLoading] = useState(true)
+    const [loadingRanking, setLoadingRanking] = useState(false)
 
     // Estados de edição
     const [editingRank, setEditingRank] = useState<Rank | null>(null)
@@ -137,7 +153,47 @@ export default function RotaValenteAdminPage() {
         if (actionsResult.data) setActions(actionsResult.data)
         if (missionsResult.data) setMissions(missionsResult.data)
 
+        // Carregar ranking
+        await loadRanking()
+
         setLoading(false)
+    }
+
+    async function loadRanking() {
+        setLoadingRanking(true)
+
+        // Buscar gamification de todos os usuários com perfis
+        const { data: gamifData } = await supabase
+            .from('user_gamification')
+            .select(`
+                id,
+                user_id,
+                total_points,
+                monthly_vigor,
+                current_rank_id,
+                profiles!inner(full_name, avatar_url),
+                subscriptions(plan_id)
+            `)
+            .order('total_points', { ascending: false })
+            .limit(100)
+
+        if (gamifData) {
+            const rankingData = gamifData.map((g: any) => ({
+                id: g.id,
+                user_id: g.user_id,
+                full_name: g.profiles?.full_name || 'Usuário',
+                avatar_url: g.profiles?.avatar_url,
+                total_points: g.total_points || 0,
+                monthly_vigor: g.monthly_vigor || 0,
+                current_rank_id: g.current_rank_id || 'novato',
+                plan_id: g.subscriptions?.[0]?.plan_id || 'recruta',
+                proezas_count: 0,
+                medals_count: 0
+            }))
+            setRanking(rankingData)
+        }
+
+        setLoadingRanking(false)
     }
 
     // ============================================
@@ -373,7 +429,87 @@ export default function RotaValenteAdminPage() {
                         <Target className="w-4 h-4 mr-2" />
                         Missões Diárias ({missions.length})
                     </TabsTrigger>
+                    <TabsTrigger value="ranking">
+                        <Crown className="w-4 h-4 mr-2" />
+                        Ranking ({ranking.length})
+                    </TabsTrigger>
                 </TabsList>
+
+                {/* ============================================ */}
+                {/* TAB: RANKING */}
+                {/* ============================================ */}
+                <TabsContent value="ranking" className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <p className="text-sm text-muted-foreground">
+                            Ranking em tempo real de todos os usuários
+                        </p>
+                        <Button onClick={() => loadRanking()} disabled={loadingRanking}>
+                            <RefreshCw className={`w-4 h-4 mr-2 ${loadingRanking ? 'animate-spin' : ''}`} />
+                            Atualizar
+                        </Button>
+                    </div>
+
+                    <div className="border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12">#</TableHead>
+                                    <TableHead>Usuário</TableHead>
+                                    <TableHead>Patente</TableHead>
+                                    <TableHead>Plano</TableHead>
+                                    <TableHead className="text-right">Vigor Total</TableHead>
+                                    <TableHead className="text-right">Vigor Mensal</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {ranking.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                            Nenhum usuário no ranking ainda
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    ranking.map((user, index) => (
+                                        <TableRow key={user.id}>
+                                            <TableCell className="font-bold">
+                                                {index === 0 && <span className="text-lg">🥇</span>}
+                                                {index === 1 && <span className="text-lg">🥈</span>}
+                                                {index === 2 && <span className="text-lg">🥉</span>}
+                                                {index > 2 && <span className="text-muted-foreground">{index + 1}</span>}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="w-8 h-8">
+                                                        <AvatarImage src={user.avatar_url || ''} />
+                                                        <AvatarFallback>{user.full_name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="font-medium">{user.full_name}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <RankInsignia rankId={user.current_rank_id} size="sm" variant="avatar" />
+                                                    <span className="text-sm capitalize">{user.current_rank_id}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant={user.plan_id === 'elite' ? 'default' : user.plan_id === 'veterano' ? 'secondary' : 'outline'} className="capitalize">
+                                                    {user.plan_id}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold text-primary">
+                                                {user.total_points.toLocaleString()}
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold text-secondary">
+                                                {user.monthly_vigor.toLocaleString()}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TabsContent>
 
                 {/* ============================================ */}
                 {/* TAB: PATENTES */}
