@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
         // Buscar plano no banco
         const { data: plan, error: planError } = await supabase
-            .from('plans')
+            .from('plan_config')
             .select('*')
             .eq('id', planId)
             .single()
