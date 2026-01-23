@@ -65,6 +65,19 @@ function getRankName(rankId: string): string {
     return names[rankId] || rankId
 }
 
+// Obter ícone do rank - FONTE ÚNICA DE VERDADE
+function getRankIcon(rankId: string): string {
+    const icons: Record<string, string> = {
+        'novato': 'Shield',
+        'especialista': 'Target',
+        'guardiao': 'ShieldCheck',
+        'comandante': 'Medal',
+        'general': 'Flame',
+        'lenda': 'Crown'
+    }
+    return icons[rankId] || 'Shield'
+}
+
 // Mapear tipo de ação para ícone correspondente
 function getActivityIcon(actionType: string) {
     const icons: Record<string, any> = {
@@ -90,11 +103,51 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
     const [loading, setLoading] = useState(true)
     const [expanded, setExpanded] = useState(false)
     const [expandedSeasons, setExpandedSeasons] = useState<Set<string>>(new Set())
+    const [ranksMap, setRanksMap] = useState<Map<string, { name: string; icon: string; points_required: number }>>(new Map())
+    const [userRankingPosition, setUserRankingPosition] = useState<number | null>(null)
     const supabase = createClient()
 
     useEffect(() => {
+        loadRanks()
         loadHistory()
+        loadUserRanking()
     }, [userId])
+
+    // Carregar ranks do banco (FONTE ÚNICA - PAINEL ADMIN)
+    async function loadRanks() {
+        const { data: ranks } = await supabase
+            .from('ranks')
+            .select('id, name, icon, points_required')
+            .order('points_required', { ascending: true })
+
+        if (ranks) {
+            const map = new Map(ranks.map(r => [r.id, { name: r.name, icon: r.icon, points_required: r.points_required }]))
+            setRanksMap(map)
+        }
+    }
+
+    // Calcular ranking atual do usuário
+    async function loadUserRanking() {
+        const { data } = await supabase
+            .from('user_gamification')
+            .select('total_points')
+            .eq('user_id', userId)
+            .single()
+
+        if (data) {
+            const { count } = await supabase
+                .from('user_gamification')
+                .select('*', { count: 'exact', head: true })
+                .gt('total_points', data.total_points)
+
+            setUserRankingPosition((count || 0) + 1)
+        }
+    }
+
+    // Helper para obter ícone do rank do banco
+    function getRankIconFromDB(rankId: string): string {
+        return ranksMap.get(rankId)?.icon || getRankIcon(rankId)
+    }
 
     async function loadHistory() {
         setLoading(true)
@@ -299,16 +352,17 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                 <div className="flex items-center gap-3">
                                     <RankInsignia
                                         rankId={getRankFromXP(currentSeason.total_xp)}
+                                        iconName={getRankIconFromDB(getRankFromXP(currentSeason.total_xp))}
                                         size="xs"
                                         variant="avatar"
                                         className="w-6 h-6 !p-0.5"
                                     />
-                                    {currentSeason.ranking_position && (
+                                    {(currentSeason.ranking_position || userRankingPosition) && (
                                         <div className="flex items-center gap-1 font-bold text-xs">
-                                            {currentSeason.ranking_position === 1 && <span className="text-base leading-none">🥇</span>}
-                                            {currentSeason.ranking_position === 2 && <span className="text-base leading-none">🥈</span>}
-                                            {currentSeason.ranking_position === 3 && <span className="text-base leading-none">🥉</span>}
-                                            <span className="text-muted-foreground">#{currentSeason.ranking_position}</span>
+                                            {(currentSeason.ranking_position || userRankingPosition) === 1 && <span className="text-base leading-none">🥇</span>}
+                                            {(currentSeason.ranking_position || userRankingPosition) === 2 && <span className="text-base leading-none">🥈</span>}
+                                            {(currentSeason.ranking_position || userRankingPosition) === 3 && <span className="text-base leading-none">🥉</span>}
+                                            <span className="text-muted-foreground">#{currentSeason.ranking_position || userRankingPosition}</span>
                                         </div>
                                     )}
                                     <span className="text-sm font-bold text-accent">
@@ -428,6 +482,7 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                         )}>
                                             <RankInsignia
                                                 rankId={correctRankId}
+                                                iconName={getRankIconFromDB(correctRankId)}
                                                 size="xs"
                                                 variant="avatar"
                                                 className="w-6 h-6 !p-0.5"
