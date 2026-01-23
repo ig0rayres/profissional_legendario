@@ -1,13 +1,8 @@
 /**
  * COMPONENTES CENTRALIZADOS - ROTA DO VALENTE
  * 
- * IMPORTANTE: Todos os ícones são buscados DIRETAMENTE das tabelas do banco:
- * - medals.icon
- * - proezas.icon
- * - ranks.icon
- * - daily_missions.icon
- * 
- * NUNCA usar ícones hardcoded. Sempre referenciar o banco.
+ * Ícones são LUCIDE REACT (monocromáticos)
+ * O banco guarda o NOME do ícone: 'Sword', 'Star', 'CheckCircle', etc.
  */
 
 'use client'
@@ -15,6 +10,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import * as LucideIcons from 'lucide-react'
 
 // ============================================
 // TIPOS
@@ -23,8 +19,9 @@ import { cn } from '@/lib/utils'
 interface BadgeProps {
     id: string
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
-    variant?: 'full' | 'icon-only' | 'compact'
+    variant?: 'full' | 'icon-only' | 'compact' | 'badge' | 'outline' | 'profile'
     showPoints?: boolean
+    showLabel?: boolean
     className?: string
 }
 
@@ -40,16 +37,93 @@ interface BadgeData {
 // TAMANHOS
 // ============================================
 
-const SIZES = {
-    xs: { icon: 'text-lg', container: 'w-6 h-6', text: 'text-xs' },
-    sm: { icon: 'text-xl', container: 'w-8 h-8', text: 'text-xs' },
-    md: { icon: 'text-2xl', container: 'w-10 h-10', text: 'text-sm' },
-    lg: { icon: 'text-3xl', container: 'w-12 h-12', text: 'text-base' },
-    xl: { icon: 'text-4xl', container: 'w-16 h-16', text: 'text-lg' },
+const ICON_SIZES = {
+    xs: 'w-3 h-3',
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6',
+    lg: 'w-10 h-10',
+    xl: 'w-16 h-16',
+}
+
+const CONTAINER_SIZES = {
+    xs: 'w-5 h-5',
+    sm: 'w-6 h-6',
+    md: 'w-8 h-8',
+    lg: 'w-14 h-14',
+    xl: 'w-20 h-20',
 }
 
 // ============================================
-// CACHE GLOBAL (evita múltiplas requisições)
+// MAPA DE ÍCONES PADRÃO (fallback)
+// ============================================
+
+const DEFAULT_ICONS: Record<string, string> = {
+    // Proezas
+    'primeiro_sangue': 'Sword',
+    'missao_cumprida': 'Target',
+    'irmandade': 'UserPlus',
+    'lancador': 'Rocket',
+    'empreendedor': 'Briefcase',
+    'maquina_negocios': 'Zap',
+    'presente': 'Gift',
+    'recrutador': 'Megaphone',
+    'embaixador': 'Trophy',
+    'primeira_confraria': 'PartyPopper',
+    'networker_ativo': 'Flame',
+    'lider_confraria': 'Crown',
+    'anfitriao': 'Home',
+    'cronista': 'Camera',
+    'pronto_missao': 'Zap',
+    'sentinela_inabalavel': 'Shield',
+    'sentinela_elite': 'Gem',
+    'engajado': 'Smartphone',
+    'comunicador': 'MessageCircle',
+    'batismo_excelencia': 'Star',
+    'colaborador': 'PenLine',
+    'avaliador_ativo': 'Target',
+    'cinegrafista': 'Video',
+    'influenciador': 'Megaphone',
+    'voz_da_rota': 'Mic',
+    'viral': 'Flame',
+    'engajador_feed': 'MessageSquare',
+
+    // Medalhas
+    'alistamento_concluido': 'CheckCircle',
+    'veterano_guerra': 'Shield',
+    'fechador_elite': 'DollarSign',
+    'primeira_venda_mkt': 'ShoppingCart',
+    'vendedor_ativo': 'Store',
+    'comerciante': 'Building',
+    'mestre_marketplace': 'Crown',
+    'mestre_conexoes': 'Globe',
+    'inabalavel': 'Gem',
+    'portfolio_premium': 'Image',
+    'veterano_rota': 'Trophy',
+
+    // Patentes
+    'novato': 'Shield',
+    'aprendiz': 'BookOpen',
+    'profissional': 'Briefcase',
+    'especialista': 'Star',
+    'mestre': 'Award',
+    'lenda': 'Crown',
+}
+
+// ============================================
+// FUNÇÃO PARA OBTER ÍCONE LUCIDE
+// ============================================
+
+function getLucideIcon(iconName: string): any {
+    // Tentar obter do Lucide
+    const Icon = (LucideIcons as any)[iconName]
+    if (Icon) return Icon
+
+    // Fallback para Award
+    return LucideIcons.Award
+}
+
+// ============================================
+// CACHE GLOBAL
 // ============================================
 
 let medalsCache: Record<string, BadgeData> = {}
@@ -73,7 +147,8 @@ async function loadAllCaches() {
     if (medalsRes.data) {
         medalsRes.data.forEach(m => {
             medalsCache[m.id] = {
-                id: m.id, name: m.name, icon: m.icon,
+                id: m.id, name: m.name,
+                icon: m.icon || DEFAULT_ICONS[m.id] || 'Award',
                 points: m.points_reward, description: m.description
             }
         })
@@ -82,7 +157,8 @@ async function loadAllCaches() {
     if (proezasRes.data) {
         proezasRes.data.forEach(p => {
             proezasCache[p.id] = {
-                id: p.id, name: p.name, icon: p.icon,
+                id: p.id, name: p.name,
+                icon: p.icon || DEFAULT_ICONS[p.id] || 'Flame',
                 points: p.points_base, description: p.description
             }
         })
@@ -91,7 +167,8 @@ async function loadAllCaches() {
     if (ranksRes.data) {
         ranksRes.data.forEach(r => {
             ranksCache[r.id] = {
-                id: r.id, name: r.name, icon: r.icon,
+                id: r.id, name: r.name,
+                icon: r.icon || DEFAULT_ICONS[r.id] || 'Shield',
                 points: r.points_required, description: r.description
             }
         })
@@ -100,7 +177,8 @@ async function loadAllCaches() {
     if (missionsRes.data) {
         missionsRes.data.forEach(m => {
             missionsCache[m.id] = {
-                id: m.id, name: m.name, icon: m.icon,
+                id: m.id, name: m.name,
+                icon: m.icon || 'Target',
                 points: m.points_base, description: m.description
             }
         })
@@ -109,7 +187,6 @@ async function loadAllCaches() {
     cacheLoaded = true
 }
 
-// Função para invalidar cache (chamar após edição no admin)
 export function invalidateBadgeCache() {
     medalsCache = {}
     proezasCache = {}
@@ -119,16 +196,111 @@ export function invalidateBadgeCache() {
 }
 
 // ============================================
-// COMPONENTE: MEDALHA (Permanente)
+// ESTILOS
 // ============================================
 
-export function MedalBadge({
-    id,
+const STYLES = {
+    badge: 'bg-secondary text-white shadow-lg',
+    outline: 'bg-white/90 backdrop-blur-sm text-secondary border-2 border-secondary/60 shadow-lg',
+    profile: 'bg-transparent text-primary',
+    'icon-only': 'bg-secondary text-white shadow-lg',
+}
+
+// ============================================
+// COMPONENTE GENÉRICO DE BADGE
+// ============================================
+
+function GenericBadge({
+    data,
     size = 'md',
-    variant = 'full',
+    variant = 'icon-only',
     showPoints = false,
-    className
-}: BadgeProps) {
+    showLabel = false,
+    className,
+    fallbackIcon = 'Award'
+}: {
+    data: BadgeData | null
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+    variant?: string
+    showPoints?: boolean
+    showLabel?: boolean
+    className?: string
+    fallbackIcon?: string
+}) {
+    if (!data) {
+        const FallbackIcon = getLucideIcon(fallbackIcon)
+        return (
+            <div className={cn(CONTAINER_SIZES[size], 'rounded-full flex items-center justify-center', STYLES['icon-only'], className)}>
+                <FallbackIcon className={ICON_SIZES[size]} strokeWidth={2.5} />
+            </div>
+        )
+    }
+
+    const Icon = getLucideIcon(data.icon)
+
+    if (variant === 'profile') {
+        return (
+            <div className={cn(CONTAINER_SIZES[size], 'rounded-full flex items-center justify-center', STYLES.profile, className)}>
+                <Icon className={ICON_SIZES[size]} strokeWidth={2.5} />
+            </div>
+        )
+    }
+
+    if (variant === 'icon-only') {
+        return (
+            <div className={cn(CONTAINER_SIZES[size], 'rounded-full flex items-center justify-center', STYLES['icon-only'], className)} title={data.name}>
+                <Icon className={ICON_SIZES[size]} strokeWidth={2.5} />
+            </div>
+        )
+    }
+
+    if (variant === 'outline') {
+        return (
+            <div className={cn(CONTAINER_SIZES[size], 'rounded-full flex items-center justify-center', STYLES.outline, className)} title={data.name}>
+                <Icon className={ICON_SIZES[size]} strokeWidth={2.5} />
+            </div>
+        )
+    }
+
+    if (variant === 'badge') {
+        return (
+            <div className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide', STYLES.badge, className)}>
+                <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
+                {showLabel && <span>{data.name}</span>}
+            </div>
+        )
+    }
+
+    if (variant === 'compact') {
+        return (
+            <div className={cn('flex items-center gap-1', className)} title={data.name}>
+                <div className={cn(CONTAINER_SIZES[size], 'rounded-full flex items-center justify-center', STYLES['icon-only'])}>
+                    <Icon className={ICON_SIZES[size]} strokeWidth={2.5} />
+                </div>
+                <span className="text-sm font-medium">{data.name}</span>
+            </div>
+        )
+    }
+
+    // full
+    return (
+        <div className={cn('flex items-center gap-2', className)}>
+            <div className={cn(CONTAINER_SIZES[size], 'rounded-full flex items-center justify-center', STYLES['icon-only'])}>
+                <Icon className={ICON_SIZES[size]} strokeWidth={2.5} />
+            </div>
+            <div>
+                <p className="text-sm font-semibold">{data.name}</p>
+                {showPoints && <p className="text-xs text-muted-foreground">+{data.points} pts</p>}
+            </div>
+        </div>
+    )
+}
+
+// ============================================
+// COMPONENTES PÚBLICOS
+// ============================================
+
+export function MedalBadge({ id, size = 'md', variant = 'icon-only', showPoints, showLabel, className }: BadgeProps) {
     const [data, setData] = useState<BadgeData | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -142,59 +314,13 @@ export function MedalBadge({
     }, [id])
 
     if (loading) {
-        return <div className={cn(SIZES[size].container, 'animate-pulse bg-muted rounded-full', className)} />
+        return <div className={cn(CONTAINER_SIZES[size], 'animate-pulse bg-muted rounded-full', className)} />
     }
 
-    if (!data) {
-        return <span className={cn(SIZES[size].icon, className)}>🏅</span>
-    }
-
-    const sizeConfig = SIZES[size]
-
-    if (variant === 'icon-only') {
-        return (
-            <span
-                className={cn(sizeConfig.icon, className)}
-                title={data.name}
-            >
-                {data.icon}
-            </span>
-        )
-    }
-
-    if (variant === 'compact') {
-        return (
-            <div className={cn('flex items-center gap-1', className)} title={data.name}>
-                <span className={sizeConfig.icon}>{data.icon}</span>
-                <span className={cn(sizeConfig.text, 'font-medium')}>{data.name}</span>
-            </div>
-        )
-    }
-
-    return (
-        <div className={cn('flex items-center gap-2', className)}>
-            <span className={sizeConfig.icon}>{data.icon}</span>
-            <div>
-                <p className={cn(sizeConfig.text, 'font-semibold')}>{data.name}</p>
-                {showPoints && (
-                    <p className="text-xs text-muted-foreground">+{data.points} pts</p>
-                )}
-            </div>
-        </div>
-    )
+    return <GenericBadge data={data} size={size} variant={variant} showPoints={showPoints} showLabel={showLabel} className={className} fallbackIcon="Award" />
 }
 
-// ============================================
-// COMPONENTE: PROEZA (Mensal)
-// ============================================
-
-export function ProezaBadge({
-    id,
-    size = 'md',
-    variant = 'full',
-    showPoints = false,
-    className
-}: BadgeProps) {
+export function ProezaBadge({ id, size = 'md', variant = 'icon-only', showPoints, showLabel, className }: BadgeProps) {
     const [data, setData] = useState<BadgeData | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -208,59 +334,13 @@ export function ProezaBadge({
     }, [id])
 
     if (loading) {
-        return <div className={cn(SIZES[size].container, 'animate-pulse bg-muted rounded-full', className)} />
+        return <div className={cn(CONTAINER_SIZES[size], 'animate-pulse bg-muted rounded-full', className)} />
     }
 
-    if (!data) {
-        return <span className={cn(SIZES[size].icon, className)}>🔥</span>
-    }
-
-    const sizeConfig = SIZES[size]
-
-    if (variant === 'icon-only') {
-        return (
-            <span
-                className={cn(sizeConfig.icon, className)}
-                title={data.name}
-            >
-                {data.icon}
-            </span>
-        )
-    }
-
-    if (variant === 'compact') {
-        return (
-            <div className={cn('flex items-center gap-1', className)} title={data.name}>
-                <span className={sizeConfig.icon}>{data.icon}</span>
-                <span className={cn(sizeConfig.text, 'font-medium')}>{data.name}</span>
-            </div>
-        )
-    }
-
-    return (
-        <div className={cn('flex items-center gap-2', className)}>
-            <span className={sizeConfig.icon}>{data.icon}</span>
-            <div>
-                <p className={cn(sizeConfig.text, 'font-semibold')}>{data.name}</p>
-                {showPoints && (
-                    <p className="text-xs text-muted-foreground">+{data.points} pts</p>
-                )}
-            </div>
-        </div>
-    )
+    return <GenericBadge data={data} size={size} variant={variant} showPoints={showPoints} showLabel={showLabel} className={className} fallbackIcon="Flame" />
 }
 
-// ============================================
-// COMPONENTE: PATENTE (Rank)
-// ============================================
-
-export function RankBadge({
-    id,
-    size = 'md',
-    variant = 'full',
-    showPoints = false,
-    className
-}: BadgeProps) {
+export function RankBadge({ id, size = 'md', variant = 'icon-only', showPoints, showLabel, className }: BadgeProps) {
     const [data, setData] = useState<BadgeData | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -274,59 +354,13 @@ export function RankBadge({
     }, [id])
 
     if (loading) {
-        return <div className={cn(SIZES[size].container, 'animate-pulse bg-muted rounded-full', className)} />
+        return <div className={cn(CONTAINER_SIZES[size], 'animate-pulse bg-muted rounded-full', className)} />
     }
 
-    if (!data) {
-        return <span className={cn(SIZES[size].icon, className)}>🔰</span>
-    }
-
-    const sizeConfig = SIZES[size]
-
-    if (variant === 'icon-only') {
-        return (
-            <span
-                className={cn(sizeConfig.icon, className)}
-                title={data.name}
-            >
-                {data.icon}
-            </span>
-        )
-    }
-
-    if (variant === 'compact') {
-        return (
-            <div className={cn('flex items-center gap-1', className)} title={data.name}>
-                <span className={sizeConfig.icon}>{data.icon}</span>
-                <span className={cn(sizeConfig.text, 'font-medium')}>{data.name}</span>
-            </div>
-        )
-    }
-
-    return (
-        <div className={cn('flex items-center gap-2', className)}>
-            <span className={sizeConfig.icon}>{data.icon}</span>
-            <div>
-                <p className={cn(sizeConfig.text, 'font-semibold')}>{data.name}</p>
-                {showPoints && (
-                    <p className="text-xs text-muted-foreground">{data.points.toLocaleString()} pts</p>
-                )}
-            </div>
-        </div>
-    )
+    return <GenericBadge data={data} size={size} variant={variant} showPoints={showPoints} showLabel={showLabel} className={className} fallbackIcon="Shield" />
 }
 
-// ============================================
-// COMPONENTE: MISSÃO DIÁRIA
-// ============================================
-
-export function MissionBadge({
-    id,
-    size = 'md',
-    variant = 'full',
-    showPoints = false,
-    className
-}: BadgeProps) {
+export function MissionBadge({ id, size = 'md', variant = 'icon-only', showPoints, showLabel, className }: BadgeProps) {
     const [data, setData] = useState<BadgeData | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -340,51 +374,11 @@ export function MissionBadge({
     }, [id])
 
     if (loading) {
-        return <div className={cn(SIZES[size].container, 'animate-pulse bg-muted rounded-full', className)} />
+        return <div className={cn(CONTAINER_SIZES[size], 'animate-pulse bg-muted rounded-full', className)} />
     }
 
-    if (!data) {
-        return <span className={cn(SIZES[size].icon, className)}>✨</span>
-    }
-
-    const sizeConfig = SIZES[size]
-
-    if (variant === 'icon-only') {
-        return (
-            <span
-                className={cn(sizeConfig.icon, className)}
-                title={data.name}
-            >
-                {data.icon}
-            </span>
-        )
-    }
-
-    if (variant === 'compact') {
-        return (
-            <div className={cn('flex items-center gap-1', className)} title={data.name}>
-                <span className={sizeConfig.icon}>{data.icon}</span>
-                <span className={cn(sizeConfig.text, 'font-medium')}>{data.name}</span>
-            </div>
-        )
-    }
-
-    return (
-        <div className={cn('flex items-center gap-2', className)}>
-            <span className={sizeConfig.icon}>{data.icon}</span>
-            <div>
-                <p className={cn(sizeConfig.text, 'font-semibold')}>{data.name}</p>
-                {showPoints && (
-                    <p className="text-xs text-muted-foreground">+{data.points} pts</p>
-                )}
-            </div>
-        </div>
-    )
+    return <GenericBadge data={data} size={size} variant={variant} showPoints={showPoints} showLabel={showLabel} className={className} fallbackIcon="Target" />
 }
 
-// ============================================
-// EXPORTS PARA COMPATIBILIDADE
-// ============================================
-
-// Alias para código legado
+// Alias para compatibilidade
 export { RankBadge as RankInsignia }

@@ -29,8 +29,7 @@ import {
     Plus, Edit, Trash2, Loader2, Check, X
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { RankInsignia } from '@/components/gamification/rank-insignia'
-import { MedalBadge } from '@/components/gamification/medal-badge'
+import { DynamicIcon, AVAILABLE_ICONS } from '@/components/rota-valente/dynamic-icon'
 
 // ============================================
 // TIPOS
@@ -406,7 +405,9 @@ export default function RotaValenteAdminPage() {
                                         <TableCell className="font-bold">{rank.rank_level}</TableCell>
                                         <TableCell className="font-medium">{rank.name}</TableCell>
                                         <TableCell>
-                                            <RankInsignia rankId={rank.id} size="sm" variant="icon-only" />
+                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                                <DynamicIcon name={rank.icon || 'Shield'} size="sm" className="text-white" />
+                                            </div>
                                         </TableCell>
                                         <TableCell>{rank.points_required.toLocaleString()} pts</TableCell>
                                         <TableCell className="text-right">
@@ -457,7 +458,9 @@ export default function RotaValenteAdminPage() {
                                     <TableRow key={medal.id}>
                                         <TableCell className="font-medium">{medal.name}</TableCell>
                                         <TableCell>
-                                            <span className="text-2xl">{medal.icon}</span>
+                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                                <DynamicIcon name={medal.icon} size="sm" className="text-white" />
+                                            </div>
                                         </TableCell>
                                         <TableCell className="max-w-xs truncate">{medal.description}</TableCell>
                                         <TableCell>
@@ -521,7 +524,9 @@ export default function RotaValenteAdminPage() {
                                         </TableCell>
                                         <TableCell className="font-medium">{proeza.name}</TableCell>
                                         <TableCell>
-                                            <span className="text-2xl">{proeza.icon}</span>
+                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                                <DynamicIcon name={proeza.icon} size="sm" className="text-white" />
+                                            </div>
                                         </TableCell>
                                         <TableCell className="max-w-xs truncate">{proeza.description}</TableCell>
                                         <TableCell>
@@ -648,7 +653,9 @@ export default function RotaValenteAdminPage() {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <span className="text-2xl">{mission.icon}</span>
+                                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                                <DynamicIcon name={mission.icon} size="sm" className="text-white" />
+                                            </div>
                                         </TableCell>
                                         <TableCell className="font-medium">{mission.name}</TableCell>
                                         <TableCell className="max-w-xs truncate">{mission.description}</TableCell>
@@ -797,12 +804,12 @@ function RankDialog({ rank, isOpen, onClose, onSave, processing }: any) {
 
 function MedalDialog({ medal, isOpen, onClose, onSave, processing }: any) {
     const [formData, setFormData] = useState({
-        id: '', name: '', description: '', icon: '🏅', points_reward: 0, category: 'profile'
+        id: '', name: '', description: '', icon: 'Award', points_reward: 0, category: 'profile'
     })
 
     useEffect(() => {
         if (medal) setFormData(medal)
-        else setFormData({ id: '', name: '', description: '', icon: '🏅', points_reward: 0, category: 'profile' })
+        else setFormData({ id: '', name: '', description: '', icon: 'Award', points_reward: 0, category: 'profile' })
     }, [medal])
 
     return (
@@ -826,8 +833,13 @@ function MedalDialog({ medal, isOpen, onClose, onSave, processing }: any) {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label>Ícone (emoji)</Label>
-                            <Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} />
+                            <Label>Ícone Lucide (ex: Award, Trophy, Star)</Label>
+                            <div className="flex gap-2 items-center">
+                                <Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} placeholder="Award" />
+                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                                    <DynamicIcon name={formData.icon} size="sm" className="text-white" />
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <Label>Pontos de Vigor</Label>
@@ -853,12 +865,12 @@ function MedalDialog({ medal, isOpen, onClose, onSave, processing }: any) {
 
 function ProezaDialog({ proeza, isOpen, onClose, onSave, processing }: any) {
     const [formData, setFormData] = useState({
-        id: '', name: '', description: '', icon: '🔥', points_base: 0, category: 'general', is_active: true
+        id: '', name: '', description: '', icon: 'Flame', points_base: 0, category: 'general', is_active: true
     })
 
     useEffect(() => {
         if (proeza) setFormData(proeza)
-        else setFormData({ id: '', name: '', description: '', icon: '🔥', points_base: 0, category: 'general', is_active: true })
+        else setFormData({ id: '', name: '', description: '', icon: 'Flame', points_base: 0, category: 'general', is_active: true })
     }, [proeza])
 
     return (
@@ -882,8 +894,13 @@ function ProezaDialog({ proeza, isOpen, onClose, onSave, processing }: any) {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label>Ícone (emoji)</Label>
-                            <Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} />
+                            <Label>Ícone Lucide (ex: Flame, Star, Target)</Label>
+                            <div className="flex gap-2 items-center">
+                                <Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} placeholder="Flame" />
+                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                                    <DynamicIcon name={formData.icon} size="sm" className="text-white" />
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <Label>Pontos Base</Label>
@@ -969,12 +986,12 @@ function ActionDialog({ action, isOpen, onClose, onSave, processing }: any) {
 
 function MissionDialog({ mission, isOpen, onClose, onSave, processing }: any) {
     const [formData, setFormData] = useState({
-        id: '', name: '', description: '', icon: '✨', points_base: 10, category: 'general', is_active: true
+        id: '', name: '', description: '', icon: 'Target', points_base: 10, category: 'general', is_active: true
     })
 
     useEffect(() => {
         if (mission) setFormData(mission)
-        else setFormData({ id: '', name: '', description: '', icon: '✨', points_base: 10, category: 'general', is_active: true })
+        else setFormData({ id: '', name: '', description: '', icon: 'Target', points_base: 10, category: 'general', is_active: true })
     }, [mission])
 
     return (
@@ -998,8 +1015,13 @@ function MissionDialog({ mission, isOpen, onClose, onSave, processing }: any) {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label>Ícone (emoji)</Label>
-                            <Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} />
+                            <Label>Ícone Lucide (ex: Target, Heart, Gift)</Label>
+                            <div className="flex gap-2 items-center">
+                                <Input value={formData.icon} onChange={(e) => setFormData({ ...formData, icon: e.target.value })} placeholder="Target" />
+                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                                    <DynamicIcon name={formData.icon} size="sm" className="text-white" />
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <Label>Pontos Base</Label>
