@@ -27,11 +27,18 @@ export default function DemoIndexPage() {
             height: '240px',
         },
         {
-            title: 'Opção 4 - Atual Melhorada',
-            description: 'Com pilares Glass/Depth + Gamificação Elegante',
-            features: ['Avatar maior 128px', 'Stats com delta de progresso', 'Medalhas 3D', 'Action bar com blur'],
+            title: 'Opção 4 - Atual Melhorada (Verde)',
+            description: 'Com pilares Glass/Depth + Gamificação | Paleta verde floresta',
+            features: ['Avatar maior 128px', 'Stats com delta', 'Medalhas 3D', '6 botões de ação'],
             url: '/demo/header-4',
-            height: '280px',
+            height: '320px',
+        },
+        {
+            title: 'Opção 5 - Versão GRAY (Sóbria) ⭐',
+            description: 'Cinza predominante, verde detalhes, laranja destaques',
+            features: ['Paleta profissional cinza', 'Verde apenas em ícones', 'Laranja em CTAs', 'Mais corporativo'],
+            url: '/demo/header-5',
+            height: '320px',
         },
     ]
 
@@ -40,7 +47,7 @@ export default function DemoIndexPage() {
             <div className="max-w-7xl mx-auto p-8">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold text-white mb-4">
-                        Headers do Perfil - 4 Opções
+                        Headers do Perfil - 5 Opções
                     </h1>
                     <p className="text-gray-400 text-lg">
                         Escolha o design que melhor representa a Rota Business Club
