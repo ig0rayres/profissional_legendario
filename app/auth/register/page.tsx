@@ -300,7 +300,8 @@ export default function RegisterPage() {
                                 {...register('rotaNumber')}
                                 error={errors.rotaNumber?.message}
                                 disabled={isLoading}
-                                className={idVerified ? 'border-green-500 bg-green-500/10' : ''}
+                                readOnly={idVerified}
+                                className={idVerified ? 'border-green-500 bg-green-500/10 cursor-not-allowed' : ''}
                             />
                             <p className="text-xs text-muted-foreground mt-1">
                                 {idVerified
