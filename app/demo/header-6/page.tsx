@@ -4,6 +4,7 @@ import { useState } from 'react'
 import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-current-header-v6'
 import { CoverPhotoUpload } from '@/components/profile/cover-photo-upload'
 
+// V6 Header Demo - Minimal Orange Usage
 export default function Header6DemoPage() {
     const [isOwner, setIsOwner] = useState(false)
     const [coverUrl, setCoverUrl] = useState('/demo-cover.jpg')
