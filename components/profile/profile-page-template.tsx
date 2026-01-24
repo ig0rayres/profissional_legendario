@@ -146,8 +146,31 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                         </Card>
 
                         {/* CTA de Upgrade na Sidebar */}
+                        {/* CTA de Upgrade na Sidebar (Apenas se não for Elite - controlado pelo componente) */}
                         {isOwner && (
-                            <UpgradeCTA variant="card" />
+                            <>
+                                <UpgradeCTA variant="card" />
+
+                                {/* Card de Gestão Financeira (Sempre visível para Owner) */}
+                                <Card className="shadow-lg shadow-black/30 border border-[#2D3B2D] backdrop-blur-sm bg-[#1A2421]/60 hover:shadow-xl transition-shadow duration-300">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-bold text-[#F2F4F3] flex items-center gap-2">
+                                            <LucideIcons.CreditCard className="w-4 h-4 text-[#D4742C]" />
+                                            Gestão Financeira
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-xs text-[#D1D5DB] mb-3">
+                                            Gerencie sua assinatura, visualize faturas e métodos de pagamento.
+                                        </p>
+                                        <Button asChild variant="outline" size="sm" className="w-full border-[#D4742C]/50 text-[#D4742C] hover:bg-[#D4742C]/10">
+                                            <a href="/dashboard/financeiro">
+                                                Acessar Painel
+                                            </a>
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </>
                         )}
                     </div>
                 </div>
