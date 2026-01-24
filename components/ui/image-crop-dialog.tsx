@@ -222,60 +222,28 @@ export function ImageCropDialog({
                             }}
                         />
 
-                        {/* Overlay with crop hole */}
-                        <div className="absolute inset-0 pointer-events-none">
-                            {/* Top overlay */}
+                        {/* Overlay with crop hole (Diamond Shape) */}
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
                             <div
-                                className="absolute bg-black/60"
-                                style={{
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    height: `calc(50% - ${cropHeight / 2}px)`
-                                }}
-                            />
-                            {/* Bottom overlay */}
-                            <div
-                                className="absolute bg-black/60"
-                                style={{
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    height: `calc(50% - ${cropHeight / 2}px)`
-                                }}
-                            />
-                            {/* Left overlay */}
-                            <div
-                                className="absolute bg-black/60"
-                                style={{
-                                    top: `calc(50% - ${cropHeight / 2}px)`,
-                                    left: 0,
-                                    width: `calc(50% - ${cropSize / 2}px)`,
-                                    height: cropHeight
-                                }}
-                            />
-                            {/* Right overlay */}
-                            <div
-                                className="absolute bg-black/60"
-                                style={{
-                                    top: `calc(50% - ${cropHeight / 2}px)`,
-                                    right: 0,
-                                    width: `calc(50% - ${cropSize / 2}px)`,
-                                    height: cropHeight
-                                }}
-                            />
-
-                            {/* Crop border - Alterado para Quadrado (não redondo) */}
-                            <div
-                                className={`absolute border-2 border-white/80 ${aspectRatio === 1 ? 'rounded-sm' : 'rounded-lg'}`}
+                                className={`absolute border-2 border-white/80 ${aspectRatio === 1 ? 'rotate-45' : 'rounded-lg'}`}
                                 style={{
                                     top: '50%',
                                     left: '50%',
                                     width: cropSize,
                                     height: cropHeight,
-                                    transform: 'translate(-50%, -50%)'
+                                    transform: `translate(-50%, -50%) ${aspectRatio === 1 ? 'rotate(45deg)' : ''}`,
+                                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)', // Máscara escura ao redor
+                                    borderRadius: aspectRatio === 1 ? '1rem' : '0.5rem' // Cantos levemente arredondados no losango ficam bonitos
                                 }}
-                            />
+                            >
+                                {/* Grid lines guide (opcional) */}
+                                <div className="absolute inset-0 opacity-20">
+                                    <div className="absolute top-1/3 left-0 right-0 h-px bg-white"></div>
+                                    <div className="absolute top-2/3 left-0 right-0 h-px bg-white"></div>
+                                    <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white"></div>
+                                    <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
