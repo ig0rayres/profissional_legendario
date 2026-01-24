@@ -1,6 +1,6 @@
 'use client'
 
-import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-current-header-v6'
+import ImprovedCurrentHeaderV6Complete from '@/components/profile/headers/improved-current-header-v6-complete'
 import { RotaValenteCard } from '@/components/profile/rota-valente-card'
 import { ConfraternityStats } from '@/components/profile/confraternity-stats'
 import { ProjectsCounter } from '@/components/profile/projects-counter'
@@ -61,8 +61,8 @@ export function ProfilePageTemplateV6({
                     </div>
                 )}
 
-                {/* Header V6 Component - EXACT SAME AS DEMO */}
-                <ImprovedCurrentHeaderV6
+                {/* Header V6 Component - COMPLETE WITH ALL DATA */}
+                <ImprovedCurrentHeaderV6Complete
                     profile={profile}
                     isOwner={isOwner}
                     gamification={gamification}
@@ -72,6 +72,7 @@ export function ProfilePageTemplateV6({
                     earnedMedals={earnedMedals}
                     allMedals={allMedals}
                 />
+
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
