@@ -165,56 +165,74 @@ export default function ImprovedCurrentHeaderV6Complete({
                             </div>
                         </div>
 
-                        {/* Gamification Stats with Glass Cards */}
-                        <div className="flex items-center gap-2 mb-3">
+                        {/* Gamification Stats with HIGH POLISH & GLOW */}
+                        <div className="flex items-center gap-3 mb-3">
                             {[
                                 {
                                     label: 'Vigor',
                                     value: gamification?.total_points || 0,
                                     icon: Flame,
-                                    delta: '127 mês passado',
-                                    color: '#1E4D40'
+                                    color: '#D4742C', // Laranja
+                                    glow: 'shadow-orange-500/20 hover:shadow-orange-500/40' // Glow Laranja
                                 },
                                 {
                                     label: 'Medalhas',
                                     value: earnedMedals.length,
                                     icon: Award,
-                                    color: '#1E4D40'
+                                    color: '#F59E0B', // Dourado
+                                    glow: 'shadow-yellow-500/20 hover:shadow-yellow-500/40' // Glow Dourado
                                 },
                                 {
                                     label: 'ID Rota',
                                     value: profile.rota_number || '#000001',
                                     icon: null,
-                                    color: '#1E4D40'
+                                    color: '#1E4D40', // Verde
+                                    glow: 'shadow-green-500/20 hover:shadow-green-500/40' // Glow Verde
                                 },
                             ].map((stat, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10"
+                                    className={cn(
+                                        "relative group flex items-center gap-3 px-5 py-2.5 rounded-xl border border-white/5 transition-all duration-300 cursor-default overflow-hidden",
+                                        "bg-black/20 backdrop-blur-md hover:bg-black/30 hover:border-white/20 hover:-translate-y-1 hover:scale-105",
+                                        stat.glow,
+                                        "shadow-lg animate-in fade-in zoom-in duration-700 fill-mode-backwards"
+                                    )}
                                     style={{
-                                        background: 'rgba(45, 59, 45, 0.3)',
-                                        backdropFilter: 'blur(8px)',
-                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                        animationDelay: `${idx * 150}ms`
                                     }}
                                 >
-                                    <div>
-                                        {stat.icon && <stat.icon className="w-4 h-4" style={{ color: stat.color }} />}
+                                    {/* Efeito de brilho ao passar o mouse */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                    <div className="relative">
+                                        {stat.icon ? (
+                                            <div className="p-1.5 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                                                <stat.icon
+                                                    className="w-4 h-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                                                    style={{ color: stat.color }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="text-[10px] font-black text-white/30">#</div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <div className="text-xs text-[#D1D5DB] uppercase tracking-wide leading-none mb-0.5">
+
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider leading-none mb-1 group-hover:text-white/70 transition-colors">
                                             {stat.label}
-                                        </div>
-                                        <div className="text-base font-bold text-[#F2F4F3] leading-none">
+                                        </span>
+                                        <span className="text-lg font-black text-white leading-none tracking-tight drop-shadow-md group-hover:text-white transition-colors">
                                             {stat.value}
-                                        </div>
+                                        </span>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        {/* Medalhas Row */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs uppercase text-[#D1D5DB] tracking-wider">Medalhas:</span>
+                        {/* Medalhas Row (Sem label de texto, apenas ícones) */}
+                        <div className="flex items-center gap-2 mt-1">
+                            {/* Label removido conforme pedido */}
                             <div className="flex items-center gap-2">
                                 <TooltipProvider>
                                     {earnedMedals.length > 0 ? (
