@@ -129,25 +129,25 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
     }
 
     return (
-        <Card className="border-[#2D3B2D] bg-[#1A2421]/60 backdrop-blur-sm shadow-lg shadow-black/30 hover:shadow-xl transition-shadow duration-300">
+        <Card className="border-primary/20 bg-primary/5 shadow-lg shadow-black/10 hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-[#F2F4F3]">
-                    <Swords className="w-5 h-5 text-[#1E4D40]" />
+                <CardTitle className="flex items-center gap-2 text-primary">
+                    <Swords className="w-5 h-5" />
                     Próximas Confrarias
                 </CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-3">
                 {confraternities.length === 0 ? (
-                    <div className="bg-[#0F1B1A]/50 p-4 rounded-lg border border-dashed border-[#2D3B2D] text-center">
-                        <Swords className="w-6 h-6 text-[#D1D5DB] mx-auto mb-2" />
-                        <p className="text-xs text-[#D1D5DB]">
+                    <div className="bg-background/50 p-4 rounded-lg border border-dashed border-border text-center">
+                        <Swords className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">
                             Nenhuma confraria agendada
                         </p>
                         {isOwnProfile && (
                             <Link
                                 href="/elo-da-rota/confraria/solicitar"
-                                className="text-xs text-[#1E4D40] hover:underline mt-2 block"
+                                className="text-xs text-primary hover:underline mt-2 block"
                             >
                                 Agendar uma confraria
                             </Link>
@@ -158,12 +158,12 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
                         {confraternities.map(conf => (
                             <div
                                 key={conf.id}
-                                className="bg-[#0F1B1A]/50 p-3 rounded-lg border border-[#1E4D40]/10 hover:border-[#1E4D40]/30 transition-colors"
+                                className="bg-background/50 p-3 rounded-lg border border-primary/10 hover:border-primary/30 transition-colors"
                             >
                                 <div className="flex items-start gap-3">
                                     {/* Avatar com Patente */}
                                     <div className="relative flex-shrink-0">
-                                        <div className="w-12 h-12 rounded-full border-2 border-[#1E4D40]/20 bg-[#1E4D40]/10 flex items-center justify-center overflow-hidden">
+                                        <div className="w-12 h-12 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center overflow-hidden">
                                             {conf.partner?.avatar_url ? (
                                                 <Image
                                                     src={conf.partner.avatar_url}
@@ -173,7 +173,7 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
                                                     className="object-cover w-full h-full"
                                                 />
                                             ) : (
-                                                <span className="text-base font-bold text-[#1E4D40]">
+                                                <span className="text-base font-bold text-primary">
                                                     {conf.partner?.full_name?.charAt(0).toUpperCase() || '?'}
                                                 </span>
                                             )}
@@ -190,17 +190,17 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
                                     </div>
 
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm truncate text-[#F2F4F3]">
+                                        <p className="font-semibold text-sm truncate">
                                             {conf.partner?.full_name || 'Usuário'}
                                         </p>
 
-                                        <div className="flex items-center gap-1 text-xs text-[#D1D5DB] mt-1">
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                                             <Calendar className="w-3 h-3" />
                                             {format(new Date(conf.proposed_date), "dd/MM 'às' HH:mm", { locale: ptBR })}
                                         </div>
 
                                         {conf.location && (
-                                            <div className="flex items-center gap-1 text-xs text-[#D1D5DB] mt-0.5">
+                                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                                                 <MapPin className="w-3 h-3" />
                                                 <span className="truncate">{conf.location}</span>
                                             </div>

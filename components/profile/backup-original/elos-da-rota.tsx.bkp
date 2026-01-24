@@ -151,14 +151,14 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
     }
 
     return (
-        <Card className="border-[#2D3B2D] bg-[#1A2421]/60 backdrop-blur-sm shadow-lg shadow-black/30 hover:shadow-xl transition-shadow duration-300">
+        <Card className="glass-card border-primary/10 shadow-lg shadow-black/10 hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-sm font-bold uppercase tracking-wider text-[#F2F4F3]">
+                <CardTitle className="flex items-center justify-between text-sm font-bold uppercase tracking-wider">
                     <div className="flex items-center gap-2">
-                        <Link2 className="w-4 h-4 text-[#1E4D40]" />
+                        <Link2 className="w-4 h-4 text-primary" />
                         Elos da Rota
                         {/* Contador total de elos */}
-                        <span className="bg-[#1E4D40]/20 text-[#1E4D40] text-xs font-bold px-2 py-0.5 rounded-full">
+                        <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
                             {connections.length}
                         </span>
                     </div>
@@ -167,11 +167,11 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
                     {pendingCount > 0 && (
                         <button
                             onClick={openNotifications}
-                            className="relative p-1.5 rounded-full bg-[#D2691E]/10 hover:bg-[#D2691E]/20 transition-colors cursor-pointer group"
+                            className="relative p-1.5 rounded-full bg-accent/10 hover:bg-accent/20 transition-colors cursor-pointer group"
                             title={`${pendingCount} solicitação(ões) pendente(s) - Clique para ver`}
                         >
-                            <Bell className="w-5 h-5 text-[#D2691E] fill-[#D2691E]/20 group-hover:text-[#D2691E] transition-colors" />
-                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#D2691E] text-[10px] font-black text-white glow-orange animate-pulse">
+                            <Bell className="w-5 h-5 text-accent fill-accent/20 group-hover:text-accent transition-colors" />
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-black text-white glow-orange animate-pulse">
                                 {pendingCount}
                             </span>
                         </button>
@@ -181,10 +181,10 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
             <CardContent>
                 {loading ? (
                     <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E4D40]"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
                 ) : connections.length === 0 ? (
-                    <div className="text-center py-6 text-[#D1D5DB]">
+                    <div className="text-center py-6 text-muted-foreground">
                         <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
                         <p className="text-xs uppercase tracking-wide">Nenhum elo ainda</p>
                     </div>
@@ -203,11 +203,11 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
                                             alt={connection.full_name}
                                             width={56}
                                             height={56}
-                                            className="rounded-full border-2 border-[#1E4D40]/20 group-hover:border-[#1E4D40] transition-colors"
+                                            className="rounded-full border-2 border-primary/20 group-hover:border-primary transition-colors"
                                         />
                                     ) : (
-                                        <div className="w-14 h-14 rounded-full border-2 border-[#1E4D40]/20 bg-[#1E4D40]/10 flex items-center justify-center group-hover:border-[#1E4D40] transition-colors">
-                                            <span className="text-lg font-bold text-[#1E4D40]">
+                                        <div className="w-14 h-14 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center group-hover:border-primary transition-colors">
+                                            <span className="text-lg font-bold text-primary">
                                                 {connection.full_name.charAt(0).toUpperCase()}
                                             </span>
                                         </div>
@@ -224,7 +224,7 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
                                         />
                                     </div>
                                 </div>
-                                <p className="text-[10px] font-medium text-[#F2F4F3] truncate w-full group-hover:text-[#1E4D40] transition-colors leading-tight">
+                                <p className="text-[10px] font-medium text-foreground truncate w-full group-hover:text-primary transition-colors leading-tight">
                                     {getDisplayName(connection.full_name)}
                                 </p>
                             </Link>
@@ -234,7 +234,7 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
 
                 {connections.length > 6 && (
                     <div className="mt-4 text-center">
-                        <Link href={`/profile/${userId}/connections`} className="text-xs text-[#1E4D40] hover:underline">
+                        <Link href={`/profile/${userId}/connections`} className="text-xs text-primary hover:underline">
                             Ver todos ({connections.length})
                         </Link>
                     </div>
