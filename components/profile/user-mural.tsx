@@ -51,16 +51,16 @@ export function NaRotaFeed({
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
     return (
-        <Card className="border-primary/20 shadow-lg shadow-black/10 hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="pb-3 border-b border-primary/10">
-                <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-secondary" />
+        <Card className="border-[#2D3B2D] bg-[#1A2421]/60 backdrop-blur-sm shadow-lg shadow-black/30 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3 border-b border-[#2D3B2D]">
+                <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-[#F2F4F3]">
+                    <MapPin className="w-4 h-4 text-[#D2691E]" />
                     NA ROTA
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
                 {allItems.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
+                    <div className="text-center py-12 text-[#D1D5DB]">
                         <MapPin className="w-16 h-16 mx-auto mb-4 opacity-20" />
                         <p className="text-sm font-bold uppercase tracking-wide">
                             Nenhuma atividade ainda
@@ -90,14 +90,14 @@ function FeedItem({ item, userName }: { item: any, userName: string }) {
             bgColor: 'bg-yellow-500/10'
         },
         portfolio: {
-            icon: <Briefcase className="w-4 h-4 text-primary" />,
+            icon: <Briefcase className="w-4 h-4 text-[#1E4D40]" />,
             label: 'adicionou um projeto',
-            bgColor: 'bg-primary/10'
+            bgColor: 'bg-[#1E4D40]/10'
         },
         confraternity: {
-            icon: <Users className="w-4 h-4 text-secondary" />,
+            icon: <Users className="w-4 h-4 text-[#D2691E]" />,
             label: 'participou de uma confraria',
-            bgColor: 'bg-secondary/10'
+            bgColor: 'bg-[#D2691E]/10'
         },
         medal_earned: {
             icon: <Award className="w-4 h-4 text-amber-500" />,
@@ -105,9 +105,9 @@ function FeedItem({ item, userName }: { item: any, userName: string }) {
             bgColor: 'bg-amber-500/10'
         },
         rank_up: {
-            icon: <Flame className="w-4 h-4 text-orange-500" />,
+            icon: <Flame className="w-4 h-4 text-[#D2691E]" />,
             label: 'subiu de patente',
-            bgColor: 'bg-orange-500/10'
+            bgColor: 'bg-[#D2691E]/10'
         }
     }
 
@@ -118,7 +118,7 @@ function FeedItem({ item, userName }: { item: any, userName: string }) {
     }
 
     return (
-        <div className="glass p-4 rounded-lg">
+        <div className="bg-[#0F1B1A]/50 p-4 rounded-lg border border-[#2D3B2D]">
             {/* Header do post */}
             <div className="flex items-center gap-3 mb-3">
                 <div className={`w-8 h-8 rounded-full ${config.bgColor} flex items-center justify-center`}>
@@ -126,10 +126,10 @@ function FeedItem({ item, userName }: { item: any, userName: string }) {
                 </div>
                 <div className="flex-1">
                     <p className="text-sm">
-                        <span className="font-bold">{userName}</span>{' '}
-                        <span className="text-muted-foreground">{config.label}</span>
+                        <span className="font-bold text-[#F2F4F3]">{userName}</span>{' '}
+                        <span className="text-[#D1D5DB]">{config.label}</span>
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-[#D1D5DB]">
                         {formatRelativeTime(item.date)}
                     </p>
                 </div>
@@ -158,22 +158,22 @@ function FeedItem({ item, userName }: { item: any, userName: string }) {
 // Rating Content
 function RatingContent({ rating }: { rating: any }) {
     return (
-        <div className="bg-muted/30 rounded-lg p-3">
+        <div className="bg-[#0F1B1A]/50 rounded-lg p-3 border border-[#2D3B2D]">
             <div className="flex items-center gap-2 mb-2">
                 <div className="flex">
                     {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                             key={i}
-                            className={`w-4 h-4 ${i < rating.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
+                            className={`w-4 h-4 ${i < rating.rating ? 'text-yellow-500 fill-yellow-500' : 'text-[#D1D5DB]'}`}
                         />
                     ))}
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-[#D1D5DB]">
                     por {rating.reviewer?.full_name || 'Usuário'}
                 </span>
             </div>
             {rating.comment && (
-                <p className="text-sm italic text-muted-foreground">
+                <p className="text-sm italic text-[#D1D5DB]">
                     "{rating.comment}"
                 </p>
             )}
@@ -186,7 +186,7 @@ function PortfolioContent({ portfolio }: { portfolio: any }) {
     return (
         <div>
             {portfolio.image_url && (
-                <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
+                <div className="relative aspect-video rounded-lg overflow-hidden mb-2 border border-[#2D3B2D]">
                     <Image
                         src={portfolio.image_url}
                         alt={portfolio.title}
@@ -195,9 +195,9 @@ function PortfolioContent({ portfolio }: { portfolio: any }) {
                     />
                 </div>
             )}
-            <p className="font-bold text-sm">{portfolio.title}</p>
+            <p className="font-bold text-sm text-[#F2F4F3]">{portfolio.title}</p>
             {portfolio.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
+                <p className="text-xs text-[#D1D5DB] line-clamp-2">
                     {portfolio.description}
                 </p>
             )}
@@ -210,7 +210,7 @@ function ConfraternityContent({ photo }: { photo: any }) {
     return (
         <div>
             {photo.photo_url && (
-                <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
+                <div className="relative aspect-video rounded-lg overflow-hidden mb-2 border border-[#2D3B2D]">
                     <Image
                         src={photo.photo_url}
                         alt={photo.title || 'Confraria'}
@@ -219,12 +219,12 @@ function ConfraternityContent({ photo }: { photo: any }) {
                     />
                 </div>
             )}
-            <p className="font-bold text-sm flex items-center gap-1">
+            <p className="font-bold text-sm flex items-center gap-1 text-[#F2F4F3]">
                 <Users className="w-3 h-3" />
                 {photo.title || 'Confraria'}
             </p>
             {photo.description && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-[#D1D5DB]">
                     {photo.description}
                 </p>
             )}
@@ -235,13 +235,13 @@ function ConfraternityContent({ photo }: { photo: any }) {
 // Medal Content
 function MedalContent({ activity }: { activity: any }) {
     return (
-        <div className="bg-amber-500/10 rounded-lg p-3 flex items-center gap-3">
+        <div className="bg-amber-500/10 rounded-lg p-3 flex items-center gap-3 border border-amber-500/20">
             <Award className="w-8 h-8 text-amber-500" />
             <div>
-                <p className="font-bold text-sm">
+                <p className="font-bold text-sm text-[#F2F4F3]">
                     {activity.activity_data?.medal_name || 'Nova Medalha'}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-[#D1D5DB]">
                     +{activity.activity_data?.xp_reward || 0} XP
                 </p>
             </div>
@@ -252,10 +252,10 @@ function MedalContent({ activity }: { activity: any }) {
 // Rank Up Content
 function RankUpContent({ activity }: { activity: any }) {
     return (
-        <div className="bg-orange-500/10 rounded-lg p-3 flex items-center gap-3">
-            <Flame className="w-8 h-8 text-orange-500" />
+        <div className="bg-[#D2691E]/10 rounded-lg p-3 flex items-center gap-3 border border-[#D2691E]/20">
+            <Flame className="w-8 h-8 text-[#D2691E]" />
             <div>
-                <p className="font-bold text-sm">
+                <p className="font-bold text-sm text-[#F2F4F3]">
                     Subiu para {activity.activity_data?.new_rank || 'nova patente'}!
                 </p>
             </div>
