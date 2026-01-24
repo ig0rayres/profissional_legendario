@@ -133,17 +133,17 @@ export function RotaValenteCard({
 
                     <div className="flex gap-3">
                         <div className="bg-[#1E4D40] text-white px-4 py-2 rounded-xl shadow-lg flex flex-col items-center min-w-[90px] transform hover:scale-105 transition-transform border-b-4 border-[#0F1F1A]">
-                            <div className="flex items-center gap-1 mb-1 opacity-80">
-                                <Flame className="w-3 h-3 text-[#D2691E] fill-[#D2691E]" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">Vigor</span>
+                            <div className="flex items-center gap-1 mb-1 opacity-90">
+                                <Flame className="w-3 h-3 text-white fill-white/20" /> {/* Ícone Branco V6 */}
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/90">Vigor</span>
                             </div>
                             <span className="text-2xl font-black leading-none tracking-tight tabular-nums">{animatedPoints}</span>
                         </div>
 
                         <div className="bg-[#1E4D40] text-white px-3 sm:px-4 py-2 rounded-xl shadow-lg flex flex-col items-center min-w-[100px] transform hover:scale-105 transition-transform border-b-4 border-[#0F1F1A]">
-                            <div className="flex items-center gap-1 mb-1 opacity-80">
-                                <Crown className="w-3 h-3 text-[#D2691E] fill-[#D2691E]" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">Plano</span>
+                            <div className="flex items-center gap-1 mb-1 opacity-90">
+                                <Crown className="w-3 h-3 text-white fill-white/20" /> {/* Ícone Branco V6 */}
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/90">Plano</span>
                             </div>
                             <span className="text-lg sm:text-lg font-black uppercase leading-none tracking-tight break-keep whitespace-nowrap">
                                 {subscription?.plan_tiers?.name || 'ELITE'}
@@ -157,7 +157,7 @@ export function RotaValenteCard({
 
                     {/* Badge START (Padronizado + Ícone Dinâmico) */}
                     <div className="absolute left-1 top-[55%] -translate-y-1/2 z-20 flex flex-col items-center group cursor-pointer hover:scale-110 transition-transform duration-300">
-                        <div className="relative w-16 h-16 bg-[#1E4D40] text-white rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(30,77,64,0.5)] border-2 border-[#D2691E]/30">
+                        <div className="relative w-16 h-16 bg-[#1E4D40] text-white rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(30,77,64,0.5)] border-2 border-[#1E4D40]/50"> {/* Borda Suave */}
                             <RankInsignia
                                 rankId={gamification.current_rank_id}
                                 rankName={gamification.rank?.name}
@@ -167,7 +167,7 @@ export function RotaValenteCard({
                                 className="text-white drop-shadow-md pb-1"
                             />
                         </div>
-                        <span className="mt-2 font-black text-[#F2F4F3] uppercase text-[10px] tracking-wide bg-[#1E4D40]/90 px-3 py-0.5 rounded-full shadow-sm border border-[#D2691E]/30">
+                        <span className="mt-2 font-black text-[#F2F4F3] uppercase text-[10px] tracking-wide bg-[#1E4D40]/90 px-3 py-0.5 rounded-full shadow-sm border border-[#1E4D40]/30">
                             {gamification.rank?.name || 'Novato'}
                         </span>
                     </div>
@@ -225,6 +225,7 @@ export function RotaValenteCard({
                         <circle cx="260" cy="115" r="8" fill="#1a2e26" opacity="0.4" />
                         <circle cx="400" cy="85" r="5" fill="#1a2e26" opacity="0.6" />
 
+                        {/* TRILHA DE PROGRESSO - Mantendo Laranja para contraste, mas levemente mais escura/rica */}
                         <path
                             ref={pathRef}
                             d={pathD}
@@ -235,7 +236,7 @@ export function RotaValenteCard({
                             strokeDasharray="1"
                             strokeDashoffset={1 - (trailProgress / 100)}
                             pathLength={1}
-                            className="transition-all duration-[2000ms] ease-out shadow-[0_0_15px_rgba(212,116,44,0.5)]"
+                            className="transition-all duration-[2000ms] ease-out shadow-[0_0_20px_rgba(212,116,44,0.6)]"
                         />
 
                         <path
@@ -253,9 +254,11 @@ export function RotaValenteCard({
                             className="transition-transform duration-[2000ms] ease-out"
                         >
                             <g className={cn("transition-opacity duration-500", animComplete ? "opacity-100" : "opacity-0")}>
-                                <circle cx="0" cy="0" r="5" fill="#1a2e26" stroke="white" strokeWidth="2" />
-                                <line x1="0" y1="0" x2="0" y2="-28" stroke="#1a2e26" strokeWidth="2.5" />
-                                <path d="M0,-28 L18,-20 L0,-12 Z" fill="#D4742C" stroke="#1a2e26" strokeWidth="1" />
+                                {/* Marcador de Posição - User */}
+                                <circle cx="0" cy="0" r="6" fill="#1a2e26" stroke="white" strokeWidth="2.5" />
+                                <line x1="0" y1="0" x2="0" y2="-28" stroke="#1a2e26" strokeWidth="3" />
+                                {/* Bandeira Laranja - Identidade Visual */}
+                                <path d="M0,-28 L20,-18 L0,-8 Z" fill="#D4742C" stroke="#1a2e26" strokeWidth="1.5" />
                             </g>
                         </g>
                     </svg>
@@ -264,7 +267,7 @@ export function RotaValenteCard({
                         <div className="bg-white/95 backdrop-blur-md border border-[#2E4A3E]/20 rounded-2xl px-5 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.15)] flex flex-col items-center min-w-[160px] animate-in zoom-in fade-in duration-700 delay-300">
                             <div className="w-full h-2 bg-gray-100 rounded-full mb-1.5 overflow-hidden border border-gray-200">
                                 <div
-                                    className="h-full bg-[#3D6B54] transition-all duration-[2000ms] ease-out"
+                                    className="h-full bg-[#1E4D40] transition-all duration-[2000ms] ease-out" // Barra Verde Forte
                                     style={{ width: `${trailProgress}%` }}
                                 />
                             </div>
@@ -272,7 +275,7 @@ export function RotaValenteCard({
                                 <span className="text-3xl font-black text-[#2E4A3E] tabular-nums tracking-tighter shadow-black">
                                     {animatedPoints}
                                 </span>
-                                <span className="text-sm font-bold text-[#D4742C] tracking-tight">/ {nextRankPoints} Pts</span>
+                                <span className="text-sm font-bold text-[#1E4D40]/70 tracking-tight">/ {nextRankPoints} Pts</span>
                             </div>
                         </div>
                     </div>
