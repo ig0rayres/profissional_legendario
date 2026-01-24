@@ -10,7 +10,7 @@ import {
     TrendingUp, Eye, Camera, Settings, Edit, Bell, Briefcase
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ProfileActionButtons } from '@/components/profile/profile-action-buttons'
+import { ProfileActionButtonsV6 } from '@/components/profile/profile-action-buttons-v6'
 import { CoverUpload } from '@/components/profile/cover-upload'
 import { MedalBadge } from '@/components/gamification/medal-badge'
 
@@ -253,7 +253,7 @@ export default function ImprovedCurrentHeaderV6Complete({
                     <div className="flex items-center justify-between">
                         {/* Action Buttons */}
                         {!isOwner ? (
-                            <ProfileActionButtons
+                            <ProfileActionButtonsV6
                                 userId={profile.id}
                                 userName={profile.full_name}
                             />
