@@ -279,11 +279,11 @@ export function ImprovedCurrentHeaderGray({
                                         Ofertar
                                     </Button>
 
-                                    {/* Outros botões - Cinza */}
+                                    {/* Outros botões - EXATAMENTE como V4 */}
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-9 border-[#1E4D40]/30 text-gray-200 hover:bg-[#1E4D40]/10 hover:border-[#1E4D40]/50"
+                                        className="h-9 border-[#2D3B2D] text-[#F2F4F3] hover:bg-[#2D3B2D]"
                                         onClick={() => window.location.href = `/chat/${profileData.full_name}`}
                                     >
                                         <MessageCircle className="w-4 h-4 mr-1.5" />
@@ -293,7 +293,7 @@ export function ImprovedCurrentHeaderGray({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-9 border-gray-600 text-gray-200 hover:bg-gray-700"
+                                        className="h-9 border-[#2D3B2D] text-[#F2F4F3] hover:bg-[#2D3B2D]"
                                     >
                                         <UserPlus className="w-4 h-4 mr-1.5" />
                                         Criar Elo
@@ -302,7 +302,7 @@ export function ImprovedCurrentHeaderGray({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-9 border-gray-600 text-gray-200 hover:bg-gray-700"
+                                        className="h-9 border-[#2D3B2D] text-[#F2F4F3] hover:bg-[#2D3B2D]"
                                         onClick={() => window.location.href = `/elo-da-rota/confraria/solicitar`}
                                     >
                                         Confraria
@@ -311,7 +311,7 @@ export function ImprovedCurrentHeaderGray({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-9 border-gray-600 text-gray-200 hover:bg-gray-700"
+                                        className="h-9 border-[#2D3B2D] text-[#F2F4F3] hover:bg-[#2D3B2D]"
                                     >
                                         <Star className="w-4 h-4 mr-1.5" />
                                         Classificar
@@ -320,7 +320,7 @@ export function ImprovedCurrentHeaderGray({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-9 border-gray-600 text-gray-200 hover:bg-gray-700"
+                                        className="h-9 border-[#2D3B2D] text-[#F2F4F3] hover:bg-[#2D3B2D]"
                                         onClick={() => window.location.href = `/orar/${profileData.full_name}`}
                                     >
                                         🙏 Orar
@@ -329,13 +329,13 @@ export function ImprovedCurrentHeaderGray({
                             )}
                         </div>
 
-                        {/* Social - Verde detalhe */}
+                        {/* Social Links - EXATAMENTE como V4 */}
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            <button className="w-9 h-9 rounded-lg bg-gray-700/60 flex items-center justify-center hover:bg-gray-600 transition-all hover:scale-105">
-                                <MessageCircleIcon className="w-4 h-4 text-emerald-500" />
+                            <button className="w-9 h-9 rounded-lg bg-[#2D3B2D]/60 flex items-center justify-center hover:bg-[#2D3B2D] transition-all hover:scale-105">
+                                <MessageCircleIcon className="w-4 h-4 text-[#D2691E]" />
                             </button>
-                            <button className="w-9 h-9 rounded-lg bg-gray-700/60 flex items-center justify-center hover:bg-gray-600 transition-all hover:scale-105">
-                                <Instagram className="w-4 h-4 text-emerald-500" />
+                            <button className="w-9 h-9 rounded-lg bg-[#2D3B2D]/60 flex items-center justify-center hover:bg-[#2D3B2D] transition-all hover:scale-105">
+                                <Instagram className="w-4 h-4 text-[#D2691E]" />
                             </button>
                         </div>
                     </div>
