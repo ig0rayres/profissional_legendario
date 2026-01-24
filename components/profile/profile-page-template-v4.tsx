@@ -80,8 +80,8 @@ export function ProfilePageTemplateV4({
                         const medal = allMedals.find(m => m.id === um.medal_id)
                         return {
                             id: medal?.id || '',
-                            icon: medal?.icon || '',
-                            name: medal?.name || ''
+                            name: medal?.name || '',
+                            icon: '' // Icon will be determined by medal ID
                         }
                     }) || []}
                     isOwner={isOwner}
