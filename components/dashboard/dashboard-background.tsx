@@ -34,14 +34,14 @@ export function DashboardBackground() {
     const renderBackground = () => {
         switch (presetName) {
             case 'orange':
-                return <div className="fixed inset-0 z-[-50] bg-gradient-to-br from-orange-950/80 via-[#1a1510] to-black pointer-events-none" />
+                return <div className="fixed inset-0 z-0 bg-gradient-to-br from-orange-950/80 via-[#1a1510] to-black pointer-events-none" />
 
             case 'gray':
-                return <div className="fixed inset-0 z-[-50] bg-gradient-to-br from-gray-900 via-gray-950 to-black pointer-events-none" />
+                return <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black pointer-events-none" />
 
             case 'cyber':
                 return (
-                    <div className="fixed inset-0 z-[-50] bg-black pointer-events-none">
+                    <div className="fixed inset-0 z-0 bg-black pointer-events-none">
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f0_1px,transparent_1px),linear-gradient(to_bottom,#0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-10" />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black" />
                     </div>
@@ -49,7 +49,7 @@ export function DashboardBackground() {
 
             case 'gold':
                 return (
-                    <div className="fixed inset-0 z-[-50] bg-black pointer-events-none">
+                    <div className="fixed inset-0 z-0 bg-black pointer-events-none">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#4d3a18] via-[#1a1205] to-black" />
                         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%)' }} />
                     </div>
@@ -57,7 +57,7 @@ export function DashboardBackground() {
 
             case 'treasure_map':
                 return (
-                    <div className="fixed inset-0 z-[-50] bg-[#1c1917] pointer-events-none">
+                    <div className="fixed inset-0 z-0 bg-[#1c1917] pointer-events-none">
                         {/* Papel envelhecido dark */}
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/aged-paper.png')] opacity-10 mix-blend-overlay" />
                         {/* Linhas de Mapa SVG Inline */}
@@ -78,7 +78,7 @@ export function DashboardBackground() {
 
             case 'night_ops':
                 return (
-                    <div className="fixed inset-0 z-[-50] bg-[#050a05] pointer-events-none">
+                    <div className="fixed inset-0 z-0 bg-[#050a05] pointer-events-none">
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,3px_100%] opacity-20" />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#0f2e1a]/30 via-transparent to-[#0f2e1a]/20" />
                         {/* Radar Scanline Animation Class must exist in globals or tailwind, but generic animate-pulse works as fallback */}
@@ -88,7 +88,7 @@ export function DashboardBackground() {
 
             case 'desert':
                 return (
-                    <div className="fixed inset-0 z-[-50] bg-[#1c1814] pointer-events-none">
+                    <div className="fixed inset-0 z-0 bg-[#1c1814] pointer-events-none">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#4a3b2a] via-[#261f18] to-[#0f0c0a]" />
                         <div className="absolute inset-0 opacity-[0.05]"
                             style={{

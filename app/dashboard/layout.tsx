@@ -6,7 +6,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
         <div className="relative min-h-screen">
             <DashboardBackground />
-            {children}
+            <div className="relative z-10">
+                {children}
+            </div>
         </div>
     )
 }
