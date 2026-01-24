@@ -305,7 +305,8 @@ export default function ImprovedCurrentHeaderV6Complete({
                                         </TooltipTrigger>
                                         <TooltipContent>Editar Perfil</TooltipContent>
                                     </Tooltip>
-                                    <Tooltip>
+                                    {/* Configurações (Oculto temporariamente) */}
+                                    {/* <Tooltip>
                                         <TooltipTrigger asChild>
                                             <a href="/dashboard/editar-perfil">
                                                 <Button variant="outline" size="icon" className="h-9 w-9">
@@ -314,7 +315,7 @@ export default function ImprovedCurrentHeaderV6Complete({
                                             </a>
                                         </TooltipTrigger>
                                         <TooltipContent>Configurações</TooltipContent>
-                                    </Tooltip>
+                                    </Tooltip> */}
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <a href="/dashboard/financeiro">
