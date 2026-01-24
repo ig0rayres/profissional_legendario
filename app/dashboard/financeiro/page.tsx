@@ -217,9 +217,9 @@ export default function FinanceiroPage() {
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
                                                                         <Button
-                                                                            variant="outline"
+                                                                            variant="default"
                                                                             size="sm"
-                                                                            className="h-8 border-[#D4742C]/30 text-[#D4742C] hover:bg-[#D4742C]/20 hover:text-[#D4742C] hover:border-[#D4742C]"
+                                                                            className="h-8 bg-[#D4742C] text-white hover:bg-[#b85d1e] border-0 shadow-md shadow-orange-900/20"
                                                                             onClick={() => alert("Módulo de Nota Fiscal será integrado em breve")}
                                                                         >
                                                                             <Download className="w-3.5 h-3.5 mr-1.5" />
