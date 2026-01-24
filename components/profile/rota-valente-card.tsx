@@ -100,12 +100,12 @@ export function RotaValenteCard({
 
     return (
         <Card className={cn(
-            "overflow-hidden relative transition-all duration-1000 border-none shadow-2xl group/card",
-            "bg-[#F2EFE9]",
+            "overflow-hidden relative transition-all duration-1000 shadow-2xl shadow-black/30 group/card",
+            "bg-[#1A2421]/60 border border-[#2D3B2D] backdrop-blur-sm",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         )}>
             <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center z-0">
-                <div className="opacity-[0.08] scale-150 transform rotate-6 blur-[0.5px]">
+                <div className="opacity-[0.03] scale-150 transform rotate-6 blur-[0.5px]">
                     <Image
                         src="/images/logo-rotabusiness.png"
                         alt=""
@@ -120,29 +120,29 @@ export function RotaValenteCard({
                 {/* ========== HEADER ========== */}
                 <div className="flex justify-between items-start w-full mb-3">
                     <div className="mt-1">
-                        <h2 className="text-xl md:text-2xl font-black text-[#2E4A3E] uppercase tracking-widest drop-shadow-sm flex items-center gap-2">
-                            <Map className="w-6 h-6 text-[#D4742C]" />
+                        <h2 className="text-xl md:text-2xl font-black text-[#F2F4F3] uppercase tracking-widest drop-shadow-sm flex items-center gap-2">
+                            <Map className="w-6 h-6 text-[#1E4D40]" />
                             ROTA DO VALENTE
-                            <span className="text-[#D4742C] hidden sm:inline-block">-</span>
-                            <span className="text-[#D4742C] text-lg md:text-xl font-bold normal-case tracking-normal">
+                            <span className="text-[#1E4D40] hidden sm:inline-block">-</span>
+                            <span className="text-[#1E4D40] text-lg md:text-xl font-bold normal-case tracking-normal">
                                 {formattedSeason}
                             </span>
                         </h2>
-                        <div className="h-1.5 w-16 bg-[#2E4A3E] mt-1 rounded-full opacity-20"></div>
+                        <div className="h-1.5 w-16 bg-[#1E4D40] mt-1 rounded-full opacity-40"></div>
                     </div>
 
                     <div className="flex gap-3">
-                        <div className="bg-[#2E4A3E] text-white px-4 py-2 rounded-xl shadow-lg flex flex-col items-center min-w-[90px] transform hover:scale-105 transition-transform border-b-4 border-[#1a2e26]">
+                        <div className="bg-[#1E4D40] text-white px-4 py-2 rounded-xl shadow-lg flex flex-col items-center min-w-[90px] transform hover:scale-105 transition-transform border-b-4 border-[#0F1F1A]">
                             <div className="flex items-center gap-1 mb-1 opacity-80">
-                                <Flame className="w-3 h-3 text-[#D4742C] fill-[#D4742C]" />
+                                <Flame className="w-3 h-3 text-[#D2691E] fill-[#D2691E]" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">Vigor</span>
                             </div>
                             <span className="text-2xl font-black leading-none tracking-tight tabular-nums">{animatedPoints}</span>
                         </div>
 
-                        <div className="bg-[#2E4A3E] text-white px-3 sm:px-4 py-2 rounded-xl shadow-lg flex flex-col items-center min-w-[100px] transform hover:scale-105 transition-transform border-b-4 border-[#1a2e26]">
+                        <div className="bg-[#1E4D40] text-white px-3 sm:px-4 py-2 rounded-xl shadow-lg flex flex-col items-center min-w-[100px] transform hover:scale-105 transition-transform border-b-4 border-[#0F1F1A]">
                             <div className="flex items-center gap-1 mb-1 opacity-80">
-                                <Crown className="w-3 h-3 text-[#D4742C] fill-[#D4742C]" />
+                                <Crown className="w-3 h-3 text-[#D2691E] fill-[#D2691E]" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest">Plano</span>
                             </div>
                             <span className="text-lg sm:text-lg font-black uppercase leading-none tracking-tight break-keep whitespace-nowrap">
@@ -157,7 +157,7 @@ export function RotaValenteCard({
 
                     {/* Badge START (Padronizado + Ícone Dinâmico) */}
                     <div className="absolute left-1 top-[55%] -translate-y-1/2 z-20 flex flex-col items-center group cursor-pointer hover:scale-110 transition-transform duration-300">
-                        <div className="relative w-16 h-16 bg-[#2E4A3E] text-white rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(46,74,62,0.3)] border-2 border-white/20">
+                        <div className="relative w-16 h-16 bg-[#1E4D40] text-white rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(30,77,64,0.5)] border-2 border-[#D2691E]/30">
                             <RankInsignia
                                 rankId={gamification.current_rank_id}
                                 rankName={gamification.rank?.name}
@@ -167,14 +167,14 @@ export function RotaValenteCard({
                                 className="text-white drop-shadow-md pb-1"
                             />
                         </div>
-                        <span className="mt-2 font-black text-[#2E4A3E] uppercase text-[10px] tracking-wide bg-white/90 px-3 py-0.5 rounded-full shadow-sm border border-[#2E4A3E]/10">
+                        <span className="mt-2 font-black text-[#F2F4F3] uppercase text-[10px] tracking-wide bg-[#1E4D40]/90 px-3 py-0.5 rounded-full shadow-sm border border-[#D2691E]/30">
                             {gamification.rank?.name || 'Novato'}
                         </span>
                     </div>
 
                     {/* Badge END (Padronizado + Ícone Dinâmico) */}
                     <div className="absolute right-1 top-[40%] -translate-y-1/2 z-20 flex flex-col items-center group cursor-pointer hover:scale-110 transition-transform duration-300">
-                        <div className="relative w-16 h-16 bg-white text-[#2E4A3E] rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(46,74,62,0.2)] border-4 border-[#2E4A3E]">
+                        <div className="relative w-16 h-16 bg-[#F2F4F3] text-[#1E4D40] rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(30,77,64,0.3)] border-4 border-[#1E4D40]">
                             {nextRank ? (
                                 <RankInsignia
                                     rankId={nextRank.id}
@@ -182,13 +182,13 @@ export function RotaValenteCard({
                                     iconName={nextRank.icon}
                                     size="lg"
                                     variant="icon-only"
-                                    className="text-[#2E4A3E]"
+                                    className="text-[#1E4D40]"
                                 />
                             ) : (
-                                <Trophy className="w-7 h-7 text-[#D4742C]" />
+                                <Trophy className="w-7 h-7 text-[#D2691E]" />
                             )}
                         </div>
-                        <div className="mt-2 bg-[#2E4A3E] px-3 py-0.5 rounded-full shadow-md">
+                        <div className="mt-2 bg-[#1E4D40] px-3 py-0.5 rounded-full shadow-md">
                             <span className="font-black text-white uppercase text-[10px] tracking-wide block text-center min-w-[60px]">
                                 {nextRank?.name || 'Lenda'}
                             </span>
