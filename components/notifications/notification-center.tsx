@@ -69,7 +69,7 @@ export function NotificationCenter() {
         if (!user) return
 
         setLoading(true)
-        const { data, error } = await supabase
+        const { data: notificationsData, error } = await supabase
             .from('notifications')
             .select('*')
             .eq('user_id', user.id)
@@ -78,9 +78,68 @@ export function NotificationCenter() {
 
         if (error) {
             console.warn('[Notifications] Error loading:', error.message)
-        } else {
-            setNotifications(data || [])
+            setLoading(false)
+            return
         }
+
+        let validNotifications = notificationsData || []
+
+        // 🧹 SANITY CHECK: Verificar se solicitações de conexão/confraria ainda estão pendentes
+        // Isso evita mostrar botões "Aceitar" para coisas já resolvidas em outro lugar
+        if (validNotifications.length > 0) {
+            const connectionRequests = validNotifications.filter(n => n.type === 'connection_request' && n.metadata?.from_user_id)
+            const confraternityInvites = validNotifications.filter(n => n.type === 'confraternity_invite' && n.metadata?.invite_id)
+
+            // 1. Verificar Conexões
+            if (connectionRequests.length > 0) {
+                const requesterIds = connectionRequests.map(n => n.metadata.from_user_id)
+
+                // Buscar conexões que JÁ foram processadas (accepted ou rejected)
+                const { data: processedConnections } = await supabase
+                    .from('user_connections')
+                    .select('requester_id, status')
+                    .eq('addressee_id', user.id)
+                    .in('requester_id', requesterIds)
+                    .neq('status', 'pending') // Só queremos as que NÃO são pending
+
+                // Remover notificações dessas conexões processadas
+                if (processedConnections && processedConnections.length > 0) {
+                    const processedRequesterIds = processedConnections.map(c => c.requester_id)
+                    // Filtrar LOCALMENTE (não deletamos do banco aqui para performance, apenas escondemos)
+                    // O ideal seria marcar como lido também, mas esconder já resolve a UX imediata
+                    validNotifications = validNotifications.filter(n => {
+                        if (n.type === 'connection_request') {
+                            return !processedRequesterIds.includes(n.metadata.from_user_id)
+                        }
+                        return true
+                    })
+                }
+            }
+
+            // 2. Verificar Convites de Confraria
+            if (confraternityInvites.length > 0) {
+                const inviteIds = confraternityInvites.map(n => n.metadata.invite_id)
+
+                // Buscar convites que JÁ foram processados
+                const { data: processedInvites } = await supabase
+                    .from('confraternity_invites')
+                    .select('id, status')
+                    .in('id', inviteIds)
+                    .neq('status', 'pending')
+
+                if (processedInvites && processedInvites.length > 0) {
+                    const processedInviteIds = processedInvites.map(i => i.id)
+                    validNotifications = validNotifications.filter(n => {
+                        if (n.type === 'confraternity_invite') {
+                            return !processedInviteIds.includes(n.metadata.invite_id)
+                        }
+                        return true
+                    })
+                }
+            }
+        }
+
+        setNotifications(validNotifications)
         setLoading(false)
     }
 
