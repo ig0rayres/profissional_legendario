@@ -103,7 +103,7 @@ export default function ImprovedCurrentHeaderV6Complete({
 
                         {/* Rank Badge with Glow - Adjusted Position */}
                         <div
-                            className="absolute -bottom-4 -right-2 z-30"
+                            className="absolute bottom-1 -right-4 z-30"
                             style={{
                                 filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))'
                             }}

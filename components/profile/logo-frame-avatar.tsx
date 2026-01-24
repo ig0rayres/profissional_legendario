@@ -24,7 +24,7 @@ export function LogoFrameAvatar({
     const sizeClasses = {
         sm: 'w-16 h-16',
         md: 'w-24 h-24',
-        lg: 'w-32 h-32',
+        lg: 'w-44 h-44', // Aumentado ~35% (era w-32)
         xl: 'w-48 h-48',
     }
 
