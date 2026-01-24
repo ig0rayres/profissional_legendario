@@ -551,30 +551,39 @@ export default function EditarPerfilPage() {
 
                             {/* Preset Selector */}
                             <div className="p-4 bg-muted/30 border-t border-white/5">
-                                <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Temas Disponíveis</p>
-                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                <div className="flex items-center justify-between mb-3">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Temas Disponíveis</p>
+                                    <span className="text-[10px] text-muted-foreground/50">Clique para aplicar</span>
+                                </div>
+                                <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                                     {[
                                         { id: 'default', name: 'Padrão', color: 'bg-[#2D3B2D]' },
                                         { id: 'orange', name: 'Laranja', color: 'bg-orange-900' },
                                         { id: 'gray', name: 'Cinza', color: 'bg-gray-800' },
-                                        { id: 'treasure_map', name: 'Tesouro', color: 'bg-[#1E4D40] border-dashed border-2 border-white/20' },
-                                        { id: 'cyber', name: 'Cyber', color: 'bg-black border border-green-500/50' },
-                                        { id: 'gold', name: 'Gold', color: 'bg-yellow-900' },
+                                        { id: 'treasure_map', name: 'Tesouro', color: 'bg-[#3d3126] border-dashed border-2 border-orange-500/30' },
+                                        { id: 'cyber', name: 'Cyber', color: 'bg-black border border-green-500 shadow-[0_0_5px_#0f0]' },
+                                        { id: 'gold', name: 'Gold', color: 'bg-yellow-900 border border-yellow-500/50' },
+                                        { id: 'night_ops', name: 'Night Ops', color: 'bg-[#0a1a0f] ring-1 ring-green-900' },
+                                        { id: 'desert', name: 'Desert', color: 'bg-[#4a3b2a]' },
+                                        // { id: 'camo', name: 'Camo', color: 'bg-[#1E4D40] bg-[url("/camo.png")]' },
                                     ].map((theme) => (
                                         <button
                                             key={theme.id}
                                             type="button"
                                             onClick={() => setCoverUrl(`preset:${theme.id}`)}
                                             className={`
-                                                flex flex-col items-center gap-1 min-w-[60px] group
+                                                flex flex-col items-center gap-1.5 group p-2 rounded-xl transition-all duration-300
+                                                ${(coverUrl === `preset:${theme.id}` || (!coverUrl && theme.id === 'default'))
+                                                    ? 'bg-white/10 ring-1 ring-primary/50 scale-105'
+                                                    : 'hover:bg-white/5 hover:scale-105'
+                                                }
                                             `}
                                         >
                                             <div className={`
-                                                w-12 h-12 rounded-lg shadow-sm transition-all group-hover:scale-110 
+                                                w-full aspect-square rounded-lg shadow-sm transition-all
                                                 ${theme.color}
-                                                ${(coverUrl === `preset:${theme.id}` || (!coverUrl && theme.id === 'default')) ? 'ring-2 ring-primary ring-offset-2 ring-offset-black' : ''}
                                             `} />
-                                            <span className="text-[10px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                                            <span className="text-[9px] font-medium text-muted-foreground group-hover:text-primary transition-colors text-center w-full truncate">
                                                 {theme.name}
                                             </span>
                                         </button>
