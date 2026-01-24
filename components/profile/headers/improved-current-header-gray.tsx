@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
     Flame, Award, Shield, Instagram, MessageCircleIcon,
-    TrendingUp, Eye
+    TrendingUp, Eye, Camera
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +26,7 @@ interface ImprovedCurrentHeaderGrayProps {
     }
     medals?: Array<{ id: string; icon: string; name: string }>
     isOwner?: boolean
+    onCoverUpdate?: () => void
 }
 
 /**
@@ -36,7 +37,8 @@ export function ImprovedCurrentHeaderGray({
     profileData,
     gamification,
     medals = [],
-    isOwner = false
+    isOwner = false,
+    onCoverUpdate
 }: ImprovedCurrentHeaderGrayProps) {
     const rating = 5.0
 
@@ -62,6 +64,20 @@ export function ImprovedCurrentHeaderGray({
                     </>
                 )}
             </div>
+
+            {/* Botão de Ajustar Capa - Só para owner */}
+            {isOwner && onCoverUpdate && (
+                <div className="absolute top-4 right-4 z-10">
+                    <Button
+                        size="sm"
+                        onClick={onCoverUpdate}
+                        className="h-9 bg-black/50 hover:bg-black/70 text-white border border-white/20 backdrop-blur-md shadow-lg"
+                    >
+                        <Camera className="w-4 h-4 mr-1.5" />
+                        Ajustar Capa
+                    </Button>
+                </div>
+            )}
 
             {/* Content */}
             <div className="relative h-full flex flex-col">
@@ -117,7 +133,7 @@ export function ImprovedCurrentHeaderGray({
                                 <div className="flex items-center gap-3 text-xs text-gray-400">
                                     {profileData.pista && (
                                         <div className="flex items-center gap-1">
-                                            <MapPin className="w-3 h-3 text-emerald-600" />
+                                            <MapPin className="w-3 h-3 text-[#10B981]" />
                                             <span>{profileData.pista}</span>
                                         </div>
                                     )}
@@ -130,22 +146,21 @@ export function ImprovedCurrentHeaderGray({
                                 </div>
                             </div>
 
-                            {/* PATENTE - Laranja destaque */}
+                            {/* PATENTE - Badge tipo medalha */}
                             <div className="flex-shrink-0 ml-4">
                                 <div
-                                    className="px-4 py-3 rounded-xl border border-[#D2691E]/40 min-w-[140px]"
+                                    className="relative px-5 py-4 rounded-2xl border-2 border-[#D2691E]/50"
                                     style={{
-                                        background: 'linear-gradient(135deg, rgba(210, 105, 30, 0.12) 0%, rgba(60, 60, 60, 0.4) 100%)',
-                                        backdropFilter: 'blur(8px)',
-                                        boxShadow: '0 4px 12px rgba(210, 105, 30, 0.15)',
+                                        background: 'linear-gradient(135deg, rgba(210, 105, 30, 0.15) 0%, rgba(60, 60, 60, 0.5) 100%)',
+                                        backdropFilter: 'blur(12px)',
+                                        boxShadow: '0 4px 16px rgba(210, 105, 30, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                                     }}
                                 >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Shield className="w-5 h-5 text-[#D2691E]" />
-                                        <span className="text-[10px] text-gray-400 uppercase tracking-wider">Patente</span>
-                                    </div>
-                                    <div className="text-xl font-bold text-white capitalize leading-none">
-                                        {gamification.current_rank_id}
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Shield className="w-8 h-8 text-[#D2691E]" />
+                                        <div className="text-base font-bold text-white capitalize leading-none text-center">
+                                            {gamification.current_rank_id}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -180,7 +195,7 @@ export function ImprovedCurrentHeaderGray({
                                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                                     }}
                                 >
-                                    {stat.icon && <stat.icon className="w-5 h-5 text-emerald-500" />}
+                                    {stat.icon && <stat.icon className="w-5 h-5 text-[#10B981]" />}
                                     <div>
                                         <div className="text-lg font-bold text-white leading-none mb-0.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
                                             {stat.value}
@@ -189,7 +204,7 @@ export function ImprovedCurrentHeaderGray({
                                             {stat.label}
                                         </div>
                                         {stat.delta && (
-                                            <div className="text-[9px] text-emerald-400 leading-none mt-0.5">
+                                            <div className="text-[9px] text-[#10B981] leading-none mt-0.5">
                                                 {stat.delta}
                                             </div>
                                         )}
@@ -205,7 +220,7 @@ export function ImprovedCurrentHeaderGray({
                                 {medals.slice(0, 4).map((medal) => (
                                     <div
                                         key={medal.id}
-                                        className="w-9 h-9 rounded-lg border border-emerald-600/30 flex items-center justify-center"
+                                        className="w-9 h-9 rounded-lg border border-[#10B981]/30 flex items-center justify-center"
                                         style={{
                                             background: 'linear-gradient(135deg, rgba(50, 50, 50, 0.7) 0%, rgba(40, 40, 40, 0.7) 100%)',
                                             backdropFilter: 'blur(4px)',
@@ -213,7 +228,7 @@ export function ImprovedCurrentHeaderGray({
                                         }}
                                         title={medal.name}
                                     >
-                                        <Award className="w-4.5 h-4.5 text-emerald-500" />
+                                        <Award className="w-4.5 h-4.5 text-[#10B981]" />
                                     </div>
                                 ))}
                             </div>
@@ -247,7 +262,7 @@ export function ImprovedCurrentHeaderGray({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-9 border-gray-600 text-gray-200 hover:bg-gray-700"
+                                        className="h-9 border-[#10B981]/30 text-gray-200 hover:bg-[#10B981]/10 hover:border-[#10B981]/50"
                                         onClick={() => window.location.href = `/chat/${profileData.full_name}`}
                                     >
                                         <MessageCircle className="w-4 h-4 mr-1.5" />

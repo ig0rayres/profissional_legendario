@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
     Flame, Award, Shield, Instagram, MessageCircleIcon,
-    TrendingUp, Eye
+    TrendingUp, Eye, Camera
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,13 +26,15 @@ interface ImprovedCurrentHeaderProps {
     }
     medals?: Array<{ id: string; icon: string; name: string }>
     isOwner?: boolean
+    onCoverUpdate?: () => void
 }
 
 export function ImprovedCurrentHeader({
     profileData,
     gamification,
     medals = [],
-    isOwner = false
+    isOwner = false,
+    onCoverUpdate
 }: ImprovedCurrentHeaderProps) {
     const rating = 5.0
 
@@ -64,6 +66,20 @@ export function ImprovedCurrentHeader({
                     </>
                 )}
             </div>
+
+            {/* Botão de Ajustar Capa - Só para owner */}
+            {isOwner && onCoverUpdate && (
+                <div className="absolute top-4 right-4 z-10">
+                    <Button
+                        size="sm"
+                        onClick={onCoverUpdate}
+                        className="h-9 bg-black/50 hover:bg-black/70 text-white border border-white/20 backdrop-blur-md shadow-lg"
+                    >
+                        <Camera className="w-4 h-4 mr-1.5" />
+                        Ajustar Capa
+                    </Button>
+                </div>
+            )}
 
             {/* Content */}
             <div className="relative h-full flex flex-col">
@@ -132,22 +148,21 @@ export function ImprovedCurrentHeader({
                                 </div>
                             </div>
 
-                            {/* PATENTE EM DESTAQUE - Lado Direito */}
+                            {/* PATENTE - Badge tipo medalha */}
                             <div className="flex-shrink-0 ml-4">
                                 <div
-                                    className="px-4 py-3 rounded-xl border border-[#D2691E]/40 min-w-[140px]"
+                                    className="relative px-5 py-4 rounded-2xl border-2 border-[#D2691E]/50"
                                     style={{
-                                        background: 'linear-gradient(135deg, rgba(210, 105, 30, 0.15) 0%, rgba(45, 59, 45, 0.3) 100%)',
-                                        backdropFilter: 'blur(8px)',
-                                        boxShadow: '0 4px 12px rgba(210, 105, 30, 0.2)',
+                                        background: 'linear-gradient(135deg, rgba(210, 105, 30, 0.18) 0%, rgba(45, 59, 45, 0.4) 100%)',
+                                        backdropFilter: 'blur(12px)',
+                                        boxShadow: '0 4px 16px rgba(210, 105, 30, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                                     }}
                                 >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Shield className="w-5 h-5 text-[#D2691E]" />
-                                        <span className="text-[10px] text-[#D1D5DB] uppercase tracking-wider">Patente</span>
-                                    </div>
-                                    <div className="text-xl font-bold text-[#F2F4F3] capitalize leading-none">
-                                        {gamification.current_rank_id}
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Shield className="w-8 h-8 text-[#D2691E]" />
+                                        <div className="text-base font-bold text-[#F2F4F3] capitalize leading-none text-center">
+                                            {gamification.current_rank_id}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
