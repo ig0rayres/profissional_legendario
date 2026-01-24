@@ -237,11 +237,11 @@ export function ImprovedCurrentHeaderGray({
                     </div>
                 </div>
 
-                {/* Action Bar - Verde (igual V4) */}
+                {/* Action Bar - EXATAMENTE igual V4 */}
                 <div
                     className="mt-auto px-6 py-3 border-t border-white/5"
                     style={{
-                        background: 'linear-gradient(135deg, rgba(30, 77, 64, 0.8) 0%, rgba(26, 36, 33, 0.8) 100%)',
+                        background: 'rgba(26, 36, 33, 0.6)',
                         backdropFilter: 'blur(12px)',
                     }}
                 >
