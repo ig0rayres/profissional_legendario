@@ -138,10 +138,25 @@ export function ImageCropDialog({
         const scaledHeight = image.naturalHeight * scale
 
         // Source coordinates in natural image pixels
-        const srcX = (cropAreaX - imageX) / scale * (image.naturalWidth / (image.naturalWidth))
-        const srcY = (cropAreaY - imageY) / scale * (image.naturalHeight / (image.naturalHeight))
-        const srcWidth = cropSize / scale
-        const srcHeight = cropHeight / scale
+        // AJUSTE PARA LOSANGO: Multiplicar por 2 (margem segura) para garantir que pegamos as pontas do losango
+        // O losango visual ocupa mais espaço que o quadrado axis-aligned.
+        // Se pegarmos apenas o quadrado, cortamos as pontas (parece zoom).
+        const zoomFactor = aspectRatio === 1 ? 1.7 : 1 // 1.7 garante que o losango caiba com folga
+
+        const originalSrcWidth = cropSize / scale
+        const originalSrcHeight = cropHeight / scale
+
+        const srcWidth = originalSrcWidth * zoomFactor
+        const srcHeight = originalSrcHeight * zoomFactor
+
+        // Recalcular X/Y para centralizar o novo quadrado maior
+        // Centro original
+        const centerX = ((cropAreaX - imageX) / scale) + (originalSrcWidth / 2)
+        const centerY = ((cropAreaY - imageY) / scale) + (originalSrcHeight / 2)
+
+        // Novo X/Y baseado no centro
+        const srcX = (centerX - srcWidth / 2) * (image.naturalWidth / image.naturalWidth) // Fator 1 mantido por compatibilidade
+        const srcY = (centerY - srcHeight / 2) * (image.naturalHeight / image.naturalHeight)
 
         ctx.drawImage(
             image,
