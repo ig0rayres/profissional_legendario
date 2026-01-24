@@ -144,17 +144,17 @@ export function CoverPhotoUpload({
                             className="hidden"
                             id="cover-upload"
                         />
-                        <label htmlFor="cover-upload">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full border-[#D2691E] text-[#D2691E] hover:bg-[#D2691E]/10"
-                                onClick={() => document.getElementById('cover-upload')?.click()}
-                            >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full border-[#D2691E] text-[#D2691E] hover:bg-[#D2691E]/10"
+                            asChild
+                        >
+                            <label htmlFor="cover-upload" className="cursor-pointer">
                                 <Camera className="w-4 h-4 mr-2" />
                                 {previewUrl ? 'Escolher outra imagem' : 'Escolher imagem'}
-                            </Button>
-                        </label>
+                            </label>
+                        </Button>
                     </div>
                 </div>
 
