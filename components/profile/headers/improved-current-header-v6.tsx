@@ -11,30 +11,32 @@ import {
 import { cn } from '@/lib/utils'
 
 interface ImprovedCurrentHeaderV6Props {
-    profile: any // Full profile object
+    profile: {
+        full_name: string
+        avatar_url: string | null
+        professional_title?: string | null
+        location?: string | null
+        rating?: number
+        cover_url?: string | null
+    }
+    gamification: {
+        total_points: number
+        current_rank_id: string
+        medals_count: number
+    }
+    medals?: Array<{ id: string; icon: string; name: string }>
     isOwner?: boolean
-    gamification?: any
-    subscription?: any
-    ratingStats?: any
-    confraternityStats?: any
-    earnedMedals?: any[]
-    allMedals?: any[]
     onCoverUpdate?: () => void
 }
 
 export default function ImprovedCurrentHeaderV6({
     profile,
     gamification,
+    medals = [],
     isOwner = false,
-    subscription,
-    ratingStats,
-    confraternityStats,
-    earnedMedals = [],
-    allMedals = [],
     onCoverUpdate
 }: ImprovedCurrentHeaderV6Props) {
-    const rating = ratingStats?.average_rating || 5.0
-    const medals = earnedMedals.slice(0, 3)
+    const rating = 5.0
 
     return (
         <div className="relative w-full h-[320px] overflow-hidden">
