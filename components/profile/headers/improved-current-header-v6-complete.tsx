@@ -311,7 +311,11 @@ export default function ImprovedCurrentHeaderV6Complete({
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <a href="/dashboard/financeiro">
-                                                <Button variant="outline" size="icon" className="h-9 w-9">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-9 w-9 bg-black/40 border border-white/10 text-white hover:bg-white/20 hover:text-white hover:border-white/30 transition-all"
+                                                >
                                                     <CreditCard className="w-4 h-4" />
                                                 </Button>
                                             </a>
