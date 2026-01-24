@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import Link from 'next/link'
 
 export default function FinanceiroPage() {
@@ -172,47 +173,69 @@ export default function FinanceiroPage() {
                                     </Button>
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <div className="rounded-md border border-white/10 overflow-hidden">
+                            <CardContent className="p-0">
+                                <div className="overflow-hidden rounded-xl border border-white/5 bg-black/20 backdrop-blur-md">
                                     <table className="w-full text-sm text-left">
-                                        <thead className="bg-white/5 text-gray-400 font-medium">
+                                        <thead className="bg-white/5 text-gray-400 font-medium uppercase text-xs tracking-wider">
                                             <tr>
                                                 <th className="p-4">Data</th>
                                                 <th className="p-4">Descrição</th>
                                                 <th className="p-4">Valor</th>
                                                 <th className="p-4">Status</th>
-                                                <th className="p-4 text-right">Ação</th>
+                                                <th className="p-4 text-right">Documentos</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
-                                            {payments.map((payment) => (
-                                                <tr key={payment.id} className="hover:bg-white/5 transition-colors">
+                                            {payments.map((payment, idx) => (
+                                                <tr
+                                                    key={payment.id}
+                                                    className="group hover:bg-white/5 transition-colors duration-300"
+                                                    style={{ animationDelay: `${idx * 100}ms` }}
+                                                >
                                                     <td className="p-4 text-white">
                                                         <div className="flex items-center gap-2">
-                                                            <Calendar className="w-4 h-4 text-gray-500" />
+                                                            <Calendar className="w-4 h-4 text-[#1E4D40] group-hover:text-[#D4742C] transition-colors" />
                                                             {new Date(payment.date).toLocaleDateString('pt-BR')}
                                                         </div>
                                                     </td>
-                                                    <td className="p-4 text-gray-300">{payment.description}</td>
-                                                    <td className="p-4 text-white font-medium">
+                                                    <td className="p-4 text-gray-300 font-medium">{payment.description}</td>
+                                                    <td className="p-4 text-white font-bold text-base">
                                                         R$ {payment.amount.toFixed(2)}
                                                     </td>
                                                     <td className="p-4">
-                                                        <Badge variant="secondary" className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border-0">
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="bg-[#1E4D40]/20 text-[#4ADE80] border border-[#1E4D40]/50 shadow-[0_0_10px_rgba(74,222,128,0.1)]"
+                                                        >
+                                                            <CheckCircle2 className="w-3 h-3 mr-1" />
                                                             Pago
                                                         </Badge>
                                                     </td>
                                                     <td className="p-4 text-right">
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-primary hover:text-white hover:bg-primary/20">
-                                                            <Download className="w-4 h-4" />
-                                                            <span className="sr-only">Baixar Fatura</span>
-                                                        </Button>
+                                                        <TooltipProvider>
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            className="h-8 border-[#D4742C]/30 text-[#D4742C] hover:bg-[#D4742C]/20 hover:text-[#D4742C] hover:border-[#D4742C]"
+                                                                            onClick={() => alert("Módulo de Nota Fiscal será integrado em breve")}
+                                                                        >
+                                                                            <Download className="w-3.5 h-3.5 mr-1.5" />
+                                                                            Nota Fiscal
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Baixar NF-e</TooltipContent>
+                                                                </Tooltip>
+                                                            </div>
+                                                        </TooltipProvider>
                                                     </td>
                                                 </tr>
                                             ))}
                                             {payments.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={5} className="p-8 text-center text-gray-500">
+                                                    <td colSpan={5} className="p-12 text-center text-gray-500">
                                                         Nenhum pagamento encontrado.
                                                     </td>
                                                 </tr>
