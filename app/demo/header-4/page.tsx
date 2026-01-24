@@ -1,12 +1,14 @@
 'use client'
 
 import { ImprovedCurrentHeader } from '@/components/profile/headers/improved-current-header'
+import { CoverPhotoUpload } from '@/components/profile/cover-photo-upload'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 export default function DemoHeader4Page() {
-    const [isOwner, setIsOwner] = useState(true) // Para test o botão de ajustar capa
+    const [isOwner, setIsOwner] = useState(true)
     const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined)
+    const [showCropModal, setShowCropModal] = useState(false)
 
     const mockProfile = {
         full_name: 'RECRUTA TESTE',
@@ -31,12 +33,12 @@ export default function DemoHeader4Page() {
     ]
 
     const handleCoverUpdate = () => {
-        // Simular upload de capa
-        if (coverUrl) {
-            setCoverUrl(undefined)
-        } else {
-            setCoverUrl('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=480&fit=crop')
-        }
+        setShowCropModal(true)
+    }
+
+    const handleCoverSave = (croppedUrl: string) => {
+        setCoverUrl(croppedUrl)
+        setShowCropModal(false)
     }
 
     return (
@@ -44,9 +46,8 @@ export default function DemoHeader4Page() {
             <div className="max-w-6xl mx-auto p-6">
                 <div className="mb-6 text-center">
                     <h1 className="text-2xl font-bold text-white mb-2">V4 Verde - Atual Melhorada</h1>
-                    <p className="text-gray-400">Paleta verde floresta | Com suporte a capa | Glass/Depth + Gamificação</p>
+                    <p className="text-gray-400">Paleta verde floresta | Com suporte a capa |Glass/Depth + Gamificação</p>
 
-                    {/* Controles de Teste */}
                     <div className="flex justify-center gap-3 mt-4">
                         <Button
                             size="sm"
@@ -74,12 +75,20 @@ export default function DemoHeader4Page() {
                         <li>✅ <strong>Pilar C - Glass/Depth:</strong> Backdrop blur, camadas com sombras suaves</li>
                         <li>✅ <strong>Pilar D - Gamificação Elegante:</strong> Stats com badges, progresso visual, níveis</li>
                         <li>✅ Badge de patente tipo medalha (sem label "Patente")</li>
-                        <li>✅ Botão "Ajustar Capa" para owner</li>
-                        <li>✅ Suporte completo para foto de capa</li>
+                        <li>✅ Botão "Ajustar Capa" para owner com modal de crop</li>
+                        <li>✅ Botões de gestão no modo owner (Editar Perfil, Configurações)</li>
+                        <li>✅ Cards de stats com 30% opacidade</li>
                         <li>✅ Altura: 320px</li>
                     </ul>
                 </div>
             </div>
+
+            <CoverPhotoUpload
+                isOpen={showCropModal}
+                onClose={() => setShowCropModal(false)}
+                onSave={handleCoverSave}
+                currentCoverUrl={coverUrl}
+            />
         </div>
     )
 }
