@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
 import { createClient } from '@/lib/supabase/client'
+import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -535,23 +536,25 @@ export default function EditarPerfilPage() {
 
                         <CardContent className="pt-6 pb-6">
                             <div className="flex items-start gap-6">
-                                {/* Avatar */}
-                                <div className="relative -mt-16">
-                                    <div className="w-24 h-24 rounded-full border-4 border-background overflow-hidden bg-primary/20">
-                                        {avatarUrl ? (
-                                            <Image
-                                                src={avatarUrl}
-                                                alt="Avatar"
-                                                width={96}
-                                                height={96}
-                                                className="object-cover w-full h-full"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <User className="w-12 h-12 text-primary/50" />
-                                            </div>
-                                        )}
+                                {/* Avatar com Moldura V6 */}
+                                <div className="relative -mt-20 group">
+                                    <div
+                                        className="relative cursor-pointer transition-transform hover:scale-105"
+                                        onClick={() => avatarInputRef.current?.click()}
+                                    >
+                                        <LogoFrameAvatar
+                                            src={avatarUrl}
+                                            alt="Avatar"
+                                            size="lg" // Usando tamanho grande para destaque
+                                            className="drop-shadow-2xl"
+                                        />
+
+                                        {/* Overlay de Edição apenas no hover */}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-10 clip-path-diamond">
+                                            <Camera className="w-8 h-8 text-white drop-shadow-md" />
+                                        </div>
                                     </div>
+
                                     <input
                                         ref={avatarInputRef}
                                         type="file"
@@ -559,11 +562,16 @@ export default function EditarPerfilPage() {
                                         onChange={handleAvatarSelect}
                                         className="hidden"
                                     />
+
+                                    {/* Botão flutuante visível sempre (fallback mobile) */}
                                     <Button
                                         type="button"
                                         size="icon"
-                                        className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full"
-                                        onClick={() => avatarInputRef.current?.click()}
+                                        className="absolute bottom-4 right-4 z-20 w-8 h-8 rounded-full shadow-lg bg-green-600 hover:bg-green-700 border border-white/20 md:hidden"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            avatarInputRef.current?.click()
+                                        }}
                                         disabled={uploadingAvatar}
                                     >
                                         {uploadingAvatar ? (

@@ -40,8 +40,8 @@ export function ImageCropDialog({
     const [imageLoaded, setImageLoaded] = useState(false)
 
     // Crop area size (fixed)
-    const cropSize = aspectRatio === 1 ? 250 : 400
-    const cropHeight = aspectRatio === 1 ? 250 : 133
+    const cropSize = aspectRatio === 1 ? 288 : 400 // Aumentado ~15% (250 -> 288)
+    const cropHeight = aspectRatio === 1 ? 288 : 133
 
     // Reset state when dialog opens/closes or image changes
     useEffect(() => {
@@ -265,9 +265,9 @@ export function ImageCropDialog({
                                 }}
                             />
 
-                            {/* Crop border */}
+                            {/* Crop border - Alterado para Quadrado (não redondo) */}
                             <div
-                                className={`absolute border-2 border-white/80 ${aspectRatio === 1 ? 'rounded-full' : 'rounded-lg'}`}
+                                className={`absolute border-2 border-white/80 ${aspectRatio === 1 ? 'rounded-sm' : 'rounded-lg'}`}
                                 style={{
                                     top: '50%',
                                     left: '50%',
