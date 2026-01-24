@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import Link from 'next/link'
 import { Calendar, Loader2, Link2, Lock } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 
@@ -164,7 +165,11 @@ export function ConfraternityButton({ targetUserId, targetUserName }: Confratern
                     <TooltipContent className="bg-black/90 border border-white/20 text-white p-3 max-w-[200px] text-center">
                         <p className="font-bold mb-1">Recurso Bloqueado</p>
                         <p className="text-xs text-gray-300 mb-2">Apenas Veteranos e Elites podem agendar Confrarias.</p>
-                        <p className="text-xs font-bold text-[#D2691E] uppercase tracking-wide">Faça upgrade agora!</p>
+                        <Link href="/planos" className="block mt-1">
+                            <p className="text-xs font-bold text-[#D2691E] uppercase tracking-wide hover:underline cursor-pointer hover:text-[#FF7F50] transition-colors">
+                                Faça upgrade agora!
+                            </p>
+                        </Link>
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
