@@ -16,8 +16,7 @@ export function LogoFrameAvatar({
     src,
     alt,
     size = 'lg',
-    className,
-    borderColor = '#1E4D40' // Verde Floresta padrão
+    className
 }: LogoFrameAvatarProps) {
 
     // Dimensões
@@ -28,25 +27,23 @@ export function LogoFrameAvatar({
         xl: 'w-48 h-48',
     }
 
-    // Calcular espessura relativa do stroke baseada no tamanho não é trivial em SVG responsivo,
-    // mas vamos fixar um strokeWidth no SVG que fica visualmente agradável (ex: 3% a 4% do tamanho).
-
     return (
         <div className={cn("relative flex items-center justify-center filter drop-shadow-xl", sizeClasses[size], className)}>
 
-            {/* 1. MÁSCARA DA IMAGEM E CONTEÚDO */}
-            {/* Recortamos a imagem em formato de losango para ela não vazar da moldura */}
+            {/* 1. IMAGEM DO USUÁRIO */}
+            {/* Posicionada no fundo, recortada em losango para não vazar nos cantos transparentes da moldura */}
+            {/* O inset-1 garante que ela fique levemente menor que o container total, para não vazar 1px se o antialiasing falhar */}
             <div
-                className="absolute inset-2 z-0 overflow-hidden"
+                className="absolute inset-[10%] z-0 overflow-hidden"
                 style={{
                     clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
                 }}
             >
-                {/* Fundo caso não tenha imagem ou transparente */}
+                {/* Fundo de fallback */}
                 <div className="absolute inset-0 bg-[#F2F4F3]"></div>
 
-                {/* Imagem do Usuário */}
-                <div className="relative w-full h-full transform scale-[1.05]"> {/* Leve zoom para garantir borda */}
+                {/* Foto */}
+                <div className="relative w-full h-full transform scale-[1.35]"> {/* Zoom para preencher bem os cantos internos da moldura */}
                     {src ? (
                         <Image
                             src={src}
@@ -63,58 +60,17 @@ export function LogoFrameAvatar({
                 </div>
             </div>
 
-            {/* 2. MOLDURA SVG (BORDA + MONTANHA INTEGRADA) */}
-            {/* Posicionado POR CIMA da imagem */}
-            <svg
-                viewBox="0 0 100 100"
-                className="absolute inset-0 w-full h-full z-10 pointer-events-none"
-                style={{ overflow: 'visible' }} // Permitir sombra/glow se precisar
-            >
-                <defs>
-                    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-                        <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.3)" />
-                    </filter>
-                </defs>
-
-                {/* Grupo unificado da moldura */}
-                <g fill={borderColor} stroke={borderColor} strokeWidth="0">
-
-                    {/* A. BORDA LOSANGO (Usando path composto ou stroke simulado) */}
-                    {/* Vamos desenhar a borda como um shape preenchido com um buraco no meio (fill-rule: evenodd) */}
-                    <path
-                        d="M 50 0 L 100 50 L 50 100 L 0 50 Z  M 50 6 L 94 50 L 50 94 L 6 50 Z"
-                        fillRule="evenodd"
-                        shapeRendering="geometricPrecision"
-                    />
-
-                    {/* B. MONTANHA NO TOPO (Integrada) */}
-                    {/* Um triângulo que 'desce' do topo e se funde com a borda interna */}
-                    <path
-                        d="M 50 5 L 70 30 L 30 30 Z"
-                        shapeRendering="geometricPrecision"
-                    // Ajuste fino: O topo da montanha (50, 5) deve coincidir ou sobrepor levemente a borda interna superior
-                    // A borda interna superior (vértice) está em (50, 6).
-                    // Vamos começar em (50, 0) para garantir conexão total com o topo externo, 
-                    // ou (50, 4) para ficar 'dentro' da borda.
-                    />
-
-                    {/* Montanha mais detalhada (estilo logo - 3 picos) */}
-                    <path
-                        d="M 50 2 L 68 28 L 55 24 L 50 32 L 45 24 L 32 28 Z"
-                        fill={borderColor}
-                        className="hidden" // Habilitar se quiser silhouette complexa
-                    />
-
-                </g>
-
-                {/* Opcional: Neve no topo da montanha (Branco) */}
-                <path
-                    d="M 50 5 L 56 14 L 50 11 L 44 14 Z"
-                    fill="#F2F4F3"
-                    opacity="0.9"
+            {/* 2. MOLDURA PNG ORIGINAL (Sobreposição) */}
+            <div className="absolute inset-0 z-10 pointer-events-none">
+                <Image
+                    src="/images/logo-frame.png"
+                    alt="Frame"
+                    fill
+                    className="object-contain" // Garante que a proporção da moldura seja mantida
+                    priority
                 />
+            </div>
 
-            </svg>
         </div>
     )
 }
