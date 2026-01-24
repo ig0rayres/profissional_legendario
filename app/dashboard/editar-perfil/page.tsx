@@ -501,36 +501,85 @@ export default function EditarPerfilPage() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Foto de Capa */}
                     <Card className="shadow-lg shadow-black/10 border border-white/10 overflow-hidden">
-                        <div className="relative h-40 bg-gradient-to-r from-primary/20 to-secondary/20">
-                            {coverUrl && (
-                                <Image
-                                    src={coverUrl}
-                                    alt="Capa"
-                                    fill
-                                    className="object-cover"
-                                />
-                            )}
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                <input
-                                    ref={coverInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleCoverSelect}
-                                    className="hidden"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={() => coverInputRef.current?.click()}
-                                    disabled={uploadingCover}
-                                >
-                                    {uploadingCover ? (
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    ) : (
-                                        <ImageIcon className="w-4 h-4 mr-2" />
-                                    )}
-                                    Alterar Capa
-                                </Button>
+                        <div className="relative">
+                            {/* Preview Area */}
+                            <div className="relative h-48 w-full overflow-hidden rounded-t-xl group">
+                                {coverUrl && !coverUrl.startsWith('preset:') ? (
+                                    <Image
+                                        src={coverUrl}
+                                        alt="Capa"
+                                        fill
+                                        className="object-cover transition-transform group-hover:scale-105"
+                                    />
+                                ) : (
+                                    /* Preset Preview Logic */
+                                    (() => {
+                                        const preset = coverUrl?.startsWith('preset:') ? coverUrl.split(':')[1] : 'default'
+                                        switch (preset) {
+                                            case 'orange': return <div className="absolute inset-0 bg-gradient-to-br from-orange-900 via-black to-orange-950" />
+                                            case 'gray': return <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black" />
+                                            case 'cyber': return <div className="absolute inset-0 bg-black"><div className="absolute inset-0 bg-[linear-gradient(to_right,#0f0_1px,transparent_1px),linear-gradient(to_bottom,#0f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20" /><div className="absolute inset-0 bg-gradient-to-b from-transparent to-black" /></div>
+                                            case 'gold': return <div className="absolute inset-0 bg-gradient-to-br from-yellow-900 via-amber-950 to-black" />
+                                            case 'treasure_map': return <div className="absolute inset-0 bg-[#1A2421]"><div className="absolute inset-0 opacity-10" style={{ backgroundImage: "repeating-linear-gradient(45deg, #444 0, #444 1px, transparent 0, transparent 50%)", backgroundSize: "20px 20px" }} /><div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E4D40]/30 to-black/80" /></div>
+                                            default: return <div className="absolute inset-0 bg-gradient-to-br from-[#1A2421] via-[#2D3B2D] to-[#1A2421]" />
+                                        }
+                                    })()
+                                )}
+
+                                {/* Overlay Upload */}
+                                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity z-10 gap-3">
+                                    <input
+                                        ref={coverInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleCoverSelect}
+                                        className="hidden"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="border-white text-white hover:bg-white hover:text-black"
+                                        onClick={() => coverInputRef.current?.click()}
+                                        disabled={uploadingCover}
+                                    >
+                                        {uploadingCover ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />}
+                                        Fazer Upload de Imagem
+                                    </Button>
+                                    <p className="text-xs text-gray-300">ou selecione um tema abaixo</p>
+                                </div>
+                            </div>
+
+                            {/* Preset Selector */}
+                            <div className="p-4 bg-muted/30 border-t border-white/5">
+                                <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Temas Disponíveis</p>
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                    {[
+                                        { id: 'default', name: 'Padrão', color: 'bg-[#2D3B2D]' },
+                                        { id: 'orange', name: 'Laranja', color: 'bg-orange-900' },
+                                        { id: 'gray', name: 'Cinza', color: 'bg-gray-800' },
+                                        { id: 'treasure_map', name: 'Tesouro', color: 'bg-[#1E4D40] border-dashed border-2 border-white/20' },
+                                        { id: 'cyber', name: 'Cyber', color: 'bg-black border border-green-500/50' },
+                                        { id: 'gold', name: 'Gold', color: 'bg-yellow-900' },
+                                    ].map((theme) => (
+                                        <button
+                                            key={theme.id}
+                                            type="button"
+                                            onClick={() => setCoverUrl(`preset:${theme.id}`)}
+                                            className={`
+                                                flex flex-col items-center gap-1 min-w-[60px] group
+                                            `}
+                                        >
+                                            <div className={`
+                                                w-12 h-12 rounded-lg shadow-sm transition-all group-hover:scale-110 
+                                                ${theme.color}
+                                                ${(coverUrl === `preset:${theme.id}` || (!coverUrl && theme.id === 'default')) ? 'ring-2 ring-primary ring-offset-2 ring-offset-black' : ''}
+                                            `} />
+                                            <span className="text-[10px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                                                {theme.name}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
