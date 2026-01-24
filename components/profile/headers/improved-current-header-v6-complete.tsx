@@ -7,7 +7,7 @@ import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
     Flame, Award, Shield, Instagram, MessageCircleIcon,
-    TrendingUp, Eye, Camera, Settings, Edit, Bell, Briefcase
+    TrendingUp, Eye, Camera, Settings, Edit, Bell, Briefcase, CreditCard
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileActionButtonsV6 } from '@/components/profile/profile-action-buttons-v6'
@@ -278,6 +278,16 @@ export default function ImprovedCurrentHeaderV6Complete({
                                             </a>
                                         </TooltipTrigger>
                                         <TooltipContent>Configurações</TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <a href="/dashboard/financeiro">
+                                                <Button variant="outline" size="icon" className="h-9 w-9">
+                                                    <CreditCard className="w-4 h-4" />
+                                                </Button>
+                                            </a>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Financeiro</TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             </div>
