@@ -11,6 +11,7 @@ interface BadgeNotification {
     id: string
     badge_id: string
     badge_name: string
+    badge_description?: string
     xp: number
 }
 
@@ -43,6 +44,7 @@ export function BadgeUnlockModal() {
                     id: notificationData.id,
                     badge_id: badgeData.badge_id,
                     badge_name: badgeData.badge_name,
+                    badge_description: badgeData.badge_description || badgeData.description, // Tenta pegar descrição
                     xp: badgeData.xp || 0
                 })
                 setIsVisible(true)
@@ -179,8 +181,8 @@ export function BadgeUnlockModal() {
                     <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-wide drop-shadow-lg">
                         {notification.badge_name}
                     </h2>
-                    <p className="text-white/60 text-sm mb-4 italic">
-                        "Pra cima, Valente!"
+                    <p className="text-white/80 text-sm mb-4 font-medium px-4">
+                        {notification.badge_description || "Você alcançou um novo marco na sua jornada!"}
                     </p>
 
                     {notification.xp > 0 && (
