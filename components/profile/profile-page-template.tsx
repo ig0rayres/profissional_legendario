@@ -135,7 +135,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                                     <div className="flex items-center justify-between gap-2 mb-1">
                                         {/* Nome e ID */}
                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                            <h1 className="text-2xl font-bold">{profile.full_name}</h1>
+                                            <h1 className="text-2xl font-bold text-[#F2F4F3]">{profile.full_name}</h1>
                                             {profile.rota_number && (
                                                 <Badge variant="outline" className="border-[#1E4D40] text-[#1E4D40] font-black text-xs bg-[#1E4D40]/10">
                                                     <Mountain className="w-3 h-3 mr-1" />
