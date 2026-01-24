@@ -4,7 +4,6 @@ import { useState } from 'react'
 import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-current-header-v6-complete'
 import { RotaValenteCard } from '@/components/profile/rota-valente-card'
 import { CoverPhotoUpload } from '@/components/profile/cover-photo-upload'
-import { v4 as uuidv4 } from 'uuid'
 
 // MOCKS TIPADOS
 const MOCK_RANKS = {
