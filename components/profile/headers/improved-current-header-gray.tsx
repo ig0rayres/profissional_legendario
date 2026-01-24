@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
     Flame, Award, Shield, Instagram, MessageCircleIcon,
-    TrendingUp, Eye, Camera
+    TrendingUp, Eye, Camera, Settings, Edit
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -133,7 +133,7 @@ export function ImprovedCurrentHeaderGray({
                                 <div className="flex items-center gap-3 text-xs text-gray-400">
                                     {profileData.pista && (
                                         <div className="flex items-center gap-1">
-                                            <MapPin className="w-3 h-3 text-[#10B981]" />
+                                            <MapPin className="w-3 h-3 text-[#1E4D40]" />
                                             <span>{profileData.pista}</span>
                                         </div>
                                     )}
@@ -190,12 +190,13 @@ export function ImprovedCurrentHeaderGray({
                                     key={idx}
                                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/5"
                                     style={{
-                                        background: 'rgba(50, 50, 50, 0.5)',
+                                        background: 'rgba(50, 50, 50, 0.3)',
                                         backdropFilter: 'blur(8px)',
                                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                        opacity: 0.9
                                     }}
                                 >
-                                    {stat.icon && <stat.icon className="w-5 h-5 text-[#10B981]" />}
+                                    {stat.icon && <stat.icon className="w-5 h-5 text-[#1E4D40]" />}
                                     <div>
                                         <div className="text-lg font-bold text-white leading-none mb-0.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
                                             {stat.value}
@@ -204,7 +205,7 @@ export function ImprovedCurrentHeaderGray({
                                             {stat.label}
                                         </div>
                                         {stat.delta && (
-                                            <div className="text-[9px] text-[#10B981] leading-none mt-0.5">
+                                            <div className="text-[9px] text-[#1E4D40] leading-none mt-0.5">
                                                 {stat.delta}
                                             </div>
                                         )}
@@ -220,7 +221,7 @@ export function ImprovedCurrentHeaderGray({
                                 {medals.slice(0, 4).map((medal) => (
                                     <div
                                         key={medal.id}
-                                        className="w-9 h-9 rounded-lg border border-[#10B981]/30 flex items-center justify-center"
+                                        className="w-9 h-9 rounded-lg border border-[#1E4D40]/30 flex items-center justify-center"
                                         style={{
                                             background: 'linear-gradient(135deg, rgba(50, 50, 50, 0.7) 0%, rgba(40, 40, 40, 0.7) 100%)',
                                             backdropFilter: 'blur(4px)',
@@ -228,7 +229,7 @@ export function ImprovedCurrentHeaderGray({
                                         }}
                                         title={medal.name}
                                     >
-                                        <Award className="w-4.5 h-4.5 text-[#10B981]" />
+                                        <Award className="w-4.5 h-4.5 text-[#1E4D40]" />
                                     </div>
                                 ))}
                             </div>
@@ -236,17 +237,37 @@ export function ImprovedCurrentHeaderGray({
                     </div>
                 </div>
 
-                {/* Action Bar - Cinza glass */}
+                {/* Action Bar - Verde (igual V4) */}
                 <div
                     className="mt-auto px-6 py-3 border-t border-white/5"
                     style={{
-                        background: 'rgba(30, 30, 30, 0.7)',
+                        background: 'linear-gradient(135deg, rgba(30, 77, 64, 0.8) 0%, rgba(26, 36, 33, 0.8) 100%)',
                         backdropFilter: 'blur(12px)',
                     }}
                 >
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                            {!isOwner && (
+                            {isOwner ? (
+                                <>
+                                    {/* Botões de Gestão - Owner */}
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-9 border-white/20 text-white hover:bg-white/10"
+                                    >
+                                        <Edit className="w-4 h-4 mr-1.5" />
+                                        Editar Perfil
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-9 border-white/20 text-white hover:bg-white/10"
+                                    >
+                                        <Settings className="w-4 h-4 mr-1.5" />
+                                        Configurações
+                                    </Button>
+                                </>
+                            ) : (
                                 <>
                                     {/* OFERTAR - Laranja (destaque) */}
                                     <Button
@@ -262,7 +283,7 @@ export function ImprovedCurrentHeaderGray({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-9 border-[#10B981]/30 text-gray-200 hover:bg-[#10B981]/10 hover:border-[#10B981]/50"
+                                        className="h-9 border-[#1E4D40]/30 text-gray-200 hover:bg-[#1E4D40]/10 hover:border-[#1E4D40]/50"
                                         onClick={() => window.location.href = `/chat/${profileData.full_name}`}
                                     >
                                         <MessageCircle className="w-4 h-4 mr-1.5" />

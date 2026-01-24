@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
     Flame, Award, Shield, Instagram, MessageCircleIcon,
-    TrendingUp, Eye, Camera
+    TrendingUp, Eye, Camera, Settings, Edit
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -195,9 +195,10 @@ export function ImprovedCurrentHeader({
                                     key={idx}
                                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10"
                                     style={{
-                                        background: 'rgba(45, 59, 45, 0.4)',
+                                        background: 'rgba(45, 59, 45, 0.3)',
                                         backdropFilter: 'blur(8px)',
                                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                        opacity: 0.9
                                     }}
                                 >
                                     {stat.icon && <stat.icon className="w-5 h-5 text-[#D2691E]" />}
@@ -251,7 +252,27 @@ export function ImprovedCurrentHeader({
                 >
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                            {!isOwner && (
+                            {isOwner ? (
+                                <>
+                                    {/* Botões de Gestão - Owner */}
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-9 border-white/20 text-white hover:bg-white/10"
+                                    >
+                                        <Edit className="w-4 h-4 mr-1.5" />
+                                        Editar Perfil
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-9 border-white/20 text-white hover:bg-white/10"
+                                    >
+                                        <Settings className="w-4 h-4 mr-1.5" />
+                                        Configurações
+                                    </Button>
+                                </>
+                            ) : (
                                 <>
                                     {/* OFERTAR VIGOR - Primeiro (pedido do usuário) */}
                                     <Button
