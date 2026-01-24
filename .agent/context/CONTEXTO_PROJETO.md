@@ -1,6 +1,6 @@
 # 🧠 CONTEXTO DO PROJETO - ROTA BUSINESS CLUB
 
-*Última atualização: 23/01/2026 - 13:00*
+*Última atualização: 24/01/2026 - 00:18*
 
 > **INSTRUÇÃO:** No início de cada sessão, peça para o assistente ler este arquivo:
 > `"leia o arquivo CONTEXTO_PROJETO.md"`
@@ -37,18 +37,19 @@
 
 ### ✅ Implementadas:
 1. **Autenticação** - Login/registro com Supabase Auth, roles (admin/user)
-2. **Perfis** - Slug personalizado, avatar/capa com crop, dados reais
-3. **Gamificação** - XP, patentes, vigor mensal, medalhas
-4. **Elos (Conexões)** - Solicitação, aceite/rejeição, realtime
+2. **Perfis** - Slug personalizado, avatar/capa com crop, dados reais, **layouts V4/V6** 🆕
+3. **Gamificação** - **Sistema completo recriado do zero** 🆕, XP, patentes, vigor, medalhas, anti-farming
+4. **Elos (Conexões)** - Solicitação, aceite/rejeição, realtime, **+10 XP ao enviar** 🆕
 5. **Chat** - Mensagens 1:1, upload de arquivos, emojis, **mensagens do sistema**
 6. **Confrarias** - Convites, pontos, limites por plano
 7. **Notificações** - Centro, realtime, sino no header, **modal de medalhas**
 8. **Admin** - Dashboard, gestão de usuários e planos
-9. **Histórico de Batalha** - Card com histórico mensal, patentes, ranking, medalhas
+9. **Histórico de Batalha** - Card com histórico mensal, patentes, ranking, medalhas  
 10. **Verificação por Gorra** - OpenAI Vision, webcam, câmera mobile, extração de ID
 11. **Sistema de Medalhas Completo** - Modal, chat, sino, multiplicadores
 12. **Deploy Production** - Vercel + Cloudflare configurados
-13. **Stripe Checkout** 🆕 - Assinaturas, webhooks, portal do cliente
+13. **Stripe Payments** 🆕 - **COMPLETO**: Checkout, webhooks, portal do cliente, assinaturas
+14. **Perfis V6** 🆕 - Novo layout com glass morphism, cards de stats, visual premium
 
 ### 🔨 Em Desenvolvimento:
 1. **Na Rota (Feed Social)** - Posts de confrarias, likes, comentários
@@ -197,6 +198,42 @@ npm run build
 ---
 
 ## 📅 HISTÓRICO RECENTE
+
+### 24/01/2026 (Madrugada): 🚀 MEGA UPDATE!
+- **STRIPE INTEGRAÇÃO COMPLETA** ✅
+  - API Routes: create-checkout-session, webhook, portal, status
+  - Webhook processando todos os eventos importantes
+  - Customer Portal funcionando (gerenciar assinatura)
+  - Tabela subscriptions totalmente integrada
+  - Componentes: StripeCheckoutButton, SubscriptionManager
+  - Páginas: /checkout/success, /checkout/cancel
+  - **PRONTO PARA PRODUÇÃO** (modo test primeiro)
+
+- **ROTA DO VALENTE - RECRIAÇÃO COMPLETA** ✅
+  - Sistema de gamificação reconstruído do zero
+  - 5 Patentes (Novato → Lendário)
+  - 10+ Medalhas configuradas
+  - API functions: awardPoints, awardBadge, checkUserProgress
+  - Anti-farming: previne duplicação de XP
+  - XP automático para: Criar Elo (+10), Aceitar Elo (+5), Confraria, etc
+  - Funções: lib/api/gamification.ts
+  - Componentes: rank-insignia, medal-badge, battle-history
+
+- **PERFIS V6 - MIGRAÇÃO COMPLETA** ✅
+  - 2 Demos criados: /demo/header-4 e /demo/header-6
+  - Header V6 Complete: improved-current-header-v6-complete.tsx
+  - Features:
+    - Avatar quadrado (rounded-2xl) com borda laranja
+    - Badge patente com glass effect
+    - Cards: Vigor, Medalhas, ID Rota
+    - Medalhas reais renderizadas
+    - Upload de capa funcional
+    - Background pattern quando sem capa
+  - Botões de ação estilizados (profile-action-buttons-v6.tsx)
+  - 2 Templates completos: profile-page-template-v4/v6.tsx
+  - Rotas de teste: /teste-v4/[rotaNumber], /teste-v6/[rotaNumber]
+  - Backup completo em .backups/profile-logic-20260124/
+  - Documentação: SESSION_STATUS.md, NEXT_SESSION_PLAN.md
 
 ### 23/01/2026: 💳 STRIPE INTEGRADO!
 - **Checkout de Assinaturas** ✅
