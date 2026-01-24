@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Calendar, Loader2, Link2, Lock } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 
@@ -142,13 +143,59 @@ export function ConfraternityButton({ targetUserId, targetUserName }: Confratern
         )
     }
 
-    // Recruta não pode enviar
+    // Recruta não pode enviar - MOSTRAR TOOLTIP COM UPGRADE
     if (userPlan === 'recruta') {
         return (
-            <Button variant="outline" size="sm" disabled className="font-bold text-[10px] h-7 px-2 border-secondary/30" title="Upgrade para enviar">
-                <Lock className="w-3 h-3 mr-1" />
-                CONFRARIA
-            </Button>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="cursor-not-allowed inline-block">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                className="font-bold text-[10px] h-7 px-2 border-secondary/30 opacity-70"
+                            >
+                                <Lock className="w-3 h-3 mr-1" />
+                                CONFRARIA
+                            </Button>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-black/90 border border-white/20 text-white p-3 max-w-[200px] text-center">
+                        <p className="font-bold mb-1">Recurso Bloqueado</p>
+                        <p className="text-xs text-gray-300 mb-2">Apenas Veteranos e Elites podem agendar Confrarias.</p>
+                        <p className="text-xs font-bold text-[#D2691E] uppercase tracking-wide">Faça upgrade agora!</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        )
+    }
+
+    // Se limite atingido (Veterano/Elite) - MOSTRAR TOOLTIP DE LIMITE
+    if (!canCreate) {
+        return (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="cursor-not-allowed inline-block">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                className="font-bold text-[10px] h-7 px-2 border-secondary/30 opacity-70"
+                            >
+                                <Calendar className="w-3 h-3 mr-1" />
+                                CONFRARIA
+                            </Button>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-black/90 border border-white/20 text-white p-3 max-w-[200px] text-center">
+                        <p className="font-bold mb-1">Limite Atingido</p>
+                        <p className="text-xs text-gray-300">{limitsInfo?.message || "Você atingiu seu limite mensal de confrarias."}</p>
+                        <p className="text-xs text-gray-400 mt-1">Renova dia 1º.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         )
     }
 
@@ -158,7 +205,6 @@ export function ConfraternityButton({ targetUserId, targetUserName }: Confratern
             variant="outline"
             size="sm"
             onClick={requestConfraternity}
-            disabled={!canCreate}
             className="font-bold text-[10px] h-7 px-2 border-secondary/30 hover:bg-secondary/10 hover:text-secondary hover:scale-105 hover:border-secondary transition-all shadow-sm"
         >
             <Calendar className="w-3 h-3 mr-1" />
