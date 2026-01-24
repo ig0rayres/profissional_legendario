@@ -48,7 +48,8 @@
 10. **Verificação por Gorra** - OpenAI Vision, webcam, câmera mobile, extração de ID
 11. **Sistema de Medalhas Completo** - Modal, chat, sino, multiplicadores
 12. **Deploy Production** - Vercel + Cloudflare configurados
-13. **Stripe Payments** 🆕 - **COMPLETO**: Checkout, webhooks, portal do cliente, assinaturas
+13. **Stripe Payments** 🆕 - **COMPLETO**: Checkout, webhooks, portal do cliente, assinaturas  
+    - 💚 Recruta: R$ 0,00 (gratuito) • 🔵 Veterano: R$ 97,90/mês • 👑 Elite: R$ 127,90/mês
 14. **Perfis V6** 🆕 - Novo layout com glass morphism, cards de stats, visual premium
 
 ### 🔨 Em Desenvolvimento:

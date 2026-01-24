@@ -35,11 +35,11 @@ Implementar sistema de pagamentos completo usando Stripe para gerenciar assinatu
 #### 2. **Criação de Produtos e Preços no Stripe**
 Configuramos 3 planos no Dashboard Stripe:
 
-| Plano | Preço Mensal | Price ID | Features |
-|-------|--------------|----------|----------|
-| **Recruta** | R$ 0,00 | `price_free` | 10 conexões, recursos básicos |
-| **Veterano** | R$ 49,90 | `price_veterano` | 100 conexões, marketplace |
-| **Elite** | R$ 99,90 | `price_elite` | Ilimitado, destaque premium |
+| Plano | Preço Mensal | Multiplicador XP | Features |
+|-------|--------------|------------------|----------|
+| **Recruta** | R$ 0,00 (Gratuito) | 1.0x | 10 elos, recursos básicos |
+| **Veterano** | R$ 97,90/mês | 1.5x | 100 elos, 4 confrarias/mês, 2 anúncios marketplace |
+| **Elite** | R$ 127,90/mês | 3.0x | Elos ilimitados, 10 confrarias/mês, 10 anúncios marketplace |
 
 #### 3. **API Routes Criadas**
 

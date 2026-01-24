@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
 import { ProfileActionButtonsV6 } from '@/components/profile/profile-action-buttons-v6'
 import { CoverUpload } from '@/components/profile/cover-upload'
 import { MedalBadge } from '@/components/gamification/medal-badge'
+import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
+import { RankInsignia } from '@/components/gamification/rank-insignia'
 
 interface ImprovedCurrentHeaderV6CompleteProps {
     profile: any
@@ -87,35 +89,31 @@ export default function ImprovedCurrentHeaderV6Complete({
                 <div className="flex items-start gap-4 p-6">
 
                     {/* Avatar with Depth Effect */}
-                    <div className="relative flex-shrink-0">
-                        <div
-                            className="relative w-28 h-28 rounded-2xl border-2 border-[#D2691E] overflow-hidden"
-                            style={{
-                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(210, 105, 30, 0.1)',
-                            }}
-                        >
-                            {profile.avatar_url ? (
-                                <Image
-                                    src={profile.avatar_url}
-                                    alt={profile.full_name}
-                                    fill
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-[#2D3B2D] to-[#1A2421] flex items-center justify-center">
-                                    <Users className="w-14 h-14 text-[#D1D5DB]" />
-                                </div>
-                            )}
+                    {/* Avatar Diamond Frame Experiment */}
+                    {/* Avatar with Logo Frame */}
+                    <div className="relative flex-shrink-0 ml-4 mr-6">
+                        <div className="relative group">
+                            <LogoFrameAvatar
+                                src={profile.avatar_url}
+                                alt={profile.full_name}
+                                size="lg"
+                                className="shadow-2xl"
+                            />
                         </div>
 
-                        {/* Rank Badge with Glow */}
+                        {/* Rank Badge with Glow - Adjusted Position */}
                         <div
-                            className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#C85A17] flex items-center justify-center shadow-lg"
+                            className="absolute -bottom-4 -right-2 z-30"
                             style={{
-                                boxShadow: '0 4px 16px rgba(210, 105, 30, 0.5)',
+                                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))'
                             }}
                         >
-                            <Shield className="w-6 h-6 text-white" />
+                            <RankInsignia
+                                rankId={gamification?.current_rank_id || 'novato'}
+                                size="lg"
+                                variant="icon-only"
+                                className="border-4 border-[#1A2421]" // Borda escura para separar do avatar
+                            />
                         </div>
                     </div>
 

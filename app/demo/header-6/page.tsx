@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-current-header-v6'
+import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-current-header-v6-complete'
 import { CoverPhotoUpload } from '@/components/profile/cover-photo-upload'
 
 // V6 Header Demo - Minimal Orange Usage
@@ -100,9 +100,9 @@ export default function Header6DemoPage() {
                     <ImprovedCurrentHeaderV6
                         profile={mockProfile}
                         gamification={mockGamification}
-                        medals={mockMedals}
+                        allMedals={mockMedals}
+                        earnedMedals={mockMedals.map(m => ({ medal_id: m.id, earned_at: new Date().toISOString() }))}
                         isOwner={isOwner}
-                        onCoverUpdate={() => setShowCropModal(true)}
                     />
                 </div>
             </div>
