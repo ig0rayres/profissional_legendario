@@ -54,7 +54,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
     }[subscription?.plan_id || 'recruta'] || 'bg-gray-500'
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#1A2421] via-[#2D3B2D] to-[#1A2421]">
+        <div className="w-full">
             <div className="container mx-auto px-4 py-8 max-w-7xl">
                 {/* Back Button */}
                 <div className="mb-6">
