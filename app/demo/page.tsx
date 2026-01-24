@@ -27,17 +27,31 @@ export default function DemoIndexPage() {
             height: '240px',
         },
         {
-            title: 'Opção 4 - Atual Melhorada (Verde)',
-            description: 'Com pilares Glass/Depth + Gamificação | Paleta verde floresta',
-            features: ['Avatar maior 128px', 'Stats com delta', 'Medalhas 3D', '6 botões de ação'],
+            title: 'V4 Verde ⭐',
+            description: 'Atual Melhorada | Paleta verde floresta + capa',
+            features: ['Avatar 128px', 'Stats com delta', 'Medalhas 3D', 'Suporte a capa'],
             url: '/demo/header-4',
             height: '320px',
         },
         {
-            title: 'Opção 5 - Versão GRAY (Sóbria) ⭐',
-            description: 'Cinza predominante, verde detalhes, laranja destaques',
-            features: ['Paleta profissional cinza', 'Verde apenas em ícones', 'Laranja em CTAs', 'Mais corporativo'],
+            title: 'V5 Gray ⭐',
+            description: 'Versão Sóbria | Cinza + detalhes verde/laranja + capa',
+            features: ['Paleta cinza', 'Verde em ícones', 'Laranja em CTAs', 'Suporte a capa'],
             url: '/demo/header-5',
+            height: '320px',
+        },
+        {
+            title: 'V4 Cinza 🆕',
+            description: 'Paleta Cinza | Verde e laranja em detalhes + capa',
+            features: ['Fundo cinza', 'Verde detalhes', 'Laranja destaques', 'Suporte a capa'],
+            url: '/demo/header-v4-gray',
+            height: '320px',
+        },
+        {
+            title: 'V5 Verde 🆕',
+            description: 'Paleta Verde | Cinza e laranja em detalhes + capa',
+            features: ['Fundo verde', 'Cinza detalhes', 'Laranja destaques', 'Suporte a capa'],
+            url: '/demo/header-v5-green',
             height: '320px',
         },
     ]
@@ -47,10 +61,13 @@ export default function DemoIndexPage() {
             <div className="max-w-7xl mx-auto p-8">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold text-white mb-4">
-                        Headers do Perfil - 5 Opções
+                        Headers do Perfil - 7 Opções
                     </h1>
                     <p className="text-gray-400 text-lg">
                         Escolha o design que melhor representa a Rota Business Club
+                    </p>
+                    <p className="text-emerald-400 text-sm mt-2">
+                        ⭐ Versões principais | 🆕 Novas variações de paleta
                     </p>
                 </div>
 
