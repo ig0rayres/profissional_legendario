@@ -2,115 +2,160 @@
 
 import { useState } from 'react'
 import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-current-header-v6-complete'
+import { RotaValenteCard } from '@/components/profile/rota-valente-card'
 import { CoverPhotoUpload } from '@/components/profile/cover-photo-upload'
+import { v4 as uuidv4 } from 'uuid'
 
-// V6 Header Demo - Minimal Orange Usage
+// MOCKS TIPADOS
+const MOCK_RANKS = {
+    novato: { id: 'novato', name: 'Novato', icon: 'shield', points_required: 0, rank_level: 1, description: 'Iniciando a jornada' },
+    veterano: { id: 'veterano', name: 'Veterano', icon: 'shield-check', points_required: 1000, rank_level: 5, description: 'Membro experiente' },
+    elite: { id: 'elite', name: 'Elite', icon: 'crown', points_required: 5000, rank_level: 10, description: 'Lenda viva' }
+}
+
+const MOCK_PLANS = {
+    free: { id: 'free', name: 'GRATUITO', monthly_price: 0, yearly_price: 0, xp_multiplier: 1, max_confraternities: 1 },
+    legendary: { id: 'legendary', name: 'LENDÁRIO', monthly_price: 97, yearly_price: 970, xp_multiplier: 2, max_confraternities: 5 }
+}
+
+const ALL_MEDALS = [
+    { id: '1', name: 'Pioneiro', icon_key: 'trophy', description: 'Primeiro a testar a plataforma', category: 'achievement' },
+    { id: '2', name: 'Colaborador', icon_key: 'users', description: 'Trabalho em equipe exemplar', category: 'social' },
+    { id: '3', name: 'Inovador', icon_key: 'lightbulb', description: 'Sugestão de melhoria implementada', category: 'innovation' },
+    { id: '4', name: 'Mentor', icon_key: 'graduation-cap', description: 'Ajudou outros membros', category: 'education' },
+    { id: '5', name: 'Invencível', icon_key: 'swords', description: 'Completou 10 desafios seguidos', category: 'challenge' }
+]
+
+// DADOS DOS PERFIS
+const PROFILES = {
+    novato: {
+        profile: {
+            id: 'user-novato',
+            avatar_url: null, // Sem foto para testar fallback
+            full_name: 'Novo Membro',
+            professional_title: 'Explorador Iniciante',
+            location: 'São Paulo, SP',
+            rating: 0, // Sem avaliação
+            cover_url: '/demo-cover-simple.jpg',
+            bio: 'Acabei de chegar e estou pronto para aprender!'
+        },
+        gamification: {
+            total_points: 150,
+            current_rank_id: 'novato',
+            rank: MOCK_RANKS.novato,
+            medals_count: 0
+        },
+        subscription: {
+            plan_tiers: MOCK_PLANS.free
+        },
+        earnedMedals: [],
+        nextRank: MOCK_RANKS.veterano
+    },
+    veterano: {
+        profile: {
+            id: 'user-veterano',
+            avatar_url: '/placeholder.svg', // Imagem padrão
+            full_name: 'Igor Rayres',
+            professional_title: 'Líder de Comunidade & Mentor',
+            location: 'Rio de Janeiro, RJ',
+            rating: 4.9, // Avaliação alta
+            cover_url: '/demo-cover-premium.jpg',
+            bio: 'Transformando ideias em realidade há 10 anos. Apaixonado por tecnologia e pessoas.'
+        },
+        gamification: {
+            total_points: 3450,
+            current_rank_id: 'veterano',
+            rank: MOCK_RANKS.veterano,
+            medals_count: 12
+        },
+        subscription: {
+            plan_tiers: MOCK_PLANS.legendary
+        },
+        earnedMedals: [
+            { medal_id: '1', earned_at: new Date().toISOString() },
+            { medal_id: '2', earned_at: new Date().toISOString() },
+            { medal_id: '3', earned_at: new Date().toISOString() },
+            { medal_id: '5', earned_at: new Date().toISOString() }
+        ],
+        nextRank: MOCK_RANKS.elite
+    }
+}
+
 export default function Header6DemoPage() {
-    const [isOwner, setIsOwner] = useState(false)
-    const [coverUrl, setCoverUrl] = useState('/demo-cover.jpg')
+    const [activeProfileKey, setActiveProfileKey] = useState<'novato' | 'veterano'>('veterano')
     const [showCropModal, setShowCropModal] = useState(false)
+    const [coverUrl, setCoverUrl] = useState(PROFILES[activeProfileKey].profile.cover_url)
 
-    const handleCoverUpdate = (newUrl: string) => {
-        console.log('Cover updated:', newUrl)
-        setCoverUrl(newUrl)
-        setShowCropModal(false)
+    const activeData = PROFILES[activeProfileKey]
+
+    // Handler para troca de perfil
+    const toggleProfile = (key: 'novato' | 'veterano') => {
+        setActiveProfileKey(key)
+        setCoverUrl(PROFILES[key].profile.cover_url)
     }
-
-    const handleCoverSave = (croppedImageUrl: string) => {
-        console.log('Saving cropped cover:', croppedImageUrl)
-        handleCoverUpdate(croppedImageUrl)
-    }
-
-    const mockProfile = {
-        id: 'demo-user-v6',
-        avatar_url: '/placeholder.svg',
-        full_name: 'Igor Rayres',
-        professional_title: 'Desenvolvedor Full Stack',
-        location: 'São Paulo, SP',
-        rating: 4.9,
-        cover_url: coverUrl
-    }
-
-    const mockGamification = {
-        total_points: 1240,
-        current_rank_id: 'elite',
-        medals_count: 12
-    }
-
-    const mockMedals = [
-        { id: '1', name: 'Pioneiro', icon: '🏆', description: 'Primeiro a testar' },
-        { id: '2', name: 'Colaborador', icon: '🤝', description: 'Trabalho em equipe' },
-        { id: '3', name: 'Inovador', icon: '💡', description: 'Ideias criativas' },
-        { id: '4', name: 'Mentor', icon: '🎓', description: 'Ensinou outros' }
-    ]
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
-            <div className="container mx-auto py-8 px-4">
-                <div className="mb-6 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
-                    <h1 className="text-3xl font-bold text-white mb-2">V6 - Minimal Orange Usage 🧡</h1>
-                    <p className="text-gray-300 mb-4">
-                        Versão com laranja <strong>apenas nos elementos PRINCIPAIS</strong>: Avatar border, Badge de Patente e botão CTA &quot;Ofertar&quot;.
-                    </p>
+        <div className="min-h-screen bg-[#0d1f16] pb-20"> {/* Fundo Escuro V6 */}
 
-                    <div className="space-y-3 text-sm">
-                        <div>
-                            <h3 className="font-semibold text-white mb-2">✅ Laranja Mantido (Elementos Especiais):</h3>
-                            <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                                <li>Avatar border (identificação visual)</li>
-                                <li>Badge de Patente (destaque de nível)</li>
-                                <li>Botão &quot;Ofertar&quot; (CTA principal)</li>
-                            </ul>
-                        </div>
+            {/* CONTROLES DE DEMO */}
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-black/80 backdrop-blur-md border border-white/10 px-6 py-3 rounded-full flex gap-4 shadow-2xl">
+                <button
+                    onClick={() => toggleProfile('novato')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeProfileKey === 'novato' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}
+                >
+                    👶 Novato
+                </button>
+                <div className="w-px bg-white/20"></div>
+                <button
+                    onClick={() => toggleProfile('veterano')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${activeProfileKey === 'veterano' ? 'bg-[#1E4D40] text-white shadow-[0_0_15px_rgba(30,77,64,0.6)]' : 'text-gray-400 hover:text-white'}`}
+                >
+                    🎖️ Veterano
+                </button>
+            </div>
 
-                        <div>
-                            <h3 className="font-semibold text-white mb-2">🔄 Mudado para Verde/Branco:</h3>
-                            <ul className="list-disc list-inside text-gray-300 space-y-1 ml-4">
-                                <li>Estrelas de avaliação → Verde #1E4D40</li>
-                                <li>Ícones de stats (Vigor, Medalhas) → Verde #1E4D40</li>
-                                <li>Bordas das medalhas → Verde #1E4D40</li>
-                                <li>Ícones sociais (mensagem, Instagram) → Branco</li>
-                            </ul>
-                        </div>
-
-                        <div className="mt-4 p-4 bg-gray-700/50 rounded-lg">
-                            <h3 className="font-semibold text-white mb-2">🎨 Paleta de Cores:</h3>
-                            <div className="flex gap-4 flex-wrap">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded border border-gray-600" style={{ background: '#1E4D40' }}></div>
-                                    <span className="text-gray-300">#1E4D40 (Verde Floresta)</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded border border-gray-600" style={{ background: '#D2691E' }}></div>
-                                    <span className="text-gray-300">#D2691E (Laranja - Detalhes Especiais)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div className="container mx-auto py-8 px-4 max-w-5xl">
+                <div className="mb-8 text-center">
+                    <h1 className="text-3xl font-black text-white mb-2 tracking-tight">V6 SYSTEM <span className="text-[#1E4D40]">PREVIEW</span></h1>
+                    <p className="text-gray-400 text-sm">Validando transparências, cores e comportamento dinâmico.</p>
                 </div>
 
-                <button
-                    onClick={() => setIsOwner(!isOwner)}
-                    className="mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                >
-                    {isOwner ? '👤 Modo Visitante' : '⚙️ Modo Proprietário'}
-                </button>
+                {/* PAINEL COMPLETO (Header + Rota) */}
+                <div className="space-y-6">
 
-                <div className="bg-gray-800 rounded-xl overflow-hidden shadow-2xl">
-                    <ImprovedCurrentHeaderV6
-                        profile={mockProfile}
-                        gamification={mockGamification}
-                        allMedals={mockMedals}
-                        earnedMedals={mockMedals.map(m => ({ medal_id: m.id, earned_at: new Date().toISOString() }))}
-                        isOwner={isOwner}
-                    />
+                    {/* 1. HEADER DO PERFIL */}
+                    <div className="bg-[#1A2421] rounded-2xl overflow-hidden shadow-2xl border border-[#2E4A3E]/30 relative">
+                        <div className="absolute top-0 right-0 p-2 opacity-30 text-[10px] uppercase font-mono text-white pointer-events-none">Header Component</div>
+                        <ImprovedCurrentHeaderV6
+                            profile={{ ...activeData.profile, cover_url: coverUrl }}
+                            gamification={activeData.gamification}
+                            allMedals={ALL_MEDALS as any} // Cast simples para mock
+                            earnedMedals={activeData.earnedMedals}
+                            isOwner={true}
+                        />
+                    </div>
+
+                    {/* 2. CARD ROTA DO VALENTE */}
+                    <div className="relative">
+                        <div className="absolute -top-3 left-4 text-[10px] uppercase font-bold tracking-widest text-[#1E4D40] bg-[#0d1f16] px-2 z-10">
+                            Progresso da Temporada
+                        </div>
+                        <RotaValenteCard
+                            gamification={activeData.gamification as any}
+                            subscription={activeData.subscription as any}
+                            nextRank={activeData.nextRank as any}
+                            allMedals={ALL_MEDALS as any}
+                            earnedMedals={activeData.earnedMedals}
+                        />
+                    </div>
+
                 </div>
             </div>
 
             <CoverPhotoUpload
                 isOpen={showCropModal}
                 onClose={() => setShowCropModal(false)}
-                onSave={handleCoverSave}
+                onSave={(url) => setCoverUrl(url)}
                 currentCoverUrl={coverUrl}
             />
         </div>
