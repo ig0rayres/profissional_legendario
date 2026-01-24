@@ -215,30 +215,48 @@ export default function ImprovedCurrentHeaderV6Complete({
                         {/* Medalhas Row */}
                         <div className="flex items-center gap-2">
                             <span className="text-xs uppercase text-[#D1D5DB] tracking-wider">Medalhas:</span>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
                                 <TooltipProvider>
-                                    {earnedMedals.slice(0, 4).map((userMedal) => {
-                                        const medal = allMedals.find(m => m.id === userMedal.medal_id)
-                                        if (!medal) return null
+                                    {earnedMedals.length > 0 ? (
+                                        earnedMedals.slice(0, 4).map((userMedal) => {
+                                            const medal = allMedals.find(m => m.id === userMedal.medal_id)
 
-                                        return (
-                                            <Tooltip key={userMedal.medal_id}>
-                                                <TooltipTrigger asChild>
-                                                    <div className="cursor-pointer hover:scale-110 transition-transform">
-                                                        <MedalBadge medalId={medal.id} size="sm" variant="profile" />
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p className="font-bold text-sm">{medal.name}</p>
-                                                    {medal.description && (
-                                                        <p className="text-xs text-zinc-300 mt-1">{medal.description}</p>
-                                                    )}
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        )
-                                    })}
+                                            // Fallback visual se não achar os dados da medalha (mas tiver o ID)
+                                            if (!medal) {
+                                                console.warn('[HeaderV6] Medalha não encontrada nos metadados:', userMedal.medal_id)
+                                                return null
+                                            }
+
+                                            return (
+                                                <Tooltip key={userMedal.medal_id}>
+                                                    <TooltipTrigger asChild>
+                                                        <div className="group relative cursor-pointer">
+                                                            <div className="w-8 h-8 rounded-full bg-[#1E4D40] flex items-center justify-center border border-[#3D6B54]/50 shadow-lg shadow-black/20 group-hover:scale-110 group-hover:bg-[#256050] transition-all duration-300">
+                                                                <MedalBadge
+                                                                    medalId={medal.id}
+                                                                    size="sm"
+                                                                    variant="icon-only"
+                                                                    className="bg-transparent w-full h-full text-white !shadow-none" // Forçando estilo ícone branco
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="bg-[#1A2421] border-[#3D6B54] text-white p-3 shadow-xl">
+                                                        <p className="font-bold text-[#D4742C] text-xs uppercase tracking-wider mb-1">{medal.name}</p>
+                                                        {medal.description && (
+                                                            <p className="text-[10px] text-gray-300 leading-tight max-w-[150px]">{medal.description}</p>
+                                                        )}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )
+                                        })
+                                    ) : (
+                                        <span className="text-xs text-white/40 italic">Nenhuma medalha ainda</span>
+                                    )}
                                     {earnedMedals.length > 4 && (
-                                        <span className="text-[10px] text-[#D1D5DB] ml-1">+{earnedMedals.length - 4}</span>
+                                        <div className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center text-[10px] font-bold text-white/50 border border-white/5">
+                                            +{earnedMedals.length - 4}
+                                        </div>
                                     )}
                                 </TooltipProvider>
                             </div>
