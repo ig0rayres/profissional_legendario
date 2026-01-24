@@ -54,7 +54,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
     }[subscription?.plan_id || 'recruta'] || 'bg-gray-500'
 
     return (
-        <div className="min-h-screen bg-adventure">
+        <div className="min-h-screen bg-gradient-to-br from-[#1A2421] via-[#2D3B2D] to-[#1A2421]">
             <div className="container mx-auto px-4 py-8 max-w-7xl">
                 {/* Back Button */}
                 <div className="mb-6">
@@ -74,9 +74,9 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                 )}
 
                 {/* Header Card */}
-                <Card className="mb-6 overflow-hidden relative shadow-xl shadow-black/10 border border-white/10 backdrop-blur-sm">
+                <Card className="mb-6 overflow-hidden relative shadow-xl shadow-black/30 border border-[#2D3B2D] backdrop-blur-sm bg-[#1A2421]/60">
                     {/* FOTO DE CAPA - 25% maior */}
-                    <div className="relative h-56 bg-gradient-to-r from-primary/20 to-secondary/20">
+                    <div className="relative h-56 bg-gradient-to-r from-[#1E4D40]/30 to-[#1A2421]/50">
                         {profile.cover_url ? (() => {
                             const posMatch = profile.cover_url.match(/pos=(\d+)/)
                             const coverPosition = posMatch ? parseInt(posMatch[1]) : 50
@@ -113,8 +113,8 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                                             className="rounded-full border-4 border-background shadow-xl"
                                         />
                                     ) : (
-                                        <div className="w-24 h-24 rounded-full border-4 border-background shadow-xl bg-primary/10 flex items-center justify-center">
-                                            <span className="text-3xl font-bold text-primary">
+                                        <div className="w-24 h-24 rounded-full border-4 border-[#D2691E] shadow-xl bg-[#1E4D40]/20 flex items-center justify-center">
+                                            <span className="text-3xl font-bold text-[#F2F4F3]">
                                                 {profile.full_name.charAt(0).toUpperCase()}
                                             </span>
                                         </div>
@@ -137,7 +137,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <h1 className="text-2xl font-bold">{profile.full_name}</h1>
                                             {profile.rota_number && (
-                                                <Badge variant="outline" className="border-secondary text-secondary font-black text-xs">
+                                                <Badge variant="outline" className="border-[#1E4D40] text-[#1E4D40] font-black text-xs bg-[#1E4D40]/10">
                                                     <Mountain className="w-3 h-3 mr-1" />
                                                     {profile.rota_number}
                                                 </Badge>
@@ -273,8 +273,8 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
 
                                     {/* Badge da Patente */}
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-primary rounded-md blur-md opacity-60" />
-                                        <Badge className="relative bg-primary hover:bg-primary/90 text-white text-xs font-black gap-1.5 px-3 py-1.5 shadow-xl shadow-primary/40 border-2 border-secondary/50 uppercase tracking-wide">
+                                        <div className="absolute inset-0 bg-[#1E4D40] rounded-md blur-md opacity-60" />
+                                        <Badge className="relative bg-[#1E4D40] hover:bg-[#1E4D40]/90 text-white text-xs font-black gap-1.5 px-3 py-1.5 shadow-xl shadow-[#1E4D40]/40 border-2 border-[#D2691E]/50 uppercase tracking-wide">
                                             <RankInsignia
                                                 rankId={gamification?.current_rank_id || 'novato'}
                                                 iconName={gamification?.rank?.icon}
@@ -376,19 +376,19 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                         <BattleHistory userId={profile.id} />
 
                         {/* Contact Info */}
-                        <Card className="shadow-lg shadow-black/10 border border-white/10 backdrop-blur-sm hover:shadow-xl transition-shadow duration-300">
+                        <Card className="shadow-lg shadow-black/30 border border-[#2D3B2D] backdrop-blur-sm bg-[#1A2421]/60 hover:shadow-xl transition-shadow duration-300">
                             <CardHeader>
-                                <CardTitle className="text-sm font-bold">Informações de Contato</CardTitle>
+                                <CardTitle className="text-sm font-bold text-[#F2F4F3]">Informações de Contato</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <div className="flex items-center gap-2 text-sm">
-                                    <Mail className="w-4 h-4 text-muted-foreground" />
-                                    <span className="text-muted-foreground">{profile.email}</span>
+                                    <Mail className="w-4 h-4 text-[#1E4D40]" />
+                                    <span className="text-[#D1D5DB]">{profile.email}</span>
                                 </div>
                                 {profile.phone && (
                                     <div className="flex items-center gap-2 text-sm">
-                                        <Phone className="w-4 h-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">{profile.phone}</span>
+                                        <Phone className="w-4 h-4 text-[#1E4D40]" />
+                                        <span className="text-[#D1D5DB]">{profile.phone}</span>
                                     </div>
                                 )}
                             </CardContent>
