@@ -699,7 +699,7 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group overflow-hidden">
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
 
             <CardContent className="p-5 relative">
@@ -793,14 +793,14 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                                                         <button
                                                             onClick={() => handleAcceptInvite(invite.id)}
                                                             disabled={processingInvite === invite.id}
-                                                            className="flex-1 py-1.5 px-3 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                                                            className="flex-1 py-1.5 px-3 bg-[#166534] hover:bg-[#14532d] text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
                                                         >
                                                             {processingInvite === invite.id ? 'Processando...' : '✓ Aceitar'}
                                                         </button>
                                                         <button
                                                             onClick={() => handleRejectInvite(invite.id)}
                                                             disabled={processingInvite === invite.id}
-                                                            className="flex-1 py-1.5 px-3 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                                                            className="flex-1 py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
                                                         >
                                                             ✗ Recusar
                                                         </button>
