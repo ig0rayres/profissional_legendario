@@ -9,10 +9,9 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function CompleteConfraternityPage({ params }: { params: Promise<{ id: string }> }) {
-    // Unwrapping params as per Next.js 15+ standards if applicable, or just standard hook
-    const unwrappedParams = use(params)
-    const inviteId = unwrappedParams.id
+export default function CompleteConfraternityPage() {
+    const paramsHook = useParams()
+    const inviteId = paramsHook.id as string
 
     const router = useRouter()
     const [userId, setUserId] = useState<string | null>(null)

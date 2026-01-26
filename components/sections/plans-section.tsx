@@ -106,7 +106,7 @@ export function PlansSection() {
                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto items-stretch">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1400px] mx-auto items-stretch">
                         {plans.map((plan) => {
                             const config = TIER_CONFIG[plan.tier] || TIER_CONFIG.recruta
                             const description = TIER_DESCRIPTIONS[plan.tier] || ''
