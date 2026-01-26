@@ -2,8 +2,8 @@
 
 > "Não somos um diretório. Somos o ponto de convergência onde a disciplina da montanha encontra a ética corporativa."
 
-## Sobre o Projeto
-**Rota Business Club** é a infraestrutura de apoio para a jornada do homem de negócios. Inspirado na dinâmica dos acampamentos base de grandes expedições, o clube oferece estratégia, alianças e recursos para a "escalada" no mercado profissional.
+## Sobre o# Profissional Legendário - Rota Business Club
+*Último Deploy: 26/01/2026 - Tentativa de Sincronização*** é a infraestrutura de apoio para a jornada do homem de negócios. Inspirado na dinâmica dos acampamentos base de grandes expedições, o clube oferece estratégia, alianças e recursos para a "escalada" no mercado profissional.
 
 ### A Estética: Tático Corporativo
 A identidade visual do projeto reflete a dualidade entre a precisão executiva e a resistência outdoor:
