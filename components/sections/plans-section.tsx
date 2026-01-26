@@ -106,21 +106,33 @@ export function PlansSection() {
                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto items-center">
                         {plans.map((plan) => {
                             const config = TIER_CONFIG[plan.tier] || TIER_CONFIG.recruta
                             const description = TIER_DESCRIPTIONS[plan.tier] || ''
                             const Icon = config.icon
+                            const isElite = plan.tier === 'elite'
 
                             return (
                                 <Card
                                     key={plan.id}
-                                    className={`relative flex flex-col ${config.popular
-                                        ? 'border-primary shadow-lg shadow-primary/20 scale-105 z-10 bg-card/80 backdrop-blur-sm'
-                                        : 'border-primary/20 bg-card/50 backdrop-blur-sm hover:border-primary/40'
-                                        } transition-all duration-300`}
+                                    className={`relative flex flex-col ${isElite
+                                            ? 'border-[#D2691E] shadow-2xl shadow-[#D2691E]/40 md:scale-110 z-20 bg-gradient-to-br from-[#D2691E]/10 via-card/90 to-card/90 backdrop-blur-sm animate-pulse-slow ring-2 ring-[#D2691E]/30'
+                                            : config.popular
+                                                ? 'border-primary shadow-lg shadow-primary/20 md:scale-105 z-10 bg-card/80 backdrop-blur-sm'
+                                                : 'border-primary/20 bg-card/50 backdrop-blur-sm hover:border-primary/40'
+                                        } transition-all duration-300 hover:shadow-xl`}
                                 >
-                                    {config.popular && (
+                                    {isElite && (
+                                        <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-30">
+                                            <span className="bg-gradient-to-r from-[#D2691E] to-[#FF8C42] text-white text-sm font-bold px-6 py-2 rounded-full shadow-2xl shadow-[#D2691E]/50 animate-bounce-slow flex items-center gap-2">
+                                                <Crown className="w-4 h-4" />
+                                                ELITE
+                                                <Crown className="w-4 h-4" />
+                                            </span>
+                                        </div>
+                                    )}
+                                    {config.popular && !isElite && (
                                         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                                             <span className="bg-primary text-primary-foreground text-sm font-bold px-4 py-1 rounded-full shadow-lg">
                                                 MAIS POPULAR
@@ -129,10 +141,17 @@ export function PlansSection() {
                                     )}
 
                                     <CardHeader className="text-center pb-8">
-                                        <div className="mx-auto p-4 rounded-full bg-primary/10 mb-4 w-16 h-16 flex items-center justify-center">
-                                            <Icon className={`w-8 h-8 ${config.popular ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        <div className={`mx-auto p-4 rounded-full mb-4 w-16 h-16 flex items-center justify-center ${isElite
+                                                ? 'bg-gradient-to-br from-[#D2691E] to-[#FF8C42] shadow-lg shadow-[#D2691E]/50'
+                                                : 'bg-primary/10'
+                                            }`}>
+                                            <Icon className={`w-8 h-8 ${isElite
+                                                    ? 'text-white'
+                                                    : config.popular ? 'text-primary' : 'text-muted-foreground'
+                                                }`} />
                                         </div>
-                                        <CardTitle className="text-3xl font-bold text-impact mb-2">
+                                        <CardTitle className={`text-3xl font-bold text-impact mb-2 ${isElite ? 'text-[#D2691E]' : ''
+                                            }`}>
                                             {plan.name}
                                         </CardTitle>
                                         <CardDescription className="text-base">
@@ -142,7 +161,8 @@ export function PlansSection() {
 
                                     <CardContent className="flex-1">
                                         <div className="text-center mb-8">
-                                            <span className="text-4xl font-bold text-foreground">
+                                            <span className={`text-4xl font-bold ${isElite ? 'text-[#D2691E]' : 'text-foreground'
+                                                }`}>
                                                 {formatPrice(plan.price)}
                                             </span>
                                             {plan.price > 0 && (
@@ -155,7 +175,8 @@ export function PlansSection() {
                                         <ul className="space-y-4">
                                             {plan.features.map((feature, idx) => (
                                                 <li key={idx} className="flex items-start gap-3">
-                                                    <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                                                    <Check className={`w-5 h-5 shrink-0 mt-0.5 ${isElite ? 'text-[#D2691E]' : 'text-primary'
+                                                        }`} />
                                                     <span className="text-sm text-muted-foreground">
                                                         {feature}
                                                     </span>
@@ -168,11 +189,13 @@ export function PlansSection() {
                                         <Link href={config.href} className="w-full">
                                             <Button
                                                 size="lg"
-                                                className={`w-full text-lg h-12 ${config.popular
-                                                    ? 'glow-orange-strong font-bold'
-                                                    : ''
+                                                className={`w-full text-lg h-12 font-bold transition-all ${isElite
+                                                        ? 'bg-gradient-to-r from-[#D2691E] to-[#FF8C42] hover:from-[#FF8C42] hover:to-[#D2691E] text-white shadow-lg shadow-[#D2691E]/50 hover:shadow-xl hover:shadow-[#D2691E]/70 hover:scale-105'
+                                                        : config.popular
+                                                            ? 'glow-orange-strong'
+                                                            : ''
                                                     }`}
-                                                variant={config.popular ? 'default' : 'outline'}
+                                                variant={isElite || config.popular ? 'default' : 'outline'}
                                             >
                                                 {config.cta}
                                             </Button>
