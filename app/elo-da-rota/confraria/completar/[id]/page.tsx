@@ -58,10 +58,11 @@ export default function CompleteConfraternityPage({ params }: { params: Promise<
             }
 
             // Determine partner name
+            const inviteAny = invite as any
             const isSender = invite.sender_id === user.id
             const partnerName = isSender
-                ? invite.receiver?.full_name
-                : invite.sender?.full_name
+                ? inviteAny.receiver?.full_name
+                : inviteAny.sender?.full_name
 
             setInviteData({
                 ...invite,

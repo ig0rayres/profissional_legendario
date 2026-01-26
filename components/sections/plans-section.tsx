@@ -106,7 +106,7 @@ export function PlansSection() {
                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto items-stretch">
                         {plans.map((plan) => {
                             const config = TIER_CONFIG[plan.tier] || TIER_CONFIG.recruta
                             const description = TIER_DESCRIPTIONS[plan.tier] || ''
@@ -116,11 +116,11 @@ export function PlansSection() {
                             return (
                                 <Card
                                     key={plan.id}
-                                    className={`relative flex flex-col ${isElite
-                                            ? 'border-[#D2691E] shadow-2xl shadow-[#D2691E]/40 md:scale-110 z-20 bg-gradient-to-br from-[#D2691E]/10 via-card/90 to-card/90 backdrop-blur-sm animate-pulse-slow ring-2 ring-[#D2691E]/30'
-                                            : config.popular
-                                                ? 'border-primary shadow-lg shadow-primary/20 md:scale-105 z-10 bg-card/80 backdrop-blur-sm'
-                                                : 'border-primary/20 bg-card/50 backdrop-blur-sm hover:border-primary/40'
+                                    className={`relative flex flex-col h-full ${isElite
+                                        ? 'border-[#D2691E] shadow-2xl shadow-[#D2691E]/40 md:-mt-4 md:mb-4 z-20 bg-gradient-to-br from-[#D2691E]/10 via-card/90 to-card/90 backdrop-blur-sm ring-2 ring-[#D2691E]/30'
+                                        : config.popular
+                                            ? 'border-primary shadow-lg shadow-primary/20 z-10 bg-card/80 backdrop-blur-sm'
+                                            : 'border-primary/20 bg-card/50 backdrop-blur-sm hover:border-primary/40'
                                         } transition-all duration-300 hover:shadow-xl`}
                                 >
                                     {isElite && (
@@ -142,12 +142,12 @@ export function PlansSection() {
 
                                     <CardHeader className="text-center pb-8">
                                         <div className={`mx-auto p-4 rounded-full mb-4 w-16 h-16 flex items-center justify-center ${isElite
-                                                ? 'bg-gradient-to-br from-[#D2691E] to-[#FF8C42] shadow-lg shadow-[#D2691E]/50'
-                                                : 'bg-primary/10'
+                                            ? 'bg-gradient-to-br from-[#D2691E] to-[#FF8C42] shadow-lg shadow-[#D2691E]/50'
+                                            : 'bg-primary/10'
                                             }`}>
                                             <Icon className={`w-8 h-8 ${isElite
-                                                    ? 'text-white'
-                                                    : config.popular ? 'text-primary' : 'text-muted-foreground'
+                                                ? 'text-white'
+                                                : config.popular ? 'text-primary' : 'text-muted-foreground'
                                                 }`} />
                                         </div>
                                         <CardTitle className={`text-3xl font-bold text-impact mb-2 ${isElite ? 'text-[#D2691E]' : ''
@@ -190,10 +190,10 @@ export function PlansSection() {
                                             <Button
                                                 size="lg"
                                                 className={`w-full text-lg h-12 font-bold transition-all ${isElite
-                                                        ? 'bg-gradient-to-r from-[#D2691E] to-[#FF8C42] hover:from-[#FF8C42] hover:to-[#D2691E] text-white shadow-lg shadow-[#D2691E]/50 hover:shadow-xl hover:shadow-[#D2691E]/70 hover:scale-105'
-                                                        : config.popular
-                                                            ? 'glow-orange-strong'
-                                                            : ''
+                                                    ? 'bg-gradient-to-r from-[#D2691E] to-[#FF8C42] hover:from-[#FF8C42] hover:to-[#D2691E] text-white shadow-lg shadow-[#D2691E]/50 hover:shadow-xl hover:shadow-[#D2691E]/70 hover:scale-105'
+                                                    : config.popular
+                                                        ? 'glow-orange-strong'
+                                                        : ''
                                                     }`}
                                                 variant={isElite || config.popular ? 'default' : 'outline'}
                                             >
