@@ -734,13 +734,13 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                             <span className="text-[9px] uppercase text-gray-600 font-medium">Total</span>
                         </div>
                         {pendingInvitesCount > 0 && (
-                            <div className="relative ml-2">
+                            <div className="relative ml-3">
                                 <div
                                     onClick={() => setShowInvitesPopup(!showInvitesPopup)}
-                                    className="bg-[#D2691E] p-2 rounded-lg shadow-md hover:bg-[#B85715] transition-colors cursor-pointer"
+                                    className="relative bg-gradient-to-br from-[#D2691E] to-[#B85715] p-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer animate-glow-pulse"
                                 >
-                                    <Bell className="w-5 h-5 text-white" />
-                                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-[11px] font-bold text-white flex items-center justify-center shadow-md border-2 border-white">
+                                    <Bell className="w-6 h-6 text-white animate-bell-ring origin-top" />
+                                    <span className="absolute -top-2 -right-2 min-w-[22px] h-[22px] bg-red-500 rounded-full text-[12px] font-bold text-white flex items-center justify-center shadow-lg border-2 border-white px-1">
                                         {pendingInvitesCount}
                                     </span>
                                 </div>

@@ -52,6 +52,8 @@ const config: Config = {
                 "slide-up": "slideUp 0.5s ease-out",
                 "slide-down": "slideDown 0.5s ease-out",
                 "scale-in": "scaleIn 0.3s ease-out",
+                "bell-ring": "bellRing 0.8s ease-in-out infinite",
+                "glow-pulse": "glowPulse 2s ease-in-out infinite",
             },
             keyframes: {
                 fadeIn: {
@@ -69,6 +71,22 @@ const config: Config = {
                 scaleIn: {
                     "0%": { transform: "scale(0.95)", opacity: "0" },
                     "100%": { transform: "scale(1)", opacity: "1" },
+                },
+                bellRing: {
+                    "0%": { transform: "rotate(0deg)" },
+                    "10%": { transform: "rotate(14deg)" },
+                    "20%": { transform: "rotate(-12deg)" },
+                    "30%": { transform: "rotate(10deg)" },
+                    "40%": { transform: "rotate(-8deg)" },
+                    "50%": { transform: "rotate(6deg)" },
+                    "60%": { transform: "rotate(-4deg)" },
+                    "70%": { transform: "rotate(2deg)" },
+                    "80%": { transform: "rotate(-1deg)" },
+                    "100%": { transform: "rotate(0deg)" },
+                },
+                glowPulse: {
+                    "0%, 100%": { boxShadow: "0 0 5px rgba(210, 105, 30, 0.5), 0 0 10px rgba(210, 105, 30, 0.3)" },
+                    "50%": { boxShadow: "0 0 15px rgba(210, 105, 30, 0.8), 0 0 25px rgba(210, 105, 30, 0.5)" },
                 },
             },
         },
