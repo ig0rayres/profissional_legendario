@@ -1,127 +1,116 @@
-# 🚀 STATUS DO PROJETO - Sessão 24/01/2026
+# 🚀 STATUS DO PROJETO - Sessão 26/01/2026
 
-**Última atualização:** 24/01/2026 00:14 BRT
-**Versão:** V6 Profile Migration - In Progress
-
----
-
-## ✅ O QUE FOI CONCLUÍDO HOJE
-
-### 1. **Templates de Perfil V4 e V6 Criados**
-- ✅ `components/profile/profile-page-template-v4.tsx` - Layout V4 completo
-- ✅ `components/profile/profile-page-template-v6.tsx` - Layout V6 completo
-- ✅ Ambos com TODOS os dados reais do backend integrados
-
-### 2. **Componente Header V6 Complete**
-- ✅ `components/profile/headers/improved-current-header-v6-complete.tsx`
-  - Layout EXATO do demo V6
-  - Cards de Vigor, Medalhas, ID Rota
-  - Badge de patente com glass effect
-  - Avatar quadrado (rounded-2xl)
-  - Foto de capa funcional
-  - Upload de capa (para owners)
-  - Medalhas reais renderizadas
-  - Stats reais (avaliação, projetos)
-
-### 3. **Botões de Ação Estilizados**
-- ✅ `components/profile/profile-action-buttons-v6.tsx`
-  - Visual do V6 (transparentes, hover effects)
-  - Lógica 100% preservada dos componentes originais
-  - Botões: Ofertar (laranja), Mensagem, Criar Elo, Confraria, Classificar, Orar
-  - Todos funcionais com modais e gamificação
-
-### 4. **Rotas de Teste Criadas**
-- ✅ `/app/teste-v4/[rotaNumber]/page.tsx` - Teste V4
-- ✅ `/app/teste-v6/[rotaNumber]/page.tsx` - Teste V6
-- **URLs de teste:**
-  - https://rotabusinessclub.com.br/teste-v4/141018
-  - https://rotabusinessclub.com.br/teste-v6/141018
-
-### 5. **Backup e Documentação**
-- ✅ `.backups/profile-logic-20260124/`
-  - profile-action-buttons.tsx (componente original)
-  - profile-page-template-original-backup.tsx (template original)
-  - LOGIC_MAP.md (mapeamento completo de lógica)
-
-### 6. **Sistema Social "Na Rota" & Validação IA (Descoberto pós-reset)**
-- ✅ **Upload de Provas:** Modal de criação de post permite vincular Confrarias e Projetos.
-- ✅ **Auto-Tagging:** Marca automaticamente o parceiro da confraria no post.
-- ✅ **Validação Automática (IA):**
-  - Endpoint: `/api/posts/auto-validate`
-  - Engine: GPT-4o-mini Vision
-  - Regra: Verifica presença de 2+ pessoas (Confraria) ou trabalho finalizado (Projeto).
-  - Ação: Se confiança ALTA -> Valida e pontua automaticamente (`validate_confraternity_proof_safe`).
+**Última atualização:** 26/01/2026 14:25 BRT
+**Versão:** Sistema Confrarias + Feed "Na Rota" + Deploy Fix
 
 ---
 
-## 🎯 ESTADO ATUAL
+## ✅ O QUE FOI CONCLUÍDO HOJE (26/01)
 
-### **Funcionalidades Implementadas:**
+### 1. **Sistema de Feed "Na Rota" (Social)**
+- ✅ **Modal de criação de posts** com vinculação a:
+  - Confrarias (encontros presenciais entre profissionais)
+  - Projetos do portfólio
+  - Medalhas para validação
+- ✅ **Auto-tagging de parceiros**: Ao vincular uma confraria, o parceiro é automaticamente marcado
+- ✅ **Upload de múltiplas mídias** (até 10 fotos/vídeos por post)
+- ✅ **Visibilidade configurável**: Público, Elos (conexões), Privado
+- ✅ **Rate limiting**: Máximo 5 posts por hora
 
-#### Header V6 Complete:
-- ✅ Avatar quadrado com borda laranja
-- ✅ Badge de patente (canto superior direito, glass effect)
-- ✅ Cards de stats (Vigor, Medalhas, ID Rota) com glass morphism
-- ✅ Medalhas reais do usuário (até 4 visíveis + contador)
-- ✅ Nome, título profissional, localização
-- ✅ Avaliação com estrelas verdes
-- ✅ Foto de capa com upload (para owners)
-- ✅ Background pattern quando sem capa
+### 2. **Sistema de Validação Automática com IA**
+- ✅ **Endpoint `/api/posts/auto-validate`**
+  - Usa GPT-4o-mini Vision para analisar fotos
+  - Para confrarias: Verifica se há 2+ pessoas na foto
+  - Para projetos: Verifica se mostra trabalho profissional
+- ✅ **Endpoint `/api/validate-confraternity`**
+  - Validação de fotos de confraternização
+  - Retorna: approved, people_count, confidence, reason
+- ✅ **Níveis de confiança**:
+  - HIGH: Validação automática + pontuação
+  - MEDIUM/LOW: Aguarda revisão manual
 
-#### Barra de Botões (Visitantes):
-- ✅ **Ofertar** - ConnectionButton (laranja, destaque)
-- ✅ **Mensagem** - MessageButton
-- ✅ **Criar Elo** - ConnectionButton (lógica completa)
-- ✅ **Confraria** - ConfraternityButton
-- ✅ **Classificar** - RatingButton
-- ✅ **Orar** - PrayerButton
+### 3. **Ajustes Visuais do Dashboard**
+- ✅ Avatar com frame da Rota (LogoFrameAvatar padronizado)
+- ✅ Pontos do histórico de batalha na mesma linha (whitespace-nowrap)
+- ✅ Elos aparecendo na listagem (query corrigida)
+- ✅ Badge de patente verde nos elos
+- ✅ Card de elos com 12 conexões (grid 4 cols)
+- ✅ Avatar header maior (64px)
+- ✅ Sino de notificação reposicionado sobre o frame
+- ✅ Badge 'JAN' em vez de 'Mês' no histórico
 
-#### Barra de Botões (Owner/Admin):
-- ✅ **Editar Perfil** - Link para `/dashboard/editar-perfil`
-- ✅ **Configurações** - Link para `/dashboard/editar-perfil`
+### 4. **Correções de Deploy (Crítico)**
+- ✅ **Problema identificado**: Webhook GitHub → Vercel estava desconectado
+- ✅ **Solução**: Deploy via Vercel CLI (`npx vercel --prod`)
+- ✅ **Fix adicional**: Cron jobs ajustados para compatibilidade com plano Hobby
+  - Antes: `0 * * * *` (a cada hora) - Bloqueado no Hobby
+  - Depois: `0 18 * * *` (diário às 18h) - Permitido
 
-#### Redes Sociais:
-- ✅ **WhatsApp** - Link direto (se cadastrado)
-- ✅ **Instagram** - Link direto (se cadastrado)
-- ✅ Ícones com hover effect
-
-#### Efeitos Visuais:
-- ✅ Glass morphism (`backdrop-filter: blur(8px)`)
-- ✅ Transparências (`rgba(45, 59, 45, 0.3)`)
-- ✅ Hover states em todos os botões
-- ✅ Transições suaves
-- ✅ Shadows e glows
+### 5. **Sistema de Confrarias Completo**
+- ✅ Confrarias validadas concedem 50pts para cada participante
+- ✅ Auto-marcação de parceiro no modal de posts
+- ✅ Contadores de confrarias (mês + total)
+- ✅ 7 medalhas automáticas relacionadas a confrarias:
+  - `primeira_confraria` - Participar da primeira
+  - `anfitriao` - Hospedar uma confraria
+  - `cronista` - Registrar uma confraria
+  - `lider_confraria` - 5+ confrarias organizadas
+  - `cinegrafista_campo` - Gravar vídeo de confraria
+- ✅ Mesclagem de posts duplicados
+- ✅ Notificação diária às 18h (ajustado de horária)
 
 ---
 
-## 📋 DADOS INTEGRADOS
+## 📁 ARQUIVOS IMPORTANTES - SISTEMA SOCIAL
 
-Todos os dados estão sendo carregados via API `/api/profile/[id]`:
+### Componentes de Feed:
+```
+components/social/
+├── create-post-modal.tsx    (✅ Modal completo de criação)
+├── post-card.tsx            (✅ Card de exibição de post)
+└── proof-button.tsx         (✅ Botão de prova/upload)
+```
 
-```typescript
-// Dados do perfil
-profile.id
-profile.full_name
-profile.avatar_url
-profile.cover_url
-profile.professional_title
-profile.pista (localização)
-profile.rota_number
-profile.whatsapp
-profile.instagram
+### APIs de Validação:
+```
+app/api/
+├── posts/auto-validate/route.ts       (✅ Validação automática IA)
+├── validate-confraternity/route.ts    (✅ Validação de foto confraria)
+└── cron/
+    ├── confraternity-reminders/route.ts
+    └── send-confraternity-notifications/route.ts
+```
 
-// Gamificação
-gamification.total_points (Vigor)
-gamification.current_rank_id (Patente)
+### Componentes de Confraria:
+```
+components/confraternity/
+├── AddToCalendarButton.tsx
+├── ConfraternityCompleteForm.tsx
+├── ConfraternityGallery.tsx
+├── ConfraternityInviteCard.tsx
+├── ConfraternityInviteForm.tsx
+└── ConfraternityLimitsIndicator.tsx
+```
 
-// Medalhas
-earnedMedals[] (medalhas conquistadas)
-allMedals[] (todas as medalhas disponíveis)
+---
 
-// Stats
-ratingStats.average_rating
-ratingStats.total_ratings
-confraternityStats.total_attended (projetos)
+## 🔧 DEPLOY - COMANDOS IMPORTANTES
+
+### Deploy via CLI (quando webhook falhar):
+```bash
+# 1. Login (uma vez)
+npx vercel login
+
+# 2. Link ao projeto (uma vez)
+npx vercel link --project rotabusinessclub
+
+# 3. Deploy para produção
+npx vercel --prod
+```
+
+### Deploy Hook (alternativa):
+```bash
+curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_8q8qFCx9enBxS4IoF82BAq38jcb0/6XyXcqgDJr"
 ```
 
 ---
@@ -129,145 +118,66 @@ confraternityStats.total_attended (projetos)
 ## 🚧 PRÓXIMOS PASSOS (QUANDO RETORNAR)
 
 ### Prioridade ALTA:
+1. **Migração para Layout V6**
+   - [ ] Substituir template principal pelo V6
+   - [ ] Testar todos os botões de ação
+   - [ ] Validar responsividade mobile
 
-1. **Testar TODAS as funcionalidades dos botões**
-   - [ ] Criar Elo - Verificar modal e envio
-   - [ ] Mensagem - Verificar navegação
-   - [ ] Ofertar - Verificar funcionamento
-   - [ ] Confraria - Verificar modal de convite
-   - [ ] Classificar - Verificar modal de avaliação
-   - [ ] Orar - Verificar funcionamento
+2. **Validar Sistema de Confrarias**
+   - [ ] Testar criação de post vinculado a confraria
+   - [ ] Verificar auto-tagging funcionando
+   - [ ] Confirmar pontuação automática após validação IA
 
-2. **Ajustes Finais do Visual**
-   - [ ] Comparar pixel-perfect com demo V6
-   - [ ] Verificar responsividade mobile
-   - [ ] Testar em diferentes navegadores
-   - [ ] Validar todas as cores (laranja apenas em: avatar border, badge patente, botão ofertar)
-
-3. **Decisão de Deploy**
-   - [ ] Escolher entre V4 ou V6 para produção
-   - [ ] Substituir rota principal `[slug]/[rotaNumber]` pelo template escolhido
-   - [ ] Remover rotas de teste após validação
+3. **Verificar Crons**
+   - [ ] Verificar se notificações diárias às 18h estão funcionando
+   - [ ] Monitorar logs no Vercel
 
 ### Prioridade MÉDIA:
-
-4. **Otimizações**
-   - [ ] Verificar performance de imagens
-   - [ ] Otimizar carregamento de medalhas
-   - [ ] Cache de dados do perfil
-
-5. **Testes de Edge Cases**
-   - [ ] Perfil sem foto
-   - [ ] Perfil sem medalhas
-   - [ ] Perfil sem redes sociais
-   - [ ] Perfil novo (sem stats)
-
----
-
-## 📁 ARQUIVOS IMPORTANTES
-
-### Componentes Principais:
-```
-components/profile/
-├── headers/
-│   ├── improved-current-header-v6-complete.tsx (✅ ATUAL - V6)
-│   ├── improved-current-header-v6.tsx (demo original)
-│   └── improved-current-header.tsx (V4 demo)
-├── profile-page-template-v6.tsx (✅ Template V6 completo)
-├── profile-page-template-v4.tsx (✅ Template V4 completo)
-├── profile-page-template-original-backup.tsx (backup original)
-├── profile-action-buttons-v6.tsx (✅ Botões estilizados V6)
-└── profile-action-buttons.tsx (botões originais)
-```
-
-### Rotas:
-```
-app/
-├── teste-v4/[rotaNumber]/page.tsx (✅ Rota teste V4)
-├── teste-v6/[rotaNumber]/page.tsx (✅ Rota teste V6)
-└── [slug]/[rotaNumber]/page.tsx (produção atual - usar template antigo)
-```
-
-### Backup:
-```
-.backups/profile-logic-20260124/
-├── LOGIC_MAP.md (mapa completo de lógica)
-├── profile-action-buttons.tsx
-└── profile-page-template-original-backup.tsx
-```
-
----
-
-## 🔧 COMANDOS ÚTEIS
-
-### Testar localmente:
-```bash
-npm run dev
-# Acesse: http://localhost:3000/teste-v6/141018
-```
-
-### Build de produção:
-```bash
-npm run build
-```
-
-### Ver logs do Vercel:
-```bash
-vercel logs <deployment-url>
-```
+4. **Melhorias no Feed "Na Rota"**
+   - [ ] Adicionar curtidas/comentários
+   - [ ] Melhorar exibição de mídia
+   - [ ] Timeline de atividades
 
 ---
 
 ## 🐛 ISSUES CONHECIDOS
 
-### Resolvidos:
-- ✅ Build error (medalhas sem propriedade `icon`) - CORRIGIDO
-- ✅ Avatar redondo em vez de quadrado - CORRIGIDO
-- ✅ Botões sem estilo V6 - CORRIGIDO
-- ✅ Faltando cards de Vigor/Medalhas - CORRIGIDO
+### Resolvidos Hoje:
+- ✅ Deploy não aparecia no Vercel - RESOLVIDO (webhook estava desconectado)
+- ✅ Cron jobs bloqueados no plano Hobby - RESOLVIDO (ajustado para diário)
+- ✅ Tipo `slug` faltando em ElosDaRotaV13 - RESOLVIDO
 
 ### Pendentes:
-- ⚠️ Verificar se todos os botões estão com hover effect correto
-- ⚠️ Testar funcionalidade completa de cada botão
-- ⚠️ Validar responsividade em mobile
+- ⚠️ Webhook GitHub → Vercel pode falhar novamente (solução: usar CLI)
+- ⚠️ Migração V6 ainda não concluída
 
 ---
 
 ## 📊 PROGRESSO GERAL
 
-**Estimativa de conclusão:** 95%
+**Estimativa de conclusão:** 85%
 
-- ✅ Layout V6 - 100%
-- ✅ Dados integrados - 100%
-- ✅ Botões visuais - 100%
-- ✅ Efeitos glass - 100%
-- ⚠️ Testes funcionais - 60%
-- ⚠️ Validação final - 0%
+- ✅ Sistema Feed "Na Rota" - 100%
+- ✅ Validação IA - 100%
+- ✅ Sistema Confrarias - 100%
+- ✅ Deploy funcionando - 100%
+- ⚠️ Layout V6 migração - 80%
+- ⚠️ Testes completos - 50%
 
 ---
 
 ## 💡 NOTAS IMPORTANTES
 
-1. **NÃO mexer no template original** (`profile-page-template.tsx`) - está em produção
-2. **Testar SEMPRE em aba anônima** para evitar cache
-3. **Aguardar 2-3min** após push para deploy Vercel completar
+1. **Deploy**: Se o webhook automático falhar, usar `npx vercel --prod`
+2. **Crons**: Plano Hobby só permite 1x/dia - não usar expressões horárias
+3. **IA Validation**: Requer `OPENAI_API_KEY` configurada no Vercel
 4. **Cores do projeto:**
    - Verde: `#1E4D40` (principal)
-   - Laranja: `#D2691E` (apenas avatar, patente, ofertar)
+   - Laranja: `#D2691E` (avatar, patente, ofertar)
    - Background: `#1A2421` / `#2D3B2D`
-   - Texto: `#F2F4F3` / `#D1D5DB`
 
 ---
 
-## 🎯 OBJETIVO FINAL
-
-**Substituir o perfil de produção atual pelo V6** mantendo:
-- ✅ TODOS os dados e funcionalidades
-- ✅ Performance igual ou melhor
-- ✅ Visual consistente com demos V4/V6
-- ✅ Experiência do usuário preservada
-
----
-
-**Status:** 🟢 Ready for Final Testing
-**Next Session:** Validação completa e deploy para produção
+**Status:** 🟢 Produção Atualizada
+**Último Deploy:** 26/01/2026 14:23 BRT
+**Next Session:** Migração V6 + Testes Confrarias
