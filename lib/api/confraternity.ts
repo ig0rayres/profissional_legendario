@@ -4,7 +4,7 @@
 // ============================================
 
 import { createClient } from '@/lib/supabase/client'
-import { awardPoints, awardBadge } from '@/lib/api/gamification'
+import { awardPoints, awardBadge, awardAchievement } from '@/lib/api/gamification'
 
 // Types
 export interface ConfraternityInvite {
@@ -506,19 +506,23 @@ export async function completeConfraternity(
             const monthlyCount = monthlyConfs?.length || 0
             console.log('[Confraternity] 📊 Confrarias este mês:', monthlyCount)
 
-            // networker_ativo: 2 confrarias no mês
+            // networker_ativo: 2 confrarias no mês (Medalha Permanente se definida assim, ou placeholder)
             if (monthlyCount >= 2) {
-                await awardBadge(userId, 'networker_ativo')
+                // await awardBadge(userId, 'networker_ativo') // Comentado se não existir a medalha
             }
-            // lider_confraria: 5 confrarias no mês
+
+            // 🏆 PROEZA MENSAL: 5 Confrarias no Mês
             if (monthlyCount >= 5) {
-                console.log('[Confraternity] 🎖️ Concedendo medalha Líder de Confraria...')
-                await awardBadge(userId, 'lider_confraria')
+                console.log('[Confraternity] 🏆 Verificando proeza mensal: 5 Confrarias...')
+                await awardAchievement(userId, '5_confrarias_mes')
+
+                // Manter medalha antiga para histórico se necessário, ou remover
+                // await awardBadge(userId, 'lider_confraria') 
             }
+
             // mestre_conexoes: 10 confrarias no mês
             if (monthlyCount >= 10) {
-                console.log('[Confraternity] 🎖️ Concedendo medalha Mestre das Conexões...')
-                await awardBadge(userId, 'mestre_conexoes')
+                // await awardBadge(userId, 'mestre_conexoes')
             }
         } catch (gamifError) {
             console.error('Gamification error:', gamifError)

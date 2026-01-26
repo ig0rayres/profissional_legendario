@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { getProfileUrl } from '@/lib/profile/utils'
 import { CreatePostModal } from '@/components/social/create-post-modal'
 import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 
@@ -287,6 +288,7 @@ interface ElosDaRotaV13Props {
         full_name: string
         avatar_url: string | null
         slug?: string
+        rota_number?: string | null
         rank_name?: string
     }>
     pendingCount?: number
@@ -320,8 +322,8 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                     id,
                     requester_id,
                     addressee_id,
-                    requester:profiles!user_connections_requester_id_fkey(id, full_name, avatar_url, slug),
-                    addressee:profiles!user_connections_addressee_id_fkey(id, full_name, avatar_url, slug)
+                    requester:profiles!user_connections_requester_id_fkey(id, full_name, avatar_url, slug, rota_number),
+                    addressee:profiles!user_connections_addressee_id_fkey(id, full_name, avatar_url, slug, rota_number)
                 `)
                 .eq('status', 'accepted')
                 .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
@@ -346,6 +348,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                     return {
                         id: partner.id,
                         slug: partner.slug,
+                        rota_number: partner.rota_number,
                         full_name: partner.full_name || 'Usuário',
                         avatar_url: partner.avatar_url,
                         rank_name: 'Veterano' // Placeholder
@@ -437,7 +440,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                             {connections.slice(0, 12).map((conn) => (
                                 <Link
                                     key={conn.id}
-                                    href={`/profile/${conn.slug || conn.id}`}
+                                    href={getProfileUrl({ full_name: conn.full_name, slug: conn.slug, rota_number: conn.rota_number })}
                                     className="group flex flex-col items-center text-center"
                                 >
                                     <div className="relative mb-2">

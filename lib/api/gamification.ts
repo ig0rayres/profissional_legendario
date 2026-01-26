@@ -309,6 +309,40 @@ export async function awardBadge(
 }
 
 /**
+ * Grant an ACHIEVEMENT to a user (Server-side API)
+ */
+export async function awardAchievement(
+    userId: string,
+    achievementId: string
+): Promise<{ success: boolean; alreadyOwned: boolean; error?: string }> {
+    try {
+        console.log(`[awardAchievement] Granting ${achievementId} to ${userId}`)
+
+        const response = await fetch('/api/gamification/award-achievement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, achievementId })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            console.error('[awardAchievement] API Error:', data.error)
+            return { success: false, alreadyOwned: false, error: data.error }
+        }
+
+        return {
+            success: data.success,
+            alreadyOwned: data.alreadyOwned,
+            error: data.error
+        }
+    } catch (error: any) {
+        console.error('[awardAchievement] Exception:', error)
+        return { success: false, alreadyOwned: false, error: error.message }
+    }
+}
+
+/**
  * Get user's gamification stats
  */
 export async function getUserGamificationStats(
