@@ -147,4 +147,11 @@ export interface CompleteProfileData {
     ratingStats: RatingStats | null
     projectsCompleted?: number
     projectsInProgress?: number
+    connections?: Array<{
+        id: string
+        full_name: string
+        avatar_url: string | null
+        rank_name?: string
+    }>
+    pendingConnectionsCount?: number
 }
