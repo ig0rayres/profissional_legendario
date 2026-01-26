@@ -522,16 +522,80 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
         }
     }, [userId, propConfraternities])
 
+    const [showInvitesPopup, setShowInvitesPopup] = useState(false)
+    const [pendingInvites, setPendingInvites] = useState<Array<{
+        id: string
+        sender: { id: string; full_name: string; avatar_url: string | null }
+        proposed_date: string | null
+        location: string | null
+        message: string | null
+    }>>([])
+    const [processingInvite, setProcessingInvite] = useState<string | null>(null)
+
     async function loadPendingInvites() {
         if (!userId) return
         try {
-            const { count } = await supabase
+            const { data, count } = await supabase
                 .from('confraternity_invites')
-                .select('*', { count: 'exact', head: true })
+                .select(`
+                    id, proposed_date, location, message,
+                    sender:profiles!confraternity_invites_sender_id_fkey(id, full_name, avatar_url)
+                `, { count: 'exact' })
                 .eq('receiver_id', userId)
                 .eq('status', 'pending')
+                .order('created_at', { ascending: false })
+
             setPendingInvitesCount(count || 0)
+            if (data) {
+                setPendingInvites(data.map((inv: any) => ({
+                    id: inv.id,
+                    sender: inv.sender?.[0] || inv.sender || { id: '', full_name: 'Usuário', avatar_url: null },
+                    proposed_date: inv.proposed_date,
+                    location: inv.location,
+                    message: inv.message
+                })))
+            }
         } catch (e) { console.error(e) }
+    }
+
+    async function handleAcceptInvite(inviteId: string) {
+        setProcessingInvite(inviteId)
+        try {
+            const { acceptConfraternityInvite } = await import('@/lib/api/confraternity')
+            const result = await acceptConfraternityInvite(inviteId, userId!)
+            if (result.success) {
+                // Remover da lista local
+                setPendingInvites(prev => prev.filter(i => i.id !== inviteId))
+                setPendingInvitesCount(prev => Math.max(0, prev - 1))
+                // Recarregar confrarias
+                loadConfraternities()
+                // Toast de sucesso
+                const { toast } = await import('sonner')
+                toast.success('Convite aceito!', { description: '+10 Vigor' })
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setProcessingInvite(null)
+        }
+    }
+
+    async function handleRejectInvite(inviteId: string) {
+        setProcessingInvite(inviteId)
+        try {
+            const { rejectConfraternityInvite } = await import('@/lib/api/confraternity')
+            const result = await rejectConfraternityInvite(inviteId, userId!)
+            if (result.success) {
+                setPendingInvites(prev => prev.filter(i => i.id !== inviteId))
+                setPendingInvitesCount(prev => Math.max(0, prev - 1))
+                const { toast } = await import('sonner')
+                toast.info('Convite recusado')
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setProcessingInvite(null)
+        }
     }
 
     async function loadCounters() {
@@ -670,13 +734,90 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                             <span className="text-[9px] uppercase text-gray-600 font-medium">Total</span>
                         </div>
                         {pendingInvitesCount > 0 && (
-                            <div className="relative cursor-pointer ml-2" onClick={() => window.location.href = '/elo-da-rota/confraria'}>
-                                <div className="bg-[#D2691E]/10 p-2 rounded-lg border border-[#D2691E]/20 hover:bg-[#D2691E]/20 transition-colors animate-pulse">
-                                    <Bell className="w-5 h-5 text-[#D2691E]" />
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                            <div className="relative ml-2">
+                                <div
+                                    onClick={() => setShowInvitesPopup(!showInvitesPopup)}
+                                    className="bg-[#D2691E] p-2 rounded-lg shadow-md hover:bg-[#B85715] transition-colors cursor-pointer"
+                                >
+                                    <Bell className="w-5 h-5 text-white" />
+                                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-[11px] font-bold text-white flex items-center justify-center shadow-md border-2 border-white">
                                         {pendingInvitesCount}
                                     </span>
                                 </div>
+
+                                {/* Popup de Convites Pendentes */}
+                                {showInvitesPopup && (
+                                    <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                                        <div className="bg-gradient-to-r from-[#D2691E] to-[#B85715] px-4 py-3">
+                                            <h4 className="text-white font-bold text-sm">Convites Pendentes</h4>
+                                            <p className="text-white/80 text-xs">{pendingInvitesCount} convite(s) aguardando</p>
+                                        </div>
+                                        <div className="max-h-72 overflow-y-auto">
+                                            {pendingInvites.map((invite) => (
+                                                <div key={invite.id} className="p-3 border-b border-gray-100 hover:bg-gray-50">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <div className="w-10 h-10 rounded-full bg-[#D2691E]/20 flex items-center justify-center overflow-hidden">
+                                                            {invite.sender.avatar_url ? (
+                                                                <Image
+                                                                    src={invite.sender.avatar_url}
+                                                                    alt={invite.sender.full_name}
+                                                                    width={40}
+                                                                    height={40}
+                                                                    className="object-cover"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-sm font-bold text-[#D2691E]">
+                                                                    {invite.sender.full_name?.charAt(0) || '?'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-gray-900 text-sm truncate">
+                                                                {invite.sender.full_name}
+                                                            </p>
+                                                            {invite.proposed_date && (
+                                                                <p className="text-xs text-gray-500">
+                                                                    {new Date(invite.proposed_date).toLocaleDateString('pt-BR', {
+                                                                        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                                                                    })}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {invite.message && (
+                                                        <p className="text-xs text-gray-600 mb-2 bg-gray-50 p-2 rounded italic">
+                                                            "{invite.message}"
+                                                        </p>
+                                                    )}
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleAcceptInvite(invite.id)}
+                                                            disabled={processingInvite === invite.id}
+                                                            className="flex-1 py-1.5 px-3 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                                                        >
+                                                            {processingInvite === invite.id ? 'Processando...' : '✓ Aceitar'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRejectInvite(invite.id)}
+                                                            disabled={processingInvite === invite.id}
+                                                            className="flex-1 py-1.5 px-3 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                                                        >
+                                                            ✗ Recusar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="p-2 bg-gray-50 border-t">
+                                            <button
+                                                onClick={() => setShowInvitesPopup(false)}
+                                                className="w-full py-2 text-xs text-gray-600 hover:text-gray-900"
+                                            >
+                                                Fechar
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
