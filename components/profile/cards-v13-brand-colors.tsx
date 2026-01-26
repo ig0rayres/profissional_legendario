@@ -699,8 +699,11 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group relative">
+            {/* Glass animation container - isolated with overflow-hidden */}
+            <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            </div>
 
             <CardContent className="p-5 relative">
                 <div className="flex items-center justify-between mb-4">
