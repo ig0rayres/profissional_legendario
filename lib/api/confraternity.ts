@@ -410,14 +410,64 @@ export async function completeConfraternity(
             confraternityId = newConf.id
         }
 
-        // 4. Marcar convite como completo
-        await supabase
-            .from('confraternity_invites')
-            .update({
-                status: 'completed',
-                completed_at: new Date().toISOString()
-            })
-            .eq('id', inviteId)
+        // 4. Determine partner ID
+        const partnerId = userId === invite.sender_id ? invite.receiver_id : invite.sender_id
+
+        // 5. Update invite status based on whether partner already confirmed
+        // Check if partner already added their testimonial
+        const { data: confCheck } = await supabase
+            .from('confraternities')
+            .select('testimonial_member1, testimonial_member2')
+            .eq('id', confraternityId)
+            .single()
+
+        const partnerTestimonialField = userId === invite.sender_id ? 'testimonial_member2' : 'testimonial_member1'
+        const partnerHasConfirmed = confCheck?.[partnerTestimonialField] ? true : false
+
+        if (partnerHasConfirmed) {
+            // Both have confirmed, mark as completed
+            await supabase
+                .from('confraternity_invites')
+                .update({
+                    status: 'completed',
+                    completed_at: new Date().toISOString()
+                })
+                .eq('id', inviteId)
+        } else {
+            // Partner still needs to confirm
+            await supabase
+                .from('confraternity_invites')
+                .update({
+                    status: 'pending_partner'
+                })
+                .eq('id', inviteId)
+
+            // 6. Notify partner to confirm
+            const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', userId)
+                .single()
+
+            const userName = userProfile?.full_name || 'Seu parceiro'
+
+            await supabase
+                .from('notifications')
+                .insert({
+                    user_id: partnerId,
+                    type: 'confraternity_pending_confirmation',
+                    title: '✅ Confraria Registrada - Confirme sua participação!',
+                    body: `${userName} registrou a confraria. Adicione seu depoimento e ganhe Vigor!`,
+                    priority: 'high',
+                    action_url: `/elo-da-rota/confraria/confirmar/${confraternityId}`,
+                    metadata: {
+                        confraternity_id: confraternityId,
+                        invite_id: inviteId,
+                        from_user_id: userId,
+                        from_user_name: userName
+                    }
+                })
+        }
 
         // 5. Gamificação
         try {
@@ -666,5 +716,156 @@ export async function getPublicConfraternities(
     } catch (error) {
         console.error('Exception fetching public confraternities:', error)
         return []
+    }
+}
+
+/**
+ * Parceiro confirma participação na confraria e adiciona depoimento
+ * Esta função é chamada quando o segundo membro confirma a confraria registrada pelo primeiro
+ */
+export async function confirmConfraternityPartner(
+    confraternityId: string,
+    userId: string,
+    data: {
+        testimonial: string
+        approvePublication: boolean
+    }
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const supabase = createClient()
+
+        // 1. Buscar a confraria
+        const { data: confraternity, error: confError } = await supabase
+            .from('confraternities')
+            .select('*, invite:confraternity_invites!invite_id(*)')
+            .eq('id', confraternityId)
+            .single()
+
+        if (confError || !confraternity) {
+            return { success: false, error: 'Confraria não encontrada' }
+        }
+
+        // 2. Verificar se usuário é parte da confraria
+        if (confraternity.member1_id !== userId && confraternity.member2_id !== userId) {
+            return { success: false, error: 'Você não faz parte desta confraria' }
+        }
+
+        // 3. Determinar qual campo de depoimento usar
+        const testimonialField = confraternity.member1_id === userId
+            ? 'testimonial_member1'
+            : 'testimonial_member2'
+
+        // 4. Atualizar a confraria com o depoimento do parceiro
+        const updateData: any = {
+            [testimonialField]: data.testimonial
+        }
+
+        // Se parceiro não aprovou publicação, mudar visibilidade para privado
+        if (!data.approvePublication && confraternity.visibility === 'public') {
+            updateData.visibility = 'connections' // Ou 'private'
+        }
+
+        const { error: updateError } = await supabase
+            .from('confraternities')
+            .update(updateData)
+            .eq('id', confraternityId)
+
+        if (updateError) {
+            return { success: false, error: updateError.message }
+        }
+
+        // 5. Marcar convite como completed (ambos confirmaram)
+        if (confraternity.invite_id) {
+            await supabase
+                .from('confraternity_invites')
+                .update({
+                    status: 'completed',
+                    completed_at: new Date().toISOString()
+                })
+                .eq('id', confraternity.invite_id)
+        }
+
+        // 6. Gamificação para o parceiro
+        try {
+            // +50 XP por confirmar participação
+            await awardPoints(
+                userId,
+                50,
+                'confraternity_confirmed',
+                'Confirmou participação na confraria'
+            )
+
+            // +15 XP por adicionar depoimento
+            if (data.testimonial) {
+                await awardPoints(
+                    userId,
+                    15,
+                    'confraternity_testimonial',
+                    'Adicionou depoimento na confraria'
+                )
+            }
+
+            // Verificar badges
+            const { data: allUserConfs } = await supabase
+                .from('confraternities')
+                .select('id')
+                .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
+
+            const totalConfs = allUserConfs?.length || 0
+
+            if (totalConfs === 1) {
+                await awardBadge(userId, 'primeira_confraria')
+            }
+
+            // Proezas mensais
+            const startOfMonth = new Date()
+            startOfMonth.setDate(1)
+            startOfMonth.setHours(0, 0, 0, 0)
+
+            const { data: monthlyConfs } = await supabase
+                .from('confraternities')
+                .select('id')
+                .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
+                .gte('date_occurred', startOfMonth.toISOString())
+
+            const monthlyCount = monthlyConfs?.length || 0
+
+            if (monthlyCount >= 5) {
+                await awardAchievement(userId, '5_confrarias_mes')
+            }
+        } catch (gamifError) {
+            console.error('[ConfirmPartner] Gamification error:', gamifError)
+        }
+
+        // 7. Notificar o primeiro membro que o parceiro confirmou
+        const partnerId = confraternity.member1_id === userId
+            ? confraternity.member2_id
+            : confraternity.member1_id
+
+        const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', userId)
+            .single()
+
+        await supabase
+            .from('notifications')
+            .insert({
+                user_id: partnerId,
+                type: 'confraternity_partner_confirmed',
+                title: '🎉 Confraria Confirmada!',
+                body: `${userProfile?.full_name || 'Seu parceiro'} confirmou a participação na confraria!`,
+                priority: 'normal',
+                action_url: `/elo-da-rota/confraria/galeria`,
+                metadata: {
+                    confraternity_id: confraternityId,
+                    from_user_id: userId
+                }
+            })
+
+        return { success: true }
+    } catch (error: any) {
+        console.error('[ConfirmPartner] Exception:', error)
+        return { success: false, error: error.message }
     }
 }
