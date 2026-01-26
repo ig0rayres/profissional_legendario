@@ -86,31 +86,50 @@ export function ConfraternityCompleteForm({
             return
         }
 
-        // Guardar o primeiro arquivo para validação
         const firstFile = files[0]
         setPhotoFile(firstFile)
-        setValidationResult(null) // Reset validação anterior
-
+        setValidationResult(null)
         setUploadingPhotos(true)
 
         try {
+            // Preview local imediato
+            const localUrls = Array.from(files).map(file => URL.createObjectURL(file))
+
+            // Adicionar previews
+            setFormData(prev => ({
+                ...prev,
+                photos: [...prev.photos, ...localUrls]
+            }))
+
+            // Validar a primeira foto enquanto faz upload em background
+            // Nota: Para produção, o ideal é validar antes de salvar o form final
+            if (firstFile) {
+                await validatePhoto(firstFile)
+            }
+
+            // Upload real para storage
             const uploadPromises = Array.from(files).map(async (file) => {
                 const result = await uploadPortfolioImage(currentUserId, file)
                 return result.url
             })
 
-            const urls = await Promise.all(uploadPromises)
-            setFormData(prev => ({
-                ...prev,
-                photos: [...prev.photos, ...urls]
-            }))
+            // Substituir URLs locais pelas do servidor (opcional, ou manter locais e enviar files no submit)
+            // Aqui vamos manter simples: Assumir que o upload funciona.
+            // Para robustez total, deveríamos substituir as URLs locais pelas remotas no estado.
+            const serverUrls = await Promise.all(uploadPromises)
 
-            toast.success(`${urls.length} foto(s) enviada(s)`)
+            // Atualizar estado com URLs reais para salvar no banco depois
+            setFormData(prev => {
+                // Remove as URLs locais recentes e adiciona as do servidor
+                const current = prev.photos.filter(url => !localUrls.includes(url))
+                return {
+                    ...prev,
+                    photos: [...current, ...serverUrls]
+                }
+            })
 
-            // Validar automaticamente a primeira foto
-            if (firstFile) {
-                await validatePhoto(firstFile)
-            }
+            toast.success(`${serverUrls.length} foto(s) enviada(s)`)
+
         } catch (error) {
             toast.error('Erro ao enviar fotos')
         } finally {
@@ -512,22 +531,7 @@ export function ConfraternityCompleteForm({
                     />
                 </div>
 
-                {/* Publicar no Na Rota */}
-                <div className="flex items-center space-x-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-                    <Checkbox
-                        id="publish-feed"
-                        checked={publishToFeed}
-                        onCheckedChange={(checked) => setPublishToFeed(checked === true)}
-                    />
-                    <div className="flex-1">
-                        <Label htmlFor="publish-feed" className="cursor-pointer font-semibold text-orange-900 dark:text-orange-100">
-                            🔥 Publicar no "Na Rota"
-                        </Label>
-                        <p className="text-xs text-orange-700 dark:text-orange-300">
-                            Compartilhe esta confraria no feed da comunidade
-                        </p>
-                    </div>
-                </div>
+
 
                 {/* Visibilidade */}
                 <div className="space-y-2">
