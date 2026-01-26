@@ -397,7 +397,7 @@ export function NotificationCenter() {
                         className="relative hover:bg-white/10 transition-colors group"
                         data-notification-trigger
                     >
-                        <Bell className="w-6 h-6 text-accent fill-accent/20 group-hover:text-accent transition-colors" />
+                        <Bell className="w-5 h-5 text-accent fill-accent/20 group-hover:text-accent transition-colors" />
                         {unreadCount > 0 && (
                             <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-black text-white glow-orange animate-in zoom-in">
                                 {unreadCount}

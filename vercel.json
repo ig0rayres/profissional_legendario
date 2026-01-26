@@ -3,6 +3,11 @@
         {
             "path": "/api/cron/confraternity-reminders",
             "schedule": "0 9 * * *"
+        },
+        {
+            "path": "/api/cron/send-confraternity-notifications",
+            "schedule": "0 * * * *",
+            "comment": "Envia notificações 4h após confrarias - Roda a cada hora"
         }
     ]
 }

@@ -15,6 +15,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { CreatePostModal } from '@/components/social/create-post-modal'
+import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 
 
 /**
@@ -313,39 +314,51 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
         try {
             // Buscar conexões aceitas
             const { data: acceptedData, error: acceptedError } = await supabase
-                .from('elo_invites')
+                .from('user_connections')
                 .select(`
                     id,
-                    sender_id,
-                    receiver_id,
-                    sender:profiles!elo_invites_sender_id_fkey(id, full_name, avatar_url),
-                    receiver:profiles!elo_invites_receiver_id_fkey(id, full_name, avatar_url)
+                    requester_id,
+                    addressee_id,
+                    requester:profiles!user_connections_requester_id_fkey(id, full_name, avatar_url, slug),
+                    addressee:profiles!user_connections_addressee_id_fkey(id, full_name, avatar_url, slug)
                 `)
                 .eq('status', 'accepted')
-                .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-                .limit(6)
+                .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+                .limit(12)
 
             if (acceptedError) throw acceptedError
 
+            console.log('[Connections] Raw data:', acceptedData)
+
             // Formatar conexões
-            const formatted = (acceptedData || []).map((invite: any) => {
-                const isReceiver = invite.receiver_id === userId
-                const partner = isReceiver ? invite.sender : invite.receiver
-                return {
-                    id: partner.id,
-                    full_name: partner.full_name,
-                    avatar_url: partner.avatar_url,
-                    rank_name: 'Veterano' // Placeholder
-                }
-            })
+            const formatted = (acceptedData || [])
+                .map((connection: any) => {
+                    const isAddressee = connection.addressee_id === userId
+                    const partner = isAddressee ? connection.requester : connection.addressee
+
+                    // Verificar se partner existe e tem dados válidos
+                    if (!partner || !partner.id) {
+                        console.warn('[Connections] Partner inválido:', connection)
+                        return null
+                    }
+
+                    return {
+                        id: partner.id,
+                        slug: partner.slug,
+                        full_name: partner.full_name || 'Usuário',
+                        avatar_url: partner.avatar_url,
+                        rank_name: 'Veterano' // Placeholder
+                    }
+                })
+                .filter(Boolean) // Remove conexões inválidas
 
             setConnections(formatted)
 
             // Buscar convites pendentes
             const { count } = await supabase
-                .from('elo_invites')
+                .from('user_connections')
                 .select('*', { count: 'exact', head: true })
-                .eq('receiver_id', userId)
+                .eq('addressee_id', userId)
                 .eq('status', 'pending')
 
             setPendingCount(count || 0)
@@ -418,34 +431,25 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                     </div>
                 ) : (
                     <>
-                        {/* GRID 3 COLUNAS - IGUAL AO CARD ATUAL */}
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                            {connections.slice(0, 6).map((conn) => (
+                        {/* GRID 4 COLUNAS - Mostra até 12 elos */}
+                        <div className="grid grid-cols-4 gap-3 mb-4">
+                            {connections.slice(0, 12).map((conn) => (
                                 <Link
                                     key={conn.id}
-                                    href={`/profile/${conn.id}`}
+                                    href={`/profile/${conn.slug || conn.id}`}
                                     className="group flex flex-col items-center text-center"
                                 >
                                     <div className="relative mb-2">
-                                        {conn.avatar_url ? (
-                                            <Image
-                                                src={conn.avatar_url}
-                                                alt={conn.full_name}
-                                                width={48}
-                                                height={48}
-                                                className="rounded-full border-2 border-[#1E4D40]/20 group-hover:border-[#1E4D40] transition-all shadow-md group-hover:shadow-lg"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-full border-2 border-[#1E4D40]/20 bg-gradient-to-br from-[#1E4D40]/10 to-[#2A6B5A]/10 flex items-center justify-center group-hover:border-[#1E4D40] transition-all shadow-md group-hover:shadow-lg">
-                                                <span className="text-base font-bold text-[#1E4D40]">
-                                                    {conn.full_name.charAt(0).toUpperCase()}
-                                                </span>
-                                            </div>
-                                        )}
+                                        <LogoFrameAvatar
+                                            src={conn.avatar_url}
+                                            alt={conn.full_name}
+                                            size="sm"
+                                            className="w-12 h-12"
+                                        />
                                         {/* Badge de patente no canto */}
                                         {conn.rank_name && (
                                             <div
-                                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-[#D2691E] to-[#B85715] border-2 border-white flex items-center justify-center shadow-md"
+                                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-[#1E4D40] to-[#2A6B5A] border-2 border-white flex items-center justify-center shadow-md"
                                                 title={conn.rank_name}
                                             >
                                                 <Shield className="w-2.5 h-2.5 text-white" />
@@ -459,7 +463,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                             ))}
                         </div>
 
-                        {connections.length > 6 && (
+                        {connections.length > 12 && (
                             <div className="text-center pt-2 border-t border-gray-200">
                                 <Link
                                     href={`/profile/${userId}/connections`}
@@ -493,6 +497,7 @@ interface ConfraternityV13Props {
 
 export function ConfraternityStatsV13({ confraternities: propConfraternities, userId }: ConfraternityV13Props) {
     const [confraternities, setConfraternities] = useState(propConfraternities || [])
+    const [counters, setCounters] = useState({ current_month_count: 0, total_count: 0 })
     const [loading, setLoading] = useState(!propConfraternities && !!userId)
     const supabase = createClient()
 
@@ -500,14 +505,38 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
         // Se confraternities foram passadas como prop, não carrega
         if (propConfraternities) {
             setConfraternities(propConfraternities)
-            return
         }
 
         // Se tem userId, carrega os dados
         if (userId) {
             loadConfraternities()
+            loadCounters()
         }
     }, [userId, propConfraternities])
+
+    async function loadCounters() {
+        try {
+            const { data, error } = await supabase
+                .from('user_confraternity_stats')
+                .select('current_month_count, total_count')
+                .eq('user_id', userId)
+                .single()
+
+            if (error) {
+                console.error('[ConfraternityStatsV13] Error loading counters:', error)
+                return
+            }
+
+            if (data) {
+                setCounters({
+                    current_month_count: data.current_month_count || 0,
+                    total_count: data.total_count || 0
+                })
+            }
+        } catch (err) {
+            console.error('[ConfraternityStatsV13] Exception loading counters:', err)
+        }
+    }
 
     async function loadConfraternities() {
         try {
@@ -590,17 +619,36 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
 
             <CardContent className="p-5 relative">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-transform duration-300">
-                        <Swords className="w-5 h-5 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-transform duration-300">
+                            <Swords className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-[#2D3142]">
+                                Confrarias
+                            </h3>
+                            <p className="text-xs text-gray-600">
+                                Próximos encontros
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="text-sm font-bold text-[#2D3142]">
-                            Confrarias
-                        </h3>
-                        <p className="text-xs text-gray-600">
-                            Próximos encontros
-                        </p>
+
+                    {/* Contadores de confrarias realizadas */}
+                    <div className="flex items-center gap-2">
+                        {/* Mês atual */}
+                        <div className="flex flex-col items-center bg-gradient-to-br from-[#D2691E]/10 to-[#B85715]/5 border border-[#D2691E]/20 rounded-lg px-3 py-1.5">
+                            <span className="text-lg font-bold text-[#D2691E]">{counters.current_month_count}</span>
+                            <span className="text-[9px] uppercase text-gray-600 font-medium">
+                                {new Date().toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}
+                            </span>
+                        </div>
+
+                        {/* Total */}
+                        <div className="flex flex-col items-center bg-gradient-to-br from-green-600/10 to-green-700/5 border border-green-600/20 rounded-lg px-3 py-1.5">
+                            <span className="text-lg font-bold text-green-700">{counters.total_count}</span>
+                            <span className="text-[9px] uppercase text-gray-600 font-medium">Total</span>
+                        </div>
                     </div>
                 </div>
 

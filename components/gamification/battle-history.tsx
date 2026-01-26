@@ -371,7 +371,7 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                                 <span className="text-gray-600">#{currentSeason.ranking_position || userRankingPosition}</span>
                                             </div>
                                         )}
-                                        <span className="text-sm font-bold text-[#D2691E]">
+                                        <span className="text-sm font-bold text-[#D2691E] whitespace-nowrap">
                                             🔥 {currentSeason.total_xp.toLocaleString('pt-BR')} pts
                                         </span>
                                     </div>

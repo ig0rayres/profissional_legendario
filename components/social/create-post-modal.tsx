@@ -47,6 +47,8 @@ export function CreatePostModal({
     const [selectedMedalId, setSelectedMedalId] = useState<string | undefined>(preselectedMedalId)
     const [selectedConfraternityId, setSelectedConfraternityId] = useState<string | undefined>(preselectedConfraternityId)
     const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(preselectedProjectId)
+    const [taggedUserId, setTaggedUserId] = useState<string | undefined>()
+    const [taggedUserName, setTaggedUserName] = useState<string | undefined>()
 
     // Dados para seletores
     const [confraternities, setConfraternities] = useState<any[]>([])
@@ -64,10 +66,18 @@ export function CreatePostModal({
 
     async function loadUserData() {
         try {
-            // Carregar confrarias aceitas
+            // Carregar confrarias aceitas com dados do parceiro
             const { data: confData } = await supabase
                 .from('confraternity_invites')
-                .select('id, proposed_date, location, sender_id, receiver_id')
+                .select(`
+                    id, 
+                    proposed_date, 
+                    location, 
+                    sender_id, 
+                    receiver_id,
+                    sender:profiles!sender_id(id, full_name),
+                    receiver:profiles!receiver_id(id, full_name)
+                `)
                 .eq('status', 'accepted')
                 .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
                 .order('proposed_date', { ascending: false })
@@ -199,6 +209,7 @@ export function CreatePostModal({
                     medal_id: selectedMedalId || null,
                     confraternity_id: selectedConfraternityId || null,
                     project_id: selectedProjectId || null,
+                    tagged_user_id: taggedUserId || null,
                     validation_status: selectedMedalId ? 'pending' : null
                 })
                 .select()
@@ -337,7 +348,25 @@ export function CreatePostModal({
                                 <Users className="w-4 h-4" />
                                 Confraria
                             </label>
-                            <Select value={selectedConfraternityId} onValueChange={setSelectedConfraternityId}>
+                            <Select
+                                value={selectedConfraternityId}
+                                onValueChange={(value) => {
+                                    setSelectedConfraternityId(value)
+                                    // Auto-marcar participante
+                                    if (value && value !== 'none') {
+                                        const conf = confraternities.find(c => c.id === value)
+                                        if (conf) {
+                                            const partnerId = conf.sender_id === userId ? conf.receiver_id : conf.sender_id
+                                            const partnerData = conf.sender_id === userId ? conf.receiver : conf.sender
+                                            setTaggedUserId(partnerId)
+                                            setTaggedUserName(partnerData?.full_name || 'Parceiro')
+                                        }
+                                    } else {
+                                        setTaggedUserId(undefined)
+                                        setTaggedUserName(undefined)
+                                    }
+                                }}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Nenhuma confraria" />
                                 </SelectTrigger>
@@ -350,6 +379,16 @@ export function CreatePostModal({
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {/* Mostrar quem está sendo marcado */}
+                            {taggedUserId && taggedUserName && (
+                                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                    <Users className="w-4 h-4 text-green-600" />
+                                    <p className="text-xs text-green-700">
+                                        Marcando: <span className="font-semibold">{taggedUserName}</span>
+                                    </p>
+                                    <p className="text-xs text-gray-500">→ Ambos ganham pontos!</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Projeto */}

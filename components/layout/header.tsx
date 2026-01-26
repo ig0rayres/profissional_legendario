@@ -12,6 +12,7 @@ import { MOCK_USER_GAMIFICATION, MOCK_RANKS } from '@/lib/data/mock'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { NotificationCenter } from '@/components/notifications/notification-center'
 import { CriticalNoticeModal } from '@/components/notifications/critical-notice-modal'
+import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 
 export function Header() {
     const [menuOpen, setMenuOpen] = useState(false)
@@ -97,21 +98,14 @@ export function Header() {
                                 <div className="flex items-center gap-4">
                                     {/* Avatar com Notificação */}
                                     <div className="relative">
-                                        <div className="w-12 h-12 rounded-full border-2 border-primary/30 overflow-hidden bg-primary/10 flex items-center justify-center">
-                                            {user.avatar_url ? (
-                                                <Image
-                                                    src={user.avatar_url}
-                                                    alt={user.full_name}
-                                                    width={48}
-                                                    height={48}
-                                                    className="object-cover w-full h-full"
-                                                />
-                                            ) : (
-                                                <User className="w-6 h-6 text-primary/60" />
-                                            )}
-                                        </div>
-                                        {/* Sino de Notificação na parte debaixo do Avatar */}
-                                        <div className="absolute -bottom-4 -right-4">
+                                        <LogoFrameAvatar
+                                            src={user.avatar_url}
+                                            alt={user.full_name}
+                                            size="sm"
+                                            className="w-16 h-16"
+                                        />
+                                        {/* Sino de Notificação sobre o frame inferior */}
+                                        <div className="absolute -bottom-2 -right-2">
                                             <NotificationCenter />
                                         </div>
                                     </div>

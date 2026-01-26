@@ -28,13 +28,20 @@ interface ConfraternityStatsProps {
     isOwnProfile?: boolean
 }
 
+interface ConfraternityCounters {
+    current_month_count: number
+    total_count: number
+}
+
 export function ConfraternityStats({ userId, isOwnProfile = false }: ConfraternityStatsProps) {
     const [confraternities, setConfraternities] = useState<UpcomingConfraternity[]>([])
+    const [counters, setCounters] = useState<ConfraternityCounters>({ current_month_count: 0, total_count: 0 })
     const [loading, setLoading] = useState(true)
     const supabase = createClient()
 
     useEffect(() => {
         loadConfraternities()
+        loadCounters()
     }, [userId])
 
     async function loadConfraternities() {
@@ -110,6 +117,31 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
         setLoading(false)
     }
 
+    async function loadCounters() {
+        try {
+            // Buscar estatísticas de confrarias validadas
+            const { data, error } = await supabase
+                .from('user_confraternity_stats')
+                .select('current_month_count, total_count')
+                .eq('user_id', userId)
+                .single()
+
+            if (error) {
+                console.error('[ConfraternityStats] Error loading counters:', error)
+                return
+            }
+
+            if (data) {
+                setCounters({
+                    current_month_count: data.current_month_count || 0,
+                    total_count: data.total_count || 0
+                })
+            }
+        } catch (err) {
+            console.error('[ConfraternityStats] Exception loading counters:', err)
+        }
+    }
+
     if (loading) {
         return (
             <Card className="bg-white border border-gray-200 shadow-md">
@@ -137,17 +169,34 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
 
             <CardContent className="p-5 relative">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-transform duration-300">
-                        <Swords className="w-5 h-5 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-transform duration-300">
+                            <Swords className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-[#2D3142]">
+                                Confrarias
+                            </h3>
+                            <p className="text-xs text-gray-600">
+                                Próximos encontros
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="text-sm font-bold text-[#2D3142]">
-                            Confrarias
-                        </h3>
-                        <p className="text-xs text-gray-600">
-                            Próximos encontros
-                        </p>
+
+                    {/* Contador de confrarias realizadas */}
+                    <div className="flex items-center gap-2">
+                        {/* Mês atual */}
+                        <div className="flex flex-col items-center bg-gradient-to-br from-[#D2691E]/10 to-[#B85715]/5 border border-[#D2691E]/20 rounded-lg px-3 py-1.5">
+                            <span className="text-lg font-bold text-[#D2691E]">{counters.current_month_count}</span>
+                            <span className="text-[9px] uppercase text-gray-600 font-medium">Mês</span>
+                        </div>
+
+                        {/* Total */}
+                        <div className="flex flex-col items-center bg-gradient-to-br from-green-600/10 to-green-700/5 border border-green-600/20 rounded-lg px-3 py-1.5">
+                            <span className="text-lg font-bold text-green-700">{counters.total_count}</span>
+                            <span className="text-[9px] uppercase text-gray-600 font-medium">Total</span>
+                        </div>
                     </div>
                 </div>
 
