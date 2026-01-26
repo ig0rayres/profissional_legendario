@@ -286,6 +286,7 @@ interface ElosDaRotaV13Props {
         id: string
         full_name: string
         avatar_url: string | null
+        slug?: string
         rank_name?: string
     }>
     pendingCount?: number

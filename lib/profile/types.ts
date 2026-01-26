@@ -13,6 +13,7 @@ export interface ProfileData {
     pista?: string
     slug?: string       // URL amigável do perfil
     rota_number?: string
+    page_background?: string // Tema de fundo escolhido
     role: 'user' | 'professional' | 'admin'
     verification_status: 'pending' | 'verified' | 'rejected'
     created_at: string

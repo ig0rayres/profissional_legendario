@@ -8,25 +8,26 @@ export function DashboardBackground() {
     const supabase = createClient()
 
     useEffect(() => {
-        // Load user profile to get cover preferences
         const loadUserTheme = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
+            // Tenta buscar do campo oficial primeiro
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('cover_url')
+                .select('page_background, cover_url')
                 .eq('id', user.id)
                 .single()
 
-            console.log('[DashboardBackground] Profile cover_url:', profile?.cover_url)
-
-            if (profile?.cover_url?.startsWith('preset:')) {
+            if (profile?.page_background) {
+                console.log('[DashboardBackground] Setting theme from DB:', profile.page_background)
+                setPresetName(profile.page_background)
+            } else if (profile?.cover_url?.startsWith('preset:')) {
+                // Fallback para compatibilidade antiga
                 const preset = profile.cover_url.split(':')[1]
-                console.log('[DashboardBackground] Setting preset:', preset)
+                console.log('[DashboardBackground] Setting theme from legacy cover:', preset)
                 setPresetName(preset)
             } else {
-                console.log('[DashboardBackground] No preset found, using default (light)')
                 setPresetName('light')
             }
         }
