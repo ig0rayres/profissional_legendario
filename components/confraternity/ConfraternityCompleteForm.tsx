@@ -259,7 +259,7 @@ export function ConfraternityCompleteForm({
 
             const totalXP = 50 + (formData.photos.length * 20) + 15
             toast.success('🎉 Confraria registrada!', {
-                description: `+${totalXP} XP ganhos! ${publishToFeed ? '📱 Publicado no Na Rota!' : ''}`
+                description: `+${totalXP} Vigor ganhos! ${publishToFeed ? '📱 Publicado no Na Rota!' : ''}`
             })
             onSuccess?.()
         } catch (error) {
@@ -421,8 +421,8 @@ export function ConfraternityCompleteForm({
 
                     {validationResult && !validating && (
                         <div className={`rounded-lg p-4 ${validationResult.approved
-                                ? 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800'
-                                : 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'
+                            ? 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800'
+                            : 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'
                             }`}>
                             <div className="flex items-center gap-3">
                                 {validationResult.approved ? (
@@ -497,7 +497,7 @@ export function ConfraternityCompleteForm({
                 <div className="space-y-2">
                     <Label htmlFor="testimonial" className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
-                        Seu Depoimento +15 XP
+                        Seu Depoimento +15 Vigor
                     </Label>
                     <Textarea
                         id="testimonial"
@@ -566,15 +566,15 @@ export function ConfraternityCompleteForm({
                         🎁 Recompensas ao finalizar:
                     </p>
                     <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
-                        <li>• +50 XP por realizar</li>
+                        <li>• +50 Vigor por realizar</li>
                         {formData.photos.length > 0 && (
-                            <li>• +{formData.photos.length * 20} XP pelas fotos ({formData.photos.length}×20)</li>
+                            <li>• +{formData.photos.length * 20} Vigor pelas fotos ({formData.photos.length}×20)</li>
                         )}
                         {formData.testimonial && (
-                            <li>• +15 XP pelo depoimento</li>
+                            <li>• +15 Vigor pelo depoimento</li>
                         )}
                         <li className="font-bold mt-2 pt-2 border-t border-green-300 dark:border-green-700">
-                            Total: +{calculateRewards()} XP
+                            Total: +{calculateRewards()} Vigor
                         </li>
                     </ul>
                 </div>
@@ -615,7 +615,7 @@ export function ConfraternityCompleteForm({
                         ) : (
                             <>
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Confirmar +{calculateRewards()} XP
+                                Confirmar +{calculateRewards()} Vigor
                             </>
                         )}
                     </Button>

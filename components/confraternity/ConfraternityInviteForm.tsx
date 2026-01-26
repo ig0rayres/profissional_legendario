@@ -271,7 +271,7 @@ export function ConfraternityInviteForm({
                     {/* Gamificação */}
                     <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
                         <p className="text-sm font-semibold text-green-900 dark:text-green-100">
-                            🎁 +10 XP ao enviar
+                            🎁 +10 Vigor ao enviar
                         </p>
                     </div>
                 </div>
@@ -305,7 +305,7 @@ export function ConfraternityInviteForm({
                         )}
                     </Button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     )
 }

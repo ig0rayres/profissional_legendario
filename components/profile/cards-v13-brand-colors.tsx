@@ -15,6 +15,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getProfileUrl } from '@/lib/profile/utils'
+import { useRouter } from 'next/navigation'
 import { CreatePostModal } from '@/components/social/create-post-modal'
 import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 
@@ -144,7 +145,7 @@ export function RotaDoValenteV13({
                             <Target className="w-4 h-4 text-[#1E4D40]" />
                             <span className="text-xs font-semibold text-gray-700">Progresso para próximo nível</span>
                         </div>
-                        <span className="text-xs font-bold text-[#1E4D40]">{currentXP} / {nextLevelXP} XP</span>
+                        <span className="text-xs font-bold text-[#1E4D40]">{currentXP} / {nextLevelXP} Vigor</span>
                     </div>
 
                     {/* Barra com animação */}
@@ -171,7 +172,7 @@ export function RotaDoValenteV13({
 
                     {/* Faltam X XP */}
                     <p className="text-xs text-gray-600 mt-2 text-center">
-                        Faltam <span className="font-bold text-[#1E4D40]">{nextLevelXP - currentXP} XP</span> para o próximo nível
+                        Faltam <span className="font-bold text-[#1E4D40]">{nextLevelXP - currentXP} Vigor</span> para o próximo nível
                     </p>
                 </div>
 
@@ -502,8 +503,10 @@ interface ConfraternityV13Props {
 export function ConfraternityStatsV13({ confraternities: propConfraternities, userId }: ConfraternityV13Props) {
     const [confraternities, setConfraternities] = useState(propConfraternities || [])
     const [counters, setCounters] = useState({ current_month_count: 0, total_count: 0 })
+    const [pendingInvitesCount, setPendingInvitesCount] = useState(0)
     const [loading, setLoading] = useState(!propConfraternities && !!userId)
     const supabase = createClient()
+    const router = useRouter()
 
     useEffect(() => {
         // Se confraternities foram passadas como prop, não carrega
@@ -515,8 +518,21 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
         if (userId) {
             loadConfraternities()
             loadCounters()
+            loadPendingInvites()
         }
     }, [userId, propConfraternities])
+
+    async function loadPendingInvites() {
+        if (!userId) return
+        try {
+            const { count } = await supabase
+                .from('confraternity_invites')
+                .select('*', { count: 'exact', head: true })
+                .eq('receiver_id', userId)
+                .eq('status', 'pending')
+            setPendingInvitesCount(count || 0)
+        } catch (e) { console.error(e) }
+    }
 
     async function loadCounters() {
         try {
@@ -653,6 +669,16 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                             <span className="text-lg font-bold text-green-700">{counters.total_count}</span>
                             <span className="text-[9px] uppercase text-gray-600 font-medium">Total</span>
                         </div>
+                        {pendingInvitesCount > 0 && (
+                            <div className="relative cursor-pointer ml-2" onClick={() => window.location.href = '/elo-da-rota/confraria'}>
+                                <div className="bg-[#D2691E]/10 p-2 rounded-lg border border-[#D2691E]/20 hover:bg-[#D2691E]/20 transition-colors animate-pulse">
+                                    <Bell className="w-5 h-5 text-[#D2691E]" />
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                                        {pendingInvitesCount}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -673,8 +699,20 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                             return (
                                 <div
                                     key={conf.id}
-                                    className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:border-[#D2691E]/30 hover:shadow-md transition-all transform hover:scale-102 duration-300 cursor-pointer group/conf"
+                                    onClick={() => window.location.href = `/elo-da-rota/confraria/completar/${conf.id}`}
+                                    className={cn(
+                                        "relative flex items-center gap-3 p-3 rounded-xl border transition-all transform hover:scale-102 duration-300 cursor-pointer group/conf",
+                                        new Date(conf.proposed_date) < new Date()
+                                            ? "bg-orange-50 border-orange-200 hover:border-orange-400"
+                                            : "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200 hover:border-[#D2691E]/30"
+                                    )}
                                 >
+                                    {new Date(conf.proposed_date) < new Date() && (
+                                        <div className="absolute -top-2 right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                                            FOTO PENDENTE
+                                        </div>
+                                    )}
+
                                     <div className="w-14 h-14 flex-shrink-0 rounded-xl bg-white border border-gray-200 flex flex-col items-center justify-center shadow-sm transform group-hover/conf:scale-110 transition-transform">
                                         <span className="text-lg font-bold text-[#D2691E]">{date.day}</span>
                                         <span className="text-[10px] uppercase text-gray-600 font-medium">{date.month}</span>
@@ -710,6 +748,12 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                                                 <MapPin className="w-3 h-3" />
                                                 <span className="truncate">{conf.location}</span>
                                             </div>
+                                        )}
+                                        {new Date(conf.proposed_date) < new Date() && (
+                                            <p className="text-[10px] font-bold text-orange-600 mt-1 flex items-center gap-1">
+                                                <Camera className="w-3 h-3" />
+                                                Clique para enviar foto
+                                            </p>
                                         )}
                                     </div>
                                 </div>

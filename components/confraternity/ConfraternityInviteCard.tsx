@@ -71,7 +71,7 @@ export function ConfraternityInviteCard({
             const result = await acceptConfraternityInvite(invite.id, currentUserId)
             if (result.success) {
                 toast.success('Convite aceito!', {
-                    description: '+10 XP ganhos'
+                    description: '+10 Vigor ganhos'
                 })
                 onUpdate?.()
             } else {
@@ -192,7 +192,7 @@ export function ConfraternityInviteCard({
                         ) : (
                             <>
                                 <Check className="mr-2 h-4 w-4" />
-                                Aceitar +10 XP
+                                Aceitar +10 Vigor
                             </>
                         )}
                     </Button>

@@ -136,7 +136,7 @@ export function RotaDoValenteV12({
                             <Target className="w-4 h-4 text-emerald-600" />
                             <span className="text-xs font-semibold text-gray-700">Progresso para próximo nível</span>
                         </div>
-                        <span className="text-xs font-bold text-emerald-600">{currentXP} / {nextLevelXP} XP</span>
+                        <span className="text-xs font-bold text-emerald-600">{currentXP} / {nextLevelXP} Vigor</span>
                     </div>
 
                     {/* Barra com animação e hover */}
@@ -163,7 +163,7 @@ export function RotaDoValenteV12({
 
                     {/* Faltam X XP */}
                     <p className="text-xs text-gray-600 mt-2 text-center">
-                        Faltam <span className="font-bold text-emerald-600">{nextLevelXP - currentXP} XP</span> para o próximo nível
+                        Faltam <span className="font-bold text-emerald-600">{nextLevelXP - currentXP} Vigor</span> para o próximo nível
                     </p>
                 </div>
 

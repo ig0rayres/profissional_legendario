@@ -163,7 +163,7 @@ export default function RotaDoValenteDashboardPage() {
                     </div>
                     <div className="flex gap-3 items-center">
                         <Badge variant="outline" className="text-sm px-3 py-1">
-                            Plano {planName} • {multiplier}x XP
+                            Plano {planName} • {multiplier}x Vigor
                         </Badge>
                         <Button className="glow-orange bg-secondary hover:bg-secondary/90 text-white">
                             <Flag className="w-4 h-4 mr-2" />

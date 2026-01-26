@@ -334,7 +334,7 @@ function MedalContentV2({ activity }: { activity: any }) {
                     {activity.activity_data?.medal_name || 'Nova Medalha'}
                 </p>
                 <p className="text-xs text-amber-400">
-                    +{activity.activity_data?.xp_reward || 0} XP
+                    +{activity.activity_data?.xp_reward || 0} Vigor
                 </p>
             </div>
         </div>
