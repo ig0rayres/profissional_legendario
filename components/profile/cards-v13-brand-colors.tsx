@@ -201,6 +201,8 @@ interface ProjectsCounterV13Props {
     showButton?: boolean
     canShowButton?: boolean
     onRequestProject?: () => void
+    targetUserId?: string
+    targetUserName?: string
 }
 
 export function ProjectsCounterV13({
