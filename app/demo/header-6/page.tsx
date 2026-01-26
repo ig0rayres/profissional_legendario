@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-current-header-v6-complete'
 import { RotaValenteCard } from '@/components/profile/rota-valente-card'
+import { RotaValenteV1 } from '@/components/profile/rota-valente-v1'
+import { RotaValenteV3 } from '@/components/profile/rota-valente-v3'
 import { CoverPhotoUpload } from '@/components/profile/cover-photo-upload'
 
 // MOCKS TIPADOS
@@ -134,12 +136,40 @@ export default function Header6DemoPage() {
                         />
                     </div>
 
-                    {/* 2. CARD ROTA DO VALENTE */}
+                    {/* 2. CARD ROTA DO VALENTE - ORIGINAL */}
                     <div className="relative">
                         <div className="absolute -top-3 left-4 text-[10px] uppercase font-bold tracking-widest text-[#1E4D40] bg-[#0d1f16] px-2 z-10">
-                            Progresso da Temporada
+                            Original
                         </div>
                         <RotaValenteCard
+                            gamification={activeData.gamification as any}
+                            subscription={activeData.subscription as any}
+                            nextRank={activeData.nextRank as any}
+                            allMedals={ALL_MEDALS as any}
+                            earnedMedals={activeData.earnedMedals}
+                        />
+                    </div>
+
+                    {/* 3. CARD ROTA DO VALENTE - V1 */}
+                    <div className="relative">
+                        <div className="absolute -top-3 left-4 text-[10px] uppercase font-bold tracking-widest text-blue-400 bg-[#0d1f16] px-2 z-10">
+                            V1 - Minimal Compact
+                        </div>
+                        <RotaValenteV1
+                            gamification={activeData.gamification as any}
+                            subscription={activeData.subscription as any}
+                            nextRank={activeData.nextRank as any}
+                            allMedals={ALL_MEDALS as any}
+                            earnedMedals={activeData.earnedMedals}
+                        />
+                    </div>
+
+                    {/* 4. CARD ROTA DO VALENTE - V3 */}
+                    <div className="relative">
+                        <div className="absolute -top-3 left-4 text-[10px] uppercase font-bold tracking-widest text-pink-400 bg-[#0d1f16] px-2 z-10">
+                            V3 - Glassmorphism
+                        </div>
+                        <RotaValenteV3
                             gamification={activeData.gamification as any}
                             subscription={activeData.subscription as any}
                             nextRank={activeData.nextRank as any}

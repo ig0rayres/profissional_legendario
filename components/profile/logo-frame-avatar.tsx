@@ -36,22 +36,22 @@ export function LogoFrameAvatar({
                 className
             )}
         >
-            {/* EFEITO DE GLOW/SHADOW NO FUNDO */}
-            <div className="absolute inset-4 bg-[#1E4D40]/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 will-change-[opacity]" />
+            {/* EFEITO DE GLOW EXTREMO NO FUNDO AO PASSAR O MOUSE */}
+            <div className="absolute inset-2 bg-orange-500/0 blur-2xl rounded-full opacity-0 group-hover:opacity-60 group-hover:bg-orange-500/30 transition-all duration-500 will-change-[opacity]" />
 
             {/* CONTAINER PRINCIPAL COM FILTRO DE SOMBRA NA BORDA */}
-            <div className="relative w-full h-full drop-shadow-[0_10px_15px_rgba(0,0,0,0.3)] group-hover:drop-shadow-[0_20px_30px_rgba(210,105,30,0.15)] transition-all duration-500">
+            <div className="relative w-full h-full drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)] group-hover:drop-shadow-[0_0_25px_rgba(255,100,0,0.6)] transition-all duration-500">
 
                 {/* 1. IMAGEM DO USUÁRIO (BACKGROUND) */}
-                {/* A imagem interna tem um zoom suave extra no hover (Parallax sutil) */}
+                {/* Ajustei o inset para preencher melhor a nova moldura */}
                 <div
-                    className="absolute inset-[15%] z-0 overflow-hidden backface-hidden"
+                    className="absolute inset-[8%] z-0 overflow-hidden backface-hidden"
                     style={{
-                        clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'
+                        clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' // Losango
                     }}
                 >
                     {/* Fundo fallback */}
-                    <div className="absolute inset-0 bg-[#F2F4F3]"></div>
+                    <div className="absolute inset-0 bg-[#0f1a15]"></div>
 
                     {/* Foto */}
                     <div className="relative w-full h-full transform scale-[1.35] group-hover:scale-[1.45] transition-transform duration-700 ease-in-out">
@@ -71,21 +71,21 @@ export function LogoFrameAvatar({
                     </div>
                 </div>
 
-                {/* 2. MOLDURA PNG (FOREGROUND) */}
+                {/* 2. MOLDURA PNG (FOREGROUND) - Nova Moldura de Montanhas */}
                 {/* A moldura fica fixa em relação ao zoom interno, mantendo a estrutura sólida */}
                 <div className="absolute inset-0 z-10 pointer-events-none">
                     <Image
-                        src="/images/logo-frame.png"
+                        src="/frame-mountains.png"
                         alt="Frame"
                         fill
-                        className="object-contain drop-shadow-sm"
+                        className="object-contain drop-shadow-md"
                         priority={true}
                     />
                 </div>
             </div>
 
             {/* BRILHO ESPECULAR (OVERLAY) */}
-            {/* Um reflexo sutil que passa pela imagem no hover */}
+            {/* Reflexo sutil */}
             <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shine" />
             </div>

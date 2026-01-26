@@ -117,6 +117,21 @@ export async function GET(request: Request, { params }: RouteParams) {
             .eq('rank_level', currentRankLevel + 1)
             .single()
 
+        // 12. Todas as proezas disponíveis
+        const { data: allProezas } = await supabase
+            .from('proezas')
+            .select('*')
+            .eq('is_active', true)
+            .order('display_order')
+
+        // 13. Proezas conquistadas pelo usuário (mês atual)
+        const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+        const { data: userProezas } = await supabase
+            .from('user_proezas')
+            .select('proeza_id, points_earned, earned_at, season_month')
+            .eq('user_id', userId)
+            .eq('season_month', currentMonth)
+
         // Montar objeto completo
         const profileData = {
             profile,
@@ -124,6 +139,8 @@ export async function GET(request: Request, { params }: RouteParams) {
             subscription,
             allMedals: allMedals || [],
             earnedMedals: userMedals || [],
+            allProezas: allProezas || [],
+            earnedProezas: userProezas || [],
             confraternityStats: confraternityStats || null,
             portfolio: portfolio || [],
             ratings: ratings || [],

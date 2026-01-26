@@ -52,7 +52,7 @@ export default function DashboardPage() {
     // Mostrar loading se auth está carregando OU se dados do perfil estão carregando
     if (authLoading || loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-adventure pt-20">
+            <div className="min-h-screen flex items-center justify-center pt-20">
                 <div className="text-center">
                     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-primary text-lg font-semibold">Carregando seu perfil...</p>
@@ -63,7 +63,7 @@ export default function DashboardPage() {
 
     if (!profileData) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-adventure pt-20">
+            <div className="min-h-screen flex items-center justify-center pt-20">
                 <div className="text-center">
                     <p className="text-destructive text-lg font-semibold mb-4">
                         Não foi possível carregar seu perfil

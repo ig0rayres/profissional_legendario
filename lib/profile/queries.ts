@@ -114,6 +114,20 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             .eq('professional_id', userId)
             .eq('status', 'in_progress')
 
+        // 11. Todas as proezas disponíveis
+        const { data: allProezas } = await supabase
+            .from('proezas')
+            .select('*')
+            .eq('is_active', true)
+            .order('category', { ascending: true })
+
+        // 12. Proezas conquistadas pelo usuário
+        const { data: earnedProezas } = await supabase
+            .from('user_proezas')
+            .select('*')
+            .eq('user_id', userId)
+            .order('earned_at', { ascending: false })
+
         // Montar objeto completo
         return {
             profile: profile as ProfileData,
@@ -121,6 +135,8 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             subscription: subscription as SubscriptionData | null,
             allMedals: (allMedals || []) as MedalData[],
             earnedMedals: (userMedals || []) as any as UserMedalData[], // Fix type casting
+            allProezas: (allProezas || []) as any,
+            earnedProezas: (earnedProezas || []) as any,
             confraternityStats,
             portfolio: (portfolio || []) as PortfolioItem[],
             ratings: (ratings || []) as RatingData[],

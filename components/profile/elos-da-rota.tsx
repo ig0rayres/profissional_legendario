@@ -151,93 +151,106 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
     }
 
     return (
-        <Card className="border-[#2D3B2D] bg-[#1A2421]/60 backdrop-blur-sm shadow-lg shadow-black/30 hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-sm font-bold uppercase tracking-wider text-[#F2F4F3]">
-                    <div className="flex items-center gap-2">
-                        <Link2 className="w-4 h-4 text-[#1E4D40]" />
-                        Elos da Rota
-                        {/* Contador total de elos */}
-                        <span className="bg-[#1E4D40]/20 text-[#1E4D40] text-xs font-bold px-2 py-0.5 rounded-full">
-                            {connections.length}
-                        </span>
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#1E4D40]/30 transition-all duration-300 group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+            <CardContent className="p-5 relative">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#1E4D40] to-[#2A6B5A] flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-transform duration-300">
+                            <Link2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-[#2D3142]">
+                                Elos da Rota
+                            </h3>
+                            <p className="text-xs text-gray-600">
+                                {connections.length} conexões
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Sininho de solicitações pendentes - igual ao do topo */}
                     {pendingCount > 0 && (
                         <button
                             onClick={openNotifications}
-                            className="relative p-1.5 rounded-full bg-[#D2691E]/10 hover:bg-[#D2691E]/20 transition-colors cursor-pointer group"
+                            className="relative p-2 rounded-xl bg-[#D2691E]/10 border border-[#D2691E]/20 hover:bg-[#D2691E]/20 transition-all transform hover:scale-110 duration-300 group/bell"
                             title={`${pendingCount} solicitação(ões) pendente(s) - Clique para ver`}
                         >
-                            <Bell className="w-5 h-5 text-[#D2691E] fill-[#D2691E]/20 group-hover:text-[#D2691E] transition-colors" />
-                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#D2691E] text-[10px] font-black text-white glow-orange animate-pulse">
+                            <Bell className="w-5 h-5 text-[#D2691E] group-hover/bell:animate-bounce" />
+                            <span className="absolute top-0 right-0 w-5 h-5 bg-[#D2691E] rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-lg animate-pulse">
                                 {pendingCount}
                             </span>
                         </button>
                     )}
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
+                </div>
+
                 {loading ? (
                     <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E4D40]"></div>
                     </div>
                 ) : connections.length === 0 ? (
-                    <div className="text-center py-6 text-[#D1D5DB]">
-                        <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                        <p className="text-xs uppercase tracking-wide">Nenhum elo ainda</p>
+                    <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300 hover:border-[#1E4D40]/30 hover:bg-[#1E4D40]/5 transition-all cursor-pointer">
+                        <Users className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">
+                            Ainda não há conexões
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Conecte-se com outros profissionais
+                        </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-3 gap-4">
-                        {connections.slice(0, 6).map((connection) => (
-                            <Link
-                                key={connection.id}
-                                href={getProfileUrl({ full_name: connection.full_name, slug: connection.slug, rota_number: connection.rota_number })}
-                                className="group flex flex-col items-center text-center"
-                            >
-                                <div className="relative mb-2">
-                                    {connection.avatar_url ? (
-                                        <Image
-                                            src={connection.avatar_url}
-                                            alt={connection.full_name}
-                                            width={56}
-                                            height={56}
-                                            className="rounded-full border-2 border-[#1E4D40]/20 group-hover:border-[#1E4D40] transition-colors"
-                                        />
-                                    ) : (
-                                        <div className="w-14 h-14 rounded-full border-2 border-[#1E4D40]/20 bg-[#1E4D40]/10 flex items-center justify-center group-hover:border-[#1E4D40] transition-colors">
-                                            <span className="text-lg font-bold text-[#1E4D40]">
-                                                {connection.full_name.charAt(0).toUpperCase()}
-                                            </span>
+                    <>
+                        {/* GRID 3 COLUNAS */}
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                            {connections.slice(0, 6).map((connection) => (
+                                <Link
+                                    key={connection.id}
+                                    href={getProfileUrl({ full_name: connection.full_name, slug: connection.slug, rota_number: connection.rota_number })}
+                                    className="group flex flex-col items-center text-center"
+                                >
+                                    <div className="relative mb-2">
+                                        {connection.avatar_url ? (
+                                            <Image
+                                                src={connection.avatar_url}
+                                                alt={connection.full_name}
+                                                width={48}
+                                                height={48}
+                                                className="rounded-full border-2 border-[#1E4D40]/20 group-hover:border-[#1E4D40] transition-all shadow-md group-hover:shadow-lg"
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-full border-2 border-[#1E4D40]/20 bg-gradient-to-br from-[#1E4D40]/10 to-[#2A6B5A]/10 flex items-center justify-center group-hover:border-[#1E4D40] transition-all shadow-md group-hover:shadow-lg">
+                                                <span className="text-base font-bold text-[#1E4D40]">
+                                                    {connection.full_name.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {/* Ícone da Patente */}
+                                        <div
+                                            className="absolute -bottom-1 -right-1"
+                                            title={connection.rank_name}
+                                        >
+                                            <RankInsignia
+                                                rankId={connection.rank_id}
+                                                size="sm"
+                                                variant="avatar"
+                                            />
                                         </div>
-                                    )}
-                                    {/* Ícone da Patente usando RankInsignia com variante 'avatar' para ter fundo */}
-                                    <div
-                                        className="absolute -bottom-1 -right-1"
-                                        title={connection.rank_name}
-                                    >
-                                        <RankInsignia
-                                            rankId={connection.rank_id}
-                                            size="sm"
-                                            variant="avatar"
-                                        />
                                     </div>
-                                </div>
-                                <p className="text-[10px] font-medium text-[#F2F4F3] truncate w-full group-hover:text-[#1E4D40] transition-colors leading-tight">
-                                    {getDisplayName(connection.full_name)}
-                                </p>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+                                    <p className="text-[10px] font-medium text-[#2D3142] truncate w-full group-hover:text-[#1E4D40] transition-colors leading-tight">
+                                        {getDisplayName(connection.full_name)}
+                                    </p>
+                                </Link>
+                            ))}
+                        </div>
 
-                {connections.length > 6 && (
-                    <div className="mt-4 text-center">
-                        <Link href={`/profile/${userId}/connections`} className="text-xs text-[#1E4D40] hover:underline">
-                            Ver todos ({connections.length})
-                        </Link>
-                    </div>
+                        {connections.length > 6 && (
+                            <div className="text-center pt-2 border-t border-gray-200">
+                                <Link href={`/profile/${userId}/connections`} className="text-xs text-[#1E4D40] hover:underline">
+                                    Ver todos ({connections.length})
+                                </Link>
+                            </div>
+                        )}
+                    </>
                 )}
             </CardContent>
         </Card>

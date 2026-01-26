@@ -3,16 +3,11 @@ import ImprovedCurrentHeaderV6 from '@/components/profile/headers/improved-curre
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Star, Briefcase, MapPin, Mail, Phone, ArrowLeft, Shield, Settings, Edit, Bell, Upload, Camera, Mountain, MessageCircle } from 'lucide-react'
-import { RotaValenteCard } from '@/components/profile/rota-valente-card'
-import { ConfraternityStats } from '@/components/profile/confraternity-stats'
+import { RotaValenteV1B } from '@/components/profile/rota-valente-v1b'
 import { ProfileActionButtons, ProfileSecondaryButtons } from '@/components/profile/profile-action-buttons'
 import { UpgradeCTA } from '@/components/UpgradeCTA'
-import { ProjectsCounter } from '@/components/profile/projects-counter'
-import { NaRotaFeed } from '@/components/profile/user-mural'
-import { ElosDaRota } from '@/components/profile/elos-da-rota'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { MedalBadge } from '@/components/gamification/medal-badge'
-import { BattleHistory } from '@/components/gamification/battle-history'
 import { CoverUpload } from '@/components/profile/cover-upload'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -20,6 +15,11 @@ import Image from 'next/image'
 import type { CompleteProfileData, RankData } from '@/lib/profile/types'
 import * as LucideIcons from 'lucide-react'
 import { MOCK_CATEGORIES } from '@/lib/data/mock'
+
+// CARDS V13 - Novos componentes com estilo atualizado
+import { ProjectsCounterV13, ElosDaRotaV13, ConfraternityStatsV13, NaRotaFeedV13 } from '@/components/profile/cards-v13-brand-colors'
+import { BattleHistory } from '@/components/gamification/battle-history'
+
 
 interface ProfilePageTemplateProps {
     profileData: CompleteProfileData
@@ -40,6 +40,8 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
         subscription,
         allMedals,
         earnedMedals,
+        allProezas,
+        earnedProezas,
         confraternityStats,
         portfolio,
         ratings,
@@ -87,44 +89,44 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Card Unificado: Rota do Valente - Layout Oficial */}
-                        <RotaValenteCard
+                        {/* Card Rota do Valente - V1B Final */}
+                        <RotaValenteV1B
                             gamification={gamification}
                             subscription={subscription}
                             nextRank={nextRank}
-                            allMedals={allMedals}
-                            earnedMedals={earnedMedals}
+                            allProezas={allProezas || []}
+                            earnedProezas={earnedProezas || []}
                         />
 
                         {/* Feed NA ROTA - Atividades do usuário */}
-                        <NaRotaFeed
+                        <NaRotaFeedV13
                             userId={profile.id}
                             userName={profile.full_name}
+                            userAvatar={profile.avatar_url}
+                            showCreateButton={isOwner}
                             ratings={ratings}
                             portfolio={portfolio}
-                            confraternityPhotos={[]}
-                            activities={[]}
                         />
                     </div>
 
                     {/* Sidebar */}
                     <div className="space-y-6">
                         {/* Projects Counter */}
-                        <ProjectsCounter
+                        <ProjectsCounterV13
                             completedCount={profileData.projectsCompleted || 0}
                             inProgressCount={profileData.projectsInProgress || 0}
                             targetUserId={profile.id}
                             targetUserName={profile.full_name}
                         />
 
-                        {/* Elos da Rota - Quadro de Amigos */}
-                        <ElosDaRota userId={profile.id} />
-
-                        {/* Próximas Confrarias */}
-                        <ConfraternityStats userId={profile.id} />
-
                         {/* Histórico de Batalha (inclui atividades/pontos no dropdown) */}
                         <BattleHistory userId={profile.id} />
+
+                        {/* Elos da Rota - Quadro de Amigos */}
+                        <ElosDaRotaV13 userId={profile.id} />
+
+                        {/* Próximas Confrarias */}
+                        <ConfraternityStatsV13 userId={profile.id} />
 
                         {/* Contact Info */}
                         <Card className="shadow-lg shadow-black/30 border border-[#2D3B2D] backdrop-blur-sm bg-[#1A2421]/60 hover:shadow-xl transition-shadow duration-300">

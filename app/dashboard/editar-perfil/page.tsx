@@ -63,6 +63,7 @@ export default function EditarPerfilPage() {
 
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
     const [coverUrl, setCoverUrl] = useState<string | null>(null)
+    const [pageBackground, setPageBackground] = useState<string>('light') // Background da PÁGINA (não do header)
     const [formData, setFormData] = useState<ProfileFormData>({
         full_name: '',
         bio: '',
@@ -355,7 +356,9 @@ export default function EditarPerfilPage() {
                     instagram: formData.instagram,
                     pista: formData.pista,
                     pista_id: selectedPistaId,
-                    slug: slug
+                    slug: slug,
+                    avatar_url: avatarUrl,
+                    cover_url: coverUrl
                 })
                 .eq('id', user.id)
 
@@ -514,14 +517,20 @@ export default function EditarPerfilPage() {
                                 ) : (
                                     /* Preset Preview Logic */
                                     (() => {
-                                        const preset = coverUrl?.startsWith('preset:') ? coverUrl.split(':')[1] : 'default'
+                                        const preset = coverUrl?.startsWith('preset:') ? coverUrl.split(':')[1] : 'light'
                                         switch (preset) {
-                                            case 'orange': return <div className="absolute inset-0 bg-gradient-to-br from-orange-900 via-black to-orange-950" />
-                                            case 'gray': return <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black" />
-                                            case 'cyber': return <div className="absolute inset-0 bg-black"><div className="absolute inset-0 bg-[linear-gradient(to_right,#0f0_1px,transparent_1px),linear-gradient(to_bottom,#0f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20" /><div className="absolute inset-0 bg-gradient-to-b from-transparent to-black" /></div>
-                                            case 'gold': return <div className="absolute inset-0 bg-gradient-to-br from-yellow-900 via-amber-950 to-black" />
-                                            case 'treasure_map': return <div className="absolute inset-0 bg-[#1A2421]"><div className="absolute inset-0 opacity-10" style={{ backgroundImage: "repeating-linear-gradient(45deg, #444 0, #444 1px, transparent 0, transparent 50%)", backgroundSize: "20px 20px" }} /><div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E4D40]/30 to-black/80" /></div>
-                                            default: return <div className="absolute inset-0 bg-gradient-to-br from-[#1A2421] via-[#2D3B2D] to-[#1A2421]" />
+                                            case 'light': return <div className="absolute inset-0 bg-[#e6e6e6]" />
+                                            case 'rota_business': return <div className="absolute inset-0 bg-gradient-to-br from-[#e8e8e8] via-[#d4d4d4] to-[#c0c0c0]" />
+                                            case 'verde_claro': return <div className="absolute inset-0 bg-gradient-to-br from-[#d4e8d4] via-[#e8f5e8] to-[#c8dcc8]" />
+                                            case 'laranja_claro': return <div className="absolute inset-0 bg-gradient-to-br from-[#ffe4d4] via-[#ffd4b8] to-[#ffcba0]" />
+                                            case 'bege_aventura': return <div className="absolute inset-0 bg-gradient-to-br from-[#f5f0e8] via-[#e8dcc8] to-[#d4c8b0]" />
+                                            case 'azul_claro': return <div className="absolute inset-0 bg-gradient-to-br from-[#d4e8f5] via-[#e0f0ff] to-[#c8dce8]" />
+                                            case 'rosa_claro': return <div className="absolute inset-0 bg-gradient-to-br from-[#ffd4e8] via-[#ffe8f0] to-[#ffc8dc]" />
+                                            case 'amarelo_claro': return <div className="absolute inset-0 bg-gradient-to-br from-[#fff8d4] via-[#ffeed4] to-[#ffe4b8]" />
+                                            case 'verde_menta': return <div className="absolute inset-0 bg-gradient-to-br from-[#d4f5e8] via-[#e0fff0] to-[#c8ffe0]" />
+                                            case 'lavanda': return <div className="absolute inset-0 bg-gradient-to-br from-[#e8d4f5] via-[#f0e8ff] to-[#dcc8e8]" />
+                                            case 'pêssego': return <div className="absolute inset-0 bg-gradient-to-br from-[#ffe8d4] via-[#fff0e0] to-[#ffd8c0]" />
+                                            default: return <div className="absolute inset-0 bg-[#e6e6e6]" />
                                         }
                                     })()
                                 )}
@@ -557,31 +566,35 @@ export default function EditarPerfilPage() {
                                 </div>
                                 <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                                     {[
-                                        { id: 'default', name: 'Padrão', color: 'bg-[#2D3B2D]' },
-                                        { id: 'orange', name: 'Laranja', color: 'bg-orange-900' },
-                                        { id: 'gray', name: 'Cinza', color: 'bg-gray-800' },
-                                        { id: 'treasure_map', name: 'Tesouro', color: 'bg-[#3d3126] border-dashed border-2 border-orange-500/30' },
-                                        { id: 'cyber', name: 'Cyber', color: 'bg-black border border-green-500 shadow-[0_0_5px_#0f0]' },
-                                        { id: 'gold', name: 'Gold', color: 'bg-yellow-900 border border-yellow-500/50' },
-                                        { id: 'night_ops', name: 'Night Ops', color: 'bg-[#0a1a0f] ring-1 ring-green-900' },
-                                        { id: 'desert', name: 'Desert', color: 'bg-[#4a3b2a]' },
-                                        // { id: 'camo', name: 'Camo', color: 'bg-[#1E4D40] bg-[url("/camo.png")]' },
+                                        { id: 'cinza', name: 'Cinza', hex: '#2d2d2d', bgClass: 'bg-[#2d2d2d]' },
+                                        { id: 'grafite', name: 'Grafite', hex: '#3a3a3a', bgClass: 'bg-[#3a3a3a]' },
+                                        { id: 'militar', name: 'Militar', hex: '#2e3b2e', bgClass: 'bg-[#2e3b2e]' },
+                                        { id: 'azul_escuro', name: 'Azul Navy', hex: '#1a2d4f', bgClass: 'bg-[#1a2d4f]' },
+                                        { id: 'marrom', name: 'Marrom', hex: '#3d2b1f', bgClass: 'bg-[#3d2b1f]' },
+                                        { id: 'preto', name: 'Preto', hex: '#1a1a1a', bgClass: 'bg-[#1a1a1a]' },
                                     ].map((theme) => (
                                         <button
                                             key={theme.id}
                                             type="button"
-                                            onClick={() => setCoverUrl(`preset:${theme.id}`)}
-                                            className={`
-                                                flex flex-col items-center gap-1.5 group p-2 rounded-xl transition-all duration-300
-                                                ${(coverUrl === `preset:${theme.id}` || (!coverUrl && theme.id === 'default'))
-                                                    ? 'bg-white/10 ring-1 ring-primary/50 scale-105'
-                                                    : 'hover:bg-white/5 hover:scale-105'
+                                            onClick={async () => {
+                                                document.body.style.background = theme.hex
+
+
+                                                // Salvar automaticamente no banco
+                                                if (user) {
+                                                    await supabase
+                                                        .from('profiles')
+                                                        .update({ page_background: theme.id })
+                                                        .eq('id', user.id)
+
+                                                    console.log('[Background] Salvo automaticamente:', theme.id)
                                                 }
-                                            `}
+                                            }}
+                                            className="flex flex-col items-center gap-1.5 group p-2 rounded-xl transition-all duration-300 hover:bg-white/10 hover:scale-105"
                                         >
                                             <div className={`
                                                 w-full aspect-square rounded-lg shadow-sm transition-all
-                                                ${theme.color}
+                                                ${theme.bgClass}
                                             `} />
                                             <span className="text-[9px] font-medium text-muted-foreground group-hover:text-primary transition-colors text-center w-full truncate">
                                                 {theme.name}
@@ -650,6 +663,7 @@ export default function EditarPerfilPage() {
                             </div>
                         </CardContent>
                     </Card>
+
 
                     {/* Informações Básicas */}
                     <Card className="shadow-lg shadow-black/10 border border-white/10">

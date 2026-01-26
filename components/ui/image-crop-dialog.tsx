@@ -267,9 +267,9 @@ export function ImageCropDialog({
                         <ZoomOut className="w-4 h-4 text-muted-foreground" />
                         <Slider
                             value={[scale]}
-                            min={0.3}
-                            max={3}
-                            step={0.05}
+                            min={0.05}
+                            max={1.5}
+                            step={0.01}
                             onValueChange={([value]) => setScale(value)}
                             className="w-48"
                         />

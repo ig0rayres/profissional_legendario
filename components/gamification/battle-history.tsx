@@ -291,407 +291,414 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
 
     if (loading) {
         return (
-            <Card className="glass-card border-primary/10 shadow-lg">
-                <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                        <Swords className="w-4 h-4 text-accent" />
-                        Histórico de Batalha
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-center py-6">
-                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            <Card className="bg-white border border-gray-200 shadow-md">
+                <CardContent className="p-5">
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#1E4D40]" />
                     </div>
                 </CardContent>
             </Card>
         )
     }
 
+
     return (
-        <Card className="glass-card border-primary/10 shadow-lg shadow-black/10 hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-accent/5">
-                <CardTitle className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                        <Swords className="w-4 h-4 text-accent" />
-                        Histórico de Batalha
-                    </div>
-                    <span className="text-[10px] font-normal text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-                        {pastSeasons.length} temporadas
-                    </span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-                {/* Temporada Atual - Formato Dropdown */}
-                {currentSeason && (
-                    <div className="border-b-2 border-accent/30">
-                        <button
-                            onClick={() => toggleSeasonExpand('current')}
-                            className={cn(
-                                "w-full px-3 py-3 text-left",
-                                "transition-all duration-300 ease-out",
-                                "bg-gradient-to-r from-accent/10 to-primary/10",
-                                "hover:from-accent/20 hover:to-primary/20",
-                                "cursor-pointer group"
-                            )}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <ChevronRight className={cn(
-                                        "w-4 h-4 text-accent",
-                                        "transition-all duration-300 ease-out",
-                                        expandedSeasons.has('current') && "rotate-90"
-                                    )} />
-                                    <Flame className="w-4 h-4 text-accent animate-pulse" />
-                                    <span className="text-sm font-bold uppercase tracking-wider">
-                                        {MONTH_NAMES[currentSeason.season_month]}/{currentSeason.season_year}
-                                    </span>
-                                    <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">
-                                        ATUAL
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <RankInsignia
-                                        rankId={getRankFromXP(currentSeason.total_xp)}
-                                        iconName={getRankIconFromDB(getRankFromXP(currentSeason.total_xp))}
-                                        size="xs"
-                                        variant="avatar"
-                                        className="w-6 h-6 !p-0.5"
-                                    />
-                                    {(currentSeason.ranking_position || userRankingPosition) && (
-                                        <div className="flex items-center gap-1 font-bold text-xs">
-                                            {(currentSeason.ranking_position || userRankingPosition) === 1 && <span className="text-base leading-none">🥇</span>}
-                                            {(currentSeason.ranking_position || userRankingPosition) === 2 && <span className="text-base leading-none">🥈</span>}
-                                            {(currentSeason.ranking_position || userRankingPosition) === 3 && <span className="text-base leading-none">🥉</span>}
-                                            <span className="text-muted-foreground">#{currentSeason.ranking_position || userRankingPosition}</span>
-                                        </div>
-                                    )}
-                                    <span className="text-sm font-bold text-accent">
-                                        🔥 {currentSeason.total_xp.toLocaleString('pt-BR')} pts
-                                    </span>
-                                </div>
-                            </div>
-                        </button>
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#1E4D40]/30 transition-all duration-300 group overflow-hidden">
+            {/* Efeito de brilho no hover */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
 
-                        {/* Dropdown de atividades */}
-                        <div className={cn(
-                            "overflow-hidden transition-all duration-400 ease-out",
-                            expandedSeasons.has('current') ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
-                        )}>
-                            <div className="px-4 pb-3 pt-2 bg-gradient-to-b from-accent/5 to-transparent">
-                                {currentSeason.activities && currentSeason.activities.length > 0 ? (
-                                    <>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                                            <TrendingUp className="w-3 h-3" />
-                                            Atividades do Mês ({currentSeason.activities.length})
-                                        </p>
-                                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                                            {currentSeason.activities.map((activity) => {
-                                                const IconComponent = getActivityIcon(activity.action_type)
-                                                const activityDate = new Date(activity.created_at)
-                                                return (
-                                                    <div
-                                                        key={activity.id}
-                                                        className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1.5"
-                                                    >
-                                                        <IconComponent className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                                        <span className="flex-1 truncate text-muted-foreground">
-                                                            {activity.description || activity.action_type}
-                                                        </span>
-                                                        <span className="text-[10px] text-muted-foreground/60 flex-shrink-0">
-                                                            {activityDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                                        </span>
-                                                        <span className="text-accent font-bold flex-shrink-0 min-w-[45px] text-right">
-                                                            +{activity.points}
-                                                        </span>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <p className="text-xs text-muted-foreground text-center py-3">
-                                        Nenhuma atividade registrada este mês
-                                    </p>
+            <CardContent className="p-5 relative">
+                {/* Header com ícone animado - igual aos outros cards */}
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-transform duration-300">
+                            <Swords className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-[#2D3142]">
+                                Histórico de Batalha
+                            </h3>
+                            <p className="text-xs text-gray-600">
+                                {pastSeasons.length} temporadas
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Conteúdo */}
+                <div>
+                    {/* Temporada Atual - Formato Dropdown */}
+                    {currentSeason && (
+                        <div className="border-b-2 border-[#D2691E]/30">
+                            <button
+                                onClick={() => toggleSeasonExpand('current')}
+                                className={cn(
+                                    "w-full px-3 py-3 text-left",
+                                    "transition-all duration-300 ease-out",
+                                    "bg-gradient-to-r from-[#D2691E]/10 to-[#1E4D40]/10",
+                                    "hover:from-[#D2691E]/20 hover:to-[#1E4D40]/20",
+                                    "cursor-pointer group"
                                 )}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <ChevronRight className={cn(
+                                            "w-4 h-4 text-[#D2691E]",
+                                            "transition-all duration-300 ease-out",
+                                            expandedSeasons.has('current') && "rotate-90"
+                                        )} />
+                                        <Flame className="w-4 h-4 text-[#D2691E] animate-pulse" />
+                                        <span className="text-sm font-bold uppercase tracking-wider text-[#2D3142]">
+                                            {MONTH_NAMES[currentSeason.season_month]}/{currentSeason.season_year}
+                                        </span>
+                                        <span className="text-xs bg-[#D2691E]/20 text-[#D2691E] px-2 py-0.5 rounded-full font-bold">
+                                            ATUAL
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <RankInsignia
+                                            rankId={getRankFromXP(currentSeason.total_xp)}
+                                            iconName={getRankIconFromDB(getRankFromXP(currentSeason.total_xp))}
+                                            size="xs"
+                                            variant="avatar"
+                                            className="w-6 h-6 !p-0.5"
+                                        />
+                                        {(currentSeason.ranking_position || userRankingPosition) && (
+                                            <div className="flex items-center gap-1 font-bold text-xs">
+                                                {(currentSeason.ranking_position || userRankingPosition) === 1 && <span className="text-base leading-none">🥇</span>}
+                                                {(currentSeason.ranking_position || userRankingPosition) === 2 && <span className="text-base leading-none">🥈</span>}
+                                                {(currentSeason.ranking_position || userRankingPosition) === 3 && <span className="text-base leading-none">🥉</span>}
+                                                <span className="text-gray-600">#{currentSeason.ranking_position || userRankingPosition}</span>
+                                            </div>
+                                        )}
+                                        <span className="text-sm font-bold text-[#D2691E]">
+                                            🔥 {currentSeason.total_xp.toLocaleString('pt-BR')} pts
+                                        </span>
+                                    </div>
+                                </div>
+                            </button>
+
+                            {/* Dropdown de atividades */}
+                            <div className={cn(
+                                "overflow-hidden transition-all duration-400 ease-out",
+                                expandedSeasons.has('current') ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                            )}>
+                                <div className="px-4 pb-3 pt-2 bg-gradient-to-b from-[#D2691E]/5 to-transparent">
+                                    {currentSeason.activities && currentSeason.activities.length > 0 ? (
+                                        <>
+                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                                                <TrendingUp className="w-3 h-3" />
+                                                Atividades do Mês ({currentSeason.activities.length})
+                                            </p>
+                                            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                                {currentSeason.activities.map((activity) => {
+                                                    const IconComponent = getActivityIcon(activity.action_type)
+                                                    const activityDate = new Date(activity.created_at)
+                                                    return (
+                                                        <div
+                                                            key={activity.id}
+                                                            className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1.5"
+                                                        >
+                                                            <IconComponent className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                                            <span className="flex-1 truncate text-gray-600">
+                                                                {activity.description || activity.action_type}
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-500 flex-shrink-0">
+                                                                {activityDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                                            </span>
+                                                            <span className="text-[#D2691E] font-bold flex-shrink-0 min-w-[45px] text-right">
+                                                                +{activity.points}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-xs text-gray-600 text-center py-3">
+                                            Nenhuma atividade registrada este mês
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Header da tabela de temporadas passadas */}
-                {pastSeasons.length > 0 && (
-                    <>
-                        <div className="grid grid-cols-[65px_1fr_40px_55px_60px] gap-1 px-3 py-1.5 bg-muted/40 border-b border-border/50 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
-                            <div>Período</div>
-                            <div className="text-center">Patente</div>
-                            <div className="text-center">Rank</div>
-                            <div className="text-center">Confraria</div>
-                            <div className="text-right">Vigor</div>
-                        </div>
-                    </>
-                )}
+                    {/* Header da tabela de temporadas passadas */}
+                    {pastSeasons.length > 0 && (
+                        <>
+                            <div className="grid grid-cols-[65px_1fr_40px_55px_60px] gap-1 px-3 py-1.5 bg-gray-50 border-b border-gray-200 text-[8px] font-bold uppercase tracking-wider text-gray-600">
+                                <div>Período</div>
+                                <div className="text-center">Patente</div>
+                                <div className="text-center">Rank</div>
+                                <div className="text-center">Confraria</div>
+                                <div className="text-right">Vigor</div>
+                            </div>
+                        </>
+                    )}
 
-                <div className="divide-y divide-border/30">
-                    {visibleSeasons.map((season) => {
-                        const isOpen = expandedSeasons.has(season.season_id)
-                        const hasBadges = season.badges && season.badges.length > 0
-                        const hasActivities = season.activities && season.activities.length > 0
-                        // Calcular rank correto baseado no XP
-                        const correctRankId = getRankFromXP(season.total_xp)
-                        const correctRankName = getRankName(correctRankId)
+                    <div className="divide-y divide-border/30">
+                        {visibleSeasons.map((season) => {
+                            const isOpen = expandedSeasons.has(season.season_id)
+                            const hasBadges = season.badges && season.badges.length > 0
+                            const hasActivities = season.activities && season.activities.length > 0
+                            // Calcular rank correto baseado no XP
+                            const correctRankId = getRankFromXP(season.total_xp)
+                            const correctRankName = getRankName(correctRankId)
 
-                        return (
-                            <div key={season.season_id}>
-                                {/* Linha principal - clicável */}
-                                <button
-                                    onClick={() => (hasBadges || hasActivities) && toggleSeasonExpand(season.season_id)}
-                                    className={cn(
-                                        "w-full grid grid-cols-[65px_1fr_40px_55px_60px] gap-1 px-3 py-2.5 text-left items-center",
-                                        "transition-all duration-300 ease-out",
-                                        "hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5",
-                                        "hover:shadow-[inset_0_0_20px_rgba(var(--primary),0.05)]",
-                                        (hasBadges || hasActivities) ? "cursor-pointer group" : "cursor-default",
-                                        isOpen && "bg-muted/20"
-                                    )}
-                                >
-                                    {/* Período */}
-                                    <div className="flex items-center gap-1">
-                                        {(hasBadges || hasActivities) && (
-                                            <ChevronRight className={cn(
-                                                "w-3 h-3 text-muted-foreground flex-shrink-0",
-                                                "transition-all duration-300 ease-out",
-                                                "group-hover:text-primary",
-                                                isOpen && "rotate-90 text-primary"
-                                            )} />
-                                        )}
-                                        {!(hasBadges || hasActivities) && <div className="w-3 flex-shrink-0" />}
-                                        <span className={cn(
-                                            "text-xs font-bold text-foreground",
-                                            "transition-colors duration-200",
-                                            "group-hover:text-primary"
-                                        )}>
-                                            {MONTH_NAMES[season.season_month]}/{String(season.season_year).slice(2)}
-                                        </span>
-                                    </div>
-
-                                    {/* Patente */}
-                                    <div className="flex items-center justify-center gap-1.5">
-                                        <div className={cn(
+                            return (
+                                <div key={season.season_id}>
+                                    {/* Linha principal - clicável */}
+                                    <button
+                                        onClick={() => (hasBadges || hasActivities) && toggleSeasonExpand(season.season_id)}
+                                        className={cn(
+                                            "w-full grid grid-cols-[65px_1fr_40px_55px_60px] gap-1 px-3 py-2.5 text-left items-center",
                                             "transition-all duration-300 ease-out",
-                                            "group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
-                                        )}>
-                                            <RankInsignia
-                                                rankId={correctRankId}
-                                                iconName={getRankIconFromDB(correctRankId)}
-                                                size="xs"
-                                                variant="avatar"
-                                                className="w-6 h-6 !p-0.5"
-                                            />
+                                            "hover:bg-gradient-to-r hover:from-[#1E4D40]/5 hover:to-[#D2691E]/5",
+                                            "hover:shadow-sm",
+                                            (hasBadges || hasActivities) ? "cursor-pointer group" : "cursor-default",
+                                            isOpen && "bg-gray-50"
+                                        )}
+                                    >
+                                        {/* Período */}
+                                        <div className="flex items-center gap-1">
+                                            {(hasBadges || hasActivities) && (
+                                                <ChevronRight className={cn(
+                                                    "w-3 h-3 text-gray-400 flex-shrink-0",
+                                                    "transition-all duration-300 ease-out",
+                                                    "group-hover:text-[#1E4D40]",
+                                                    isOpen && "rotate-90 text-[#1E4D40]"
+                                                )} />
+                                            )}
+                                            {!(hasBadges || hasActivities) && <div className="w-3 flex-shrink-0" />}
+                                            <span className={cn(
+                                                "text-xs font-bold text-[#2D3142]",
+                                                "transition-colors duration-200",
+                                                "group-hover:text-[#1E4D40]"
+                                            )}>
+                                                {MONTH_NAMES[season.season_month]}/{String(season.season_year).slice(2)}
+                                            </span>
                                         </div>
-                                        <span className={cn(
-                                            "text-[11px] text-muted-foreground hidden sm:inline",
-                                            "transition-colors duration-200",
-                                            "group-hover:text-foreground"
-                                        )}>
-                                            {correctRankName}
-                                        </span>
-                                    </div>
 
-                                    {/* Ranking */}
-                                    <div className="flex items-center justify-center">
-                                        {season.ranking_position ? (
+                                        {/* Patente */}
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            <div className={cn(
+                                                "transition-all duration-300 ease-out",
+                                                "group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
+                                            )}>
+                                                <RankInsignia
+                                                    rankId={correctRankId}
+                                                    iconName={getRankIconFromDB(correctRankId)}
+                                                    size="xs"
+                                                    variant="avatar"
+                                                    className="w-6 h-6 !p-0.5"
+                                                />
+                                            </div>
+                                            <span className={cn(
+                                                "text-[11px] text-muted-foreground hidden sm:inline",
+                                                "transition-colors duration-200",
+                                                "group-hover:text-foreground"
+                                            )}>
+                                                {correctRankName}
+                                            </span>
+                                        </div>
+
+                                        {/* Ranking */}
+                                        <div className="flex items-center justify-center">
+                                            {season.ranking_position ? (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className={cn(
+                                                                "flex items-center gap-1 font-bold text-xs",
+                                                                "transition-all duration-300",
+                                                                season.ranking_position <= 3 && "group-hover:scale-110"
+                                                            )}>
+                                                                {season.ranking_position === 1 && (
+                                                                    <span className="text-base leading-none">🥇</span>
+                                                                )}
+                                                                {season.ranking_position === 2 && (
+                                                                    <span className="text-base leading-none">🥈</span>
+                                                                )}
+                                                                {season.ranking_position === 3 && (
+                                                                    <span className="text-base leading-none">🥉</span>
+                                                                )}
+                                                                <span className="text-muted-foreground">#{season.ranking_position}</span>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p className="text-xs">
+                                                                {season.ranking_position === 1 && "🥇 Campeão da temporada!"}
+                                                                {season.ranking_position === 2 && "🥈 Vice-campeão"}
+                                                                {season.ranking_position === 3 && "🥉 3º lugar no pódio"}
+                                                                {season.ranking_position > 3 && `Posição #${season.ranking_position} no ranking`}
+                                                            </p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground/50">-</span>
+                                            )}
+                                        </div>
+
+                                        {/* Confrarias */}
+                                        <div className="flex items-center justify-center">
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <div className={cn(
-                                                            "flex items-center gap-1 font-bold text-xs",
-                                                            "transition-all duration-300",
-                                                            season.ranking_position <= 3 && "group-hover:scale-110"
+                                                            "flex items-center gap-0.5 text-muted-foreground",
+                                                            "transition-all duration-200",
+                                                            "group-hover:text-accent group-hover:scale-105"
                                                         )}>
-                                                            {season.ranking_position === 1 && (
-                                                                <span className="text-base leading-none">🥇</span>
-                                                            )}
-                                                            {season.ranking_position === 2 && (
-                                                                <span className="text-base leading-none">🥈</span>
-                                                            )}
-                                                            {season.ranking_position === 3 && (
-                                                                <span className="text-base leading-none">🥉</span>
-                                                            )}
-                                                            <span className="text-muted-foreground">#{season.ranking_position}</span>
+                                                            <Users className="w-3 h-3" />
+                                                            <span className="text-xs font-medium">
+                                                                {season.confraternities_count || 0}
+                                                            </span>
                                                         </div>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p className="text-xs">
-                                                            {season.ranking_position === 1 && "🥇 Campeão da temporada!"}
-                                                            {season.ranking_position === 2 && "🥈 Vice-campeão"}
-                                                            {season.ranking_position === 3 && "🥉 3º lugar no pódio"}
-                                                            {season.ranking_position > 3 && `Posição #${season.ranking_position} no ranking`}
-                                                        </p>
+                                                        <p className="text-xs">Confrarias realizadas</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
-                                        ) : (
-                                            <span className="text-[10px] text-muted-foreground/50">-</span>
-                                        )}
-                                    </div>
+                                        </div>
 
-                                    {/* Confrarias */}
-                                    <div className="flex items-center justify-center">
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className={cn(
-                                                        "flex items-center gap-0.5 text-muted-foreground",
-                                                        "transition-all duration-200",
-                                                        "group-hover:text-accent group-hover:scale-105"
-                                                    )}>
-                                                        <Users className="w-3 h-3" />
-                                                        <span className="text-xs font-medium">
-                                                            {season.confraternities_count || 0}
-                                                        </span>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p className="text-xs">Confrarias realizadas</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </div>
-
-                                    {/* Vigor */}
-                                    <div className={cn(
-                                        "flex items-center gap-1 justify-end",
-                                        "transition-all duration-200",
-                                        "group-hover:scale-105"
-                                    )}>
-                                        <Flame className={cn(
-                                            "w-3 h-3 transition-all duration-300",
-                                            season.total_xp >= 2000 ? "text-accent group-hover:animate-pulse" :
-                                                season.total_xp >= 1000 ? "text-primary" :
-                                                    "text-muted-foreground"
-                                        )} />
-                                        <span className={cn(
-                                            "text-xs font-bold tabular-nums transition-colors duration-200",
-                                            season.total_xp >= 2000 ? "text-accent" :
-                                                season.total_xp >= 1000 ? "text-primary" :
-                                                    "text-foreground"
+                                        {/* Vigor */}
+                                        <div className={cn(
+                                            "flex items-center gap-1 justify-end",
+                                            "transition-all duration-200",
+                                            "group-hover:scale-105"
                                         )}>
-                                            {season.total_xp.toLocaleString('pt-BR')}
-                                        </span>
-                                    </div>
-                                </button>
+                                            <Flame className={cn(
+                                                "w-3 h-3 transition-all duration-300",
+                                                season.total_xp >= 2000 ? "text-accent group-hover:animate-pulse" :
+                                                    season.total_xp >= 1000 ? "text-primary" :
+                                                        "text-muted-foreground"
+                                            )} />
+                                            <span className={cn(
+                                                "text-xs font-bold tabular-nums transition-colors duration-200",
+                                                season.total_xp >= 2000 ? "text-accent" :
+                                                    season.total_xp >= 1000 ? "text-primary" :
+                                                        "text-foreground"
+                                            )}>
+                                                {season.total_xp.toLocaleString('pt-BR')}
+                                            </span>
+                                        </div>
+                                    </button>
 
-                                {/* Dropdown de medalhas e atividades - com animação de entrada */}
-                                <div className={cn(
-                                    "overflow-hidden transition-all duration-400 ease-out",
-                                    isOpen && (hasBadges || hasActivities) ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
-                                )}>
-                                    <div className="px-4 pb-3 pt-2 bg-gradient-to-b from-muted/30 to-muted/10 border-t border-border/20 space-y-4">
-                                        {/* Medalhas */}
-                                        {hasBadges && (
-                                            <div>
-                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
-                                                    <Award className="w-3 h-3" />
-                                                    Medalhas conquistadas
-                                                </p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <TooltipProvider>
-                                                        {season.badges!.map((badge, index) => (
-                                                            <Tooltip key={badge.badge_id}>
-                                                                <TooltipTrigger asChild>
-                                                                    <div
-                                                                        className={cn(
-                                                                            "cursor-pointer transition-all duration-300",
-                                                                            "hover:scale-125 hover:-translate-y-1",
-                                                                            "hover:drop-shadow-[0_4px_12px_rgba(var(--accent),0.4)]"
-                                                                        )}
-                                                                        style={{
-                                                                            animationDelay: `${index * 50}ms`,
-                                                                            animation: isOpen ? 'slideInUp 0.3s ease-out forwards' : 'none'
-                                                                        }}
+                                    {/* Dropdown de medalhas e atividades - com animação de entrada */}
+                                    <div className={cn(
+                                        "overflow-hidden transition-all duration-400 ease-out",
+                                        isOpen && (hasBadges || hasActivities) ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                                    )}>
+                                        <div className="px-4 pb-3 pt-2 bg-gradient-to-b from-muted/30 to-muted/10 border-t border-border/20 space-y-4">
+                                            {/* Medalhas */}
+                                            {hasBadges && (
+                                                <div>
+                                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
+                                                        <Award className="w-3 h-3" />
+                                                        Medalhas conquistadas
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <TooltipProvider>
+                                                            {season.badges!.map((badge, index) => (
+                                                                <Tooltip key={badge.badge_id}>
+                                                                    <TooltipTrigger asChild>
+                                                                        <div
+                                                                            className={cn(
+                                                                                "cursor-pointer transition-all duration-300",
+                                                                                "hover:scale-125 hover:-translate-y-1",
+                                                                                "hover:drop-shadow-[0_4px_12px_rgba(var(--accent),0.4)]"
+                                                                            )}
+                                                                            style={{
+                                                                                animationDelay: `${index * 50}ms`,
+                                                                                animation: isOpen ? 'slideInUp 0.3s ease-out forwards' : 'none'
+                                                                            }}
+                                                                        >
+                                                                            <MedalBadge
+                                                                                medalId={badge.badge_id}
+                                                                                size="sm"
+                                                                                variant="icon-only"
+                                                                                className="w-7 h-7 shadow-md"
+                                                                            />
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent
+                                                                        className="max-w-[220px] bg-background/95 backdrop-blur-sm border-primary/20"
+                                                                        sideOffset={8}
                                                                     >
-                                                                        <MedalBadge
-                                                                            medalId={badge.badge_id}
-                                                                            size="sm"
-                                                                            variant="icon-only"
-                                                                            className="w-7 h-7 shadow-md"
-                                                                        />
-                                                                    </div>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent
-                                                                    className="max-w-[220px] bg-background/95 backdrop-blur-sm border-primary/20"
-                                                                    sideOffset={8}
-                                                                >
-                                                                    <p className="font-bold text-sm text-primary">{badge.badge_name}</p>
-                                                                    {badge.badge_description && (
-                                                                        <p className="text-xs text-muted-foreground mt-1">{badge.badge_description}</p>
-                                                                    )}
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        ))}
-                                                    </TooltipProvider>
+                                                                        <p className="font-bold text-sm text-primary">{badge.badge_name}</p>
+                                                                        {badge.badge_description && (
+                                                                            <p className="text-xs text-muted-foreground mt-1">{badge.badge_description}</p>
+                                                                        )}
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            ))}
+                                                        </TooltipProvider>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {/* Atividades/Pontos */}
-                                        {hasActivities && (
-                                            <div>
-                                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                                                    <TrendingUp className="w-3 h-3" />
-                                                    Atividades ({season.activities!.length})
-                                                </p>
-                                                <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                                                    {season.activities!.map((activity) => {
-                                                        const IconComponent = getActivityIcon(activity.action_type)
-                                                        return (
-                                                            <div
-                                                                key={activity.id}
-                                                                className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1.5"
-                                                            >
-                                                                <IconComponent className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                                                <span className="flex-1 truncate text-muted-foreground">
-                                                                    {activity.description || activity.action_type}
-                                                                </span>
-                                                                <span className="text-accent font-bold flex-shrink-0">
-                                                                    +{activity.points}
-                                                                </span>
-                                                            </div>
-                                                        )
-                                                    })}
+                                            {/* Atividades/Pontos */}
+                                            {hasActivities && (
+                                                <div>
+                                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                                                        <TrendingUp className="w-3 h-3" />
+                                                        Atividades ({season.activities!.length})
+                                                    </p>
+                                                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                                                        {season.activities!.map((activity) => {
+                                                            const IconComponent = getActivityIcon(activity.action_type)
+                                                            return (
+                                                                <div
+                                                                    key={activity.id}
+                                                                    className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1.5"
+                                                                >
+                                                                    <IconComponent className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                                                    <span className="flex-1 truncate text-muted-foreground">
+                                                                        {activity.description || activity.action_type}
+                                                                    </span>
+                                                                    <span className="text-accent font-bold flex-shrink-0">
+                                                                        +{activity.points}
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
-
-                {/* Botão Ver Mais/Menos */}
-                {pastSeasons.length > 6 && (
-                    <div className="border-t border-border/50 p-1.5 bg-muted/10">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full h-7 text-[10px] text-muted-foreground hover:text-foreground uppercase tracking-wider"
-                            onClick={() => setExpanded(!expanded)}
-                        >
-                            {expanded ? (
-                                <>
-                                    <ChevronUp className="w-3 h-3 mr-1" />
-                                    Ver menos
-                                </>
-                            ) : (
-                                <>
-                                    <ChevronDown className="w-3 h-3 mr-1" />
-                                    Ver todas ({pastSeasons.length})
-                                </>
-                            )}
-                        </Button>
+                            )
+                        })}
                     </div>
-                )}
+
+                    {/* Botão Ver Mais/Menos */}
+                    {pastSeasons.length > 6 && (
+                        <div className="border-t border-border/50 p-1.5 bg-muted/10">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full h-7 text-[10px] text-muted-foreground hover:text-foreground uppercase tracking-wider"
+                                onClick={() => setExpanded(!expanded)}
+                            >
+                                {expanded ? (
+                                    <>
+                                        <ChevronUp className="w-3 h-3 mr-1" />
+                                        Ver menos
+                                    </>
+                                ) : (
+                                    <>
+                                        <ChevronDown className="w-3 h-3 mr-1" />
+                                        Ver todas ({pastSeasons.length})
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </CardContent>
         </Card>
     )

@@ -116,12 +116,31 @@ export interface RatingData {
     }
 }
 
+export interface ProezaData {
+    id: string
+    name: string
+    icon: string
+    description: string
+    points_base: number
+    category?: string
+    is_active?: boolean
+}
+
+export interface UserProezaData {
+    proeza_id: string
+    points_earned: number
+    earned_at: string
+    season_month?: string
+}
+
 export interface CompleteProfileData {
     profile: ProfileData
     gamification: GamificationData | null
     subscription: SubscriptionData | null
     allMedals: MedalData[]
     earnedMedals: UserMedalData[]
+    allProezas: ProezaData[]
+    earnedProezas: UserProezaData[]
     confraternityStats: ConfraternityStat | null
     portfolio: PortfolioItem[]
     ratings: RatingData[]

@@ -100,22 +100,19 @@ export default function ImprovedCurrentHeaderV6Complete({
                                 src={profile.avatar_url}
                                 alt={profile.full_name}
                                 size="lg"
-                                className="shadow-2xl"
+                                className=""
                             />
                         </div>
 
-                        {/* Rank Badge with Glow - Adjusted Position */}
+                        {/* Rank Badge - Adjusted Position */}
                         <div
                             className="absolute bottom-6 right-6 z-30"
-                            style={{
-                                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))'
-                            }}
                         >
                             <RankInsignia
                                 rankId={gamification?.current_rank_id || 'novato'}
                                 size="lg"
                                 variant="icon-only"
-                                className="border-4 border-[#1A2421]" // Borda escura para separar do avatar
+                                className="border-4 border-[#1A2421]"
                             />
                         </div>
                     </div>
@@ -148,19 +145,12 @@ export default function ImprovedCurrentHeaderV6Complete({
                                 </div>
                             </div>
 
-                            {/* PATENTE - Badge tipo medalha */}
-                            <div className="flex-shrink-0 ml-4">
-                                <div
-                                    className="relative px-5 py-4 rounded-2xl border-2 border-[#1E4D40]/50"
-                                    style={{
-                                        background: 'rgba(45, 59, 45, 0.3)',
-                                        opacity: 0.9,
-                                        backdropFilter: 'blur(8px)'
-                                    }}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Shield className="w-8 h-8 text-[#1E4D40]" />
-                                        <div className="text-base font-bold text-[#F2F4F3] capitalize leading-none text-center">
+                            {/* PATENTE - Badge tipo medalha (estilo V4 com gradiente laranja) - Absoluto */}
+                            <div className="absolute top-12 right-6 z-20">
+                                <div className="bg-gradient-to-br from-[#D2691E]/60 to-[#A0522D]/60 border-2 border-[#D2691E]/15 rounded-xl px-5 py-3 shadow-xl backdrop-blur-sm">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <Shield className="w-8 h-8 text-white" />
+                                        <div className="text-sm font-bold text-white capitalize">
                                             {gamification?.current_rank_id || 'Novato'}
                                         </div>
                                     </div>

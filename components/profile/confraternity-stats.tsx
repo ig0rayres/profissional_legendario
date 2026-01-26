@@ -112,113 +112,119 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
 
     if (loading) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Swords className="w-5 h-5" />
-                        Próximas Confrarias
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
+            <Card className="bg-white border border-gray-200 shadow-md">
+                <CardContent className="p-5">
+                    <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#D2691E] border-t-transparent" />
                     </div>
                 </CardContent>
             </Card>
         )
     }
 
-    return (
-        <Card className="border-[#2D3B2D] bg-[#1A2421]/60 backdrop-blur-sm shadow-lg shadow-black/30 hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-[#F2F4F3]">
-                    <Swords className="w-5 h-5 text-[#1E4D40]" />
-                    Próximas Confrarias
-                </CardTitle>
-            </CardHeader>
+    const formatDate = (date: string) => {
+        const d = new Date(date)
+        return {
+            day: d.getDate(),
+            month: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+            weekday: d.toLocaleDateString('pt-BR', { weekday: 'short' }),
+            time: d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        }
+    }
 
-            <CardContent className="space-y-3">
+    return (
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+            <CardContent className="p-5 relative">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-transform duration-300">
+                        <Swords className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-[#2D3142]">
+                            Confrarias
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                            Próximos encontros
+                        </p>
+                    </div>
+                </div>
+
                 {confraternities.length === 0 ? (
-                    <div className="bg-[#0F1B1A]/50 p-4 rounded-lg border border-dashed border-[#2D3B2D] text-center">
-                        <Swords className="w-6 h-6 text-[#D1D5DB] mx-auto mb-2" />
-                        <p className="text-xs text-[#D1D5DB]">
+                    <div className="text-center py-8 bg-[#D2691E]/5 rounded-xl border border-dashed border-[#D2691E]/20 hover:border-[#D2691E]/40 hover:bg-[#D2691E]/10 transition-all cursor-pointer">
+                        <Calendar className="w-10 h-10 text-[#D2691E]/50 mx-auto mb-2" />
+                        <p className="text-sm text-[#2D3142]">
                             Nenhuma confraria agendada
                         </p>
                         {isOwnProfile && (
                             <Link
                                 href="/elo-da-rota/confraria/solicitar"
-                                className="text-xs text-[#1E4D40] hover:underline mt-2 block"
+                                className="text-xs text-[#D2691E] hover:underline mt-2 block font-medium"
                             >
-                                Agendar uma confraria
+                                Agendar um encontro
                             </Link>
                         )}
                     </div>
                 ) : (
-                    <>
-                        {confraternities.map(conf => (
-                            <div
-                                key={conf.id}
-                                className="bg-[#0F1B1A]/50 p-3 rounded-lg border border-[#1E4D40]/10 hover:border-[#1E4D40]/30 transition-colors"
-                            >
-                                <div className="flex items-start gap-3">
-                                    {/* Avatar com Patente */}
-                                    <div className="relative flex-shrink-0">
-                                        <div className="w-12 h-12 rounded-full border-2 border-[#1E4D40]/20 bg-[#1E4D40]/10 flex items-center justify-center overflow-hidden">
-                                            {conf.partner?.avatar_url ? (
-                                                <Image
-                                                    src={conf.partner.avatar_url}
-                                                    alt={conf.partner.full_name}
-                                                    width={48}
-                                                    height={48}
-                                                    className="object-cover w-full h-full"
-                                                />
-                                            ) : (
-                                                <span className="text-base font-bold text-[#1E4D40]">
-                                                    {conf.partner?.full_name?.charAt(0).toUpperCase() || '?'}
-                                                </span>
-                                            )}
-                                        </div>
+                    <div className="space-y-3">
+                        {confraternities.map((conf) => {
+                            const date = formatDate(conf.proposed_date)
+                            return (
+                                <div
+                                    key={conf.id}
+                                    className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:border-[#D2691E]/30 hover:shadow-md transition-all transform hover:scale-102 duration-300 cursor-pointer group/conf"
+                                >
+                                    <div className="w-14 h-14 flex-shrink-0 rounded-xl bg-white border border-gray-200 flex flex-col items-center justify-center shadow-sm transform group-hover/conf:scale-110 transition-transform">
+                                        <span className="text-lg font-bold text-[#D2691E]">{date.day}</span>
+                                        <span className="text-[10px] uppercase text-gray-600 font-medium">{date.month}</span>
+                                    </div>
 
-                                        {/* Ícone da Patente - menor */}
-                                        <div className="absolute -bottom-0.5 -right-0.5">
-                                            <RankInsignia
-                                                rankId={conf.partner?.rank_id || 'novato'}
-                                                size="xs"
-                                                variant="avatar"
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md transform group-hover/conf:rotate-6 transition-transform">
+                                        {conf.partner?.avatar_url ? (
+                                            <Image
+                                                src={conf.partner.avatar_url}
+                                                alt={conf.partner.full_name}
+                                                width={48}
+                                                height={48}
+                                                className="object-cover"
                                             />
-                                        </div>
+                                        ) : (
+                                            <span className="text-lg font-bold text-white">
+                                                {conf.partner?.full_name?.charAt(0) || '?'}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm truncate text-[#F2F4F3]">
-                                            {conf.partner?.full_name || 'Usuário'}
+                                        <p className="text-sm font-semibold text-[#2D3142] truncate">
+                                            {conf.partner?.full_name}
                                         </p>
-
-                                        <div className="flex items-center gap-1 text-xs text-[#D1D5DB] mt-1">
-                                            <Calendar className="w-3 h-3" />
-                                            {format(new Date(conf.proposed_date), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                                        <div className="flex items-center gap-1 text-xs text-gray-700 mt-0.5">
+                                            <span className="capitalize">{date.weekday}</span>
+                                            <span>•</span>
+                                            <span>{date.time}</span>
                                         </div>
-
                                         {conf.location && (
-                                            <div className="flex items-center gap-1 text-xs text-[#D1D5DB] mt-0.5">
+                                            <div className="flex items-center gap-1 text-xs text-gray-600 mt-0.5">
                                                 <MapPin className="w-3 h-3" />
                                                 <span className="truncate">{conf.location}</span>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
 
                         {confraternities.length >= 5 && (
                             <Link
                                 href="/elo-da-rota/confraria"
-                                className="text-xs text-primary hover:underline text-center block pt-2"
+                                className="text-xs text-[#D2691E] hover:underline text-center block pt-2 font-medium"
                             >
                                 Ver todas as confrarias
                             </Link>
                         )}
-                    </>
+                    </div>
                 )}
             </CardContent>
         </Card>

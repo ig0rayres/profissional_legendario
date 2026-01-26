@@ -25,6 +25,8 @@ const nextConfig = {
     experimental: {
         missingSuspenseWithCSRBailout: false,
     },
+    // Permitir acesso de dispositivos na rede local
+    allowedDevOrigins: ['192.168.5.21'],
     // Excluir Edge Functions do Supabase (usam Deno, não Node)
     webpack: (config) => {
         config.watchOptions = {

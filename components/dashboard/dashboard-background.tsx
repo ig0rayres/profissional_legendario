@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 
 export function DashboardBackground() {
-    const [presetName, setPresetName] = useState<string>('default')
+    const [presetName, setPresetName] = useState<string>('light')
     const supabase = createClient()
 
     useEffect(() => {
@@ -19,91 +19,158 @@ export function DashboardBackground() {
                 .eq('id', user.id)
                 .single()
 
+            console.log('[DashboardBackground] Profile cover_url:', profile?.cover_url)
+
             if (profile?.cover_url?.startsWith('preset:')) {
                 const preset = profile.cover_url.split(':')[1]
+                console.log('[DashboardBackground] Setting preset:', preset)
                 setPresetName(preset)
             } else {
-                setPresetName('default')
+                console.log('[DashboardBackground] No preset found, using default (light)')
+                setPresetName('light')
             }
         }
 
         loadUserTheme()
     }, [])
 
-    // Styles Rendering Logic
+    // Styles Rendering Logic - TODOS CLAROS para legibilidade
     const renderBackground = () => {
         switch (presetName) {
-            case 'orange':
-                return <div className="fixed inset-0 z-0 bg-gradient-to-br from-orange-950/80 via-[#1a1510] to-black pointer-events-none" />
+            case 'light':
+                // Cinza Claro - Padrão Antigo Restaurado
+                return <div className="fixed inset-0 -z-10 bg-[#e6e6e6] pointer-events-none" />
 
-            case 'gray':
-                return <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black pointer-events-none" />
-
-            case 'cyber':
+            case 'rota_business':
+                // Cinza com Logo da Rota Business (sutil)
                 return (
-                    <div className="fixed inset-0 z-0 bg-black pointer-events-none">
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f0_1px,transparent_1px),linear-gradient(to_bottom,#0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-10" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black" />
-                    </div>
-                )
-
-            case 'gold':
-                return (
-                    <div className="fixed inset-0 z-0 bg-black pointer-events-none">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#4d3a18] via-[#1a1205] to-black" />
-                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%)' }} />
-                    </div>
-                )
-
-            case 'treasure_map':
-                return (
-                    <div className="fixed inset-0 z-0 bg-[#1c1917] pointer-events-none">
-                        {/* Papel envelhecido dark */}
-                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/aged-paper.png')] opacity-10 mix-blend-overlay" />
-                        {/* Linhas de Mapa SVG Inline */}
-                        <div className="absolute inset-0 opacity-[0.05]"
-                            style={{
-                                backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23D4742C' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E\")",
-                            }}
-                        />
-                        {/* X Marks the Spot - Decorative */}
-                        <div className="absolute right-20 bottom-20 opacity-10 rotate-12">
-                            <svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#D4742C" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#e8e8e8] via-[#d4d4d4] to-[#c0c0c0] pointer-events-none">
+                        {/* Logo Watermark */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03]">
+                            <svg width="600" height="600" viewBox="0 0 200 200" fill="none">
+                                <circle cx="100" cy="100" r="80" stroke="#1A2421" strokeWidth="4" />
+                                <path d="M100 40 L140 100 L100 80 L60 100 Z" fill="#1A2421" />
+                                <text x="100" y="150" textAnchor="middle" fontSize="24" fill="#1A2421" fontWeight="bold">ROTA</text>
                             </svg>
                         </div>
+                        {/* Subtle Grid */}
+                        <div className="absolute inset-0 opacity-[0.02]" style={{
+                            backgroundImage: "linear-gradient(#1A2421 1px, transparent 1px), linear-gradient(90deg, #1A2421 1px, transparent 1px)",
+                            backgroundSize: "50px 50px"
+                        }} />
                     </div>
                 )
 
-            case 'night_ops':
+            case 'verde_claro':
+                // Verde Claro Suave
                 return (
-                    <div className="fixed inset-0 z-0 bg-[#050a05] pointer-events-none">
-                        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,3px_100%] opacity-20" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f2e1a]/30 via-transparent to-[#0f2e1a]/20" />
-                        {/* Radar Scanline Animation Class must exist in globals or tailwind, but generic animate-pulse works as fallback */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#00ff00]/5 to-transparent h-full w-full animate-pulse opacity-10" />
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#d4e8d4] via-[#e8f5e8] to-[#c8dcc8] pointer-events-none">
+                        <div className="absolute inset-0 opacity-[0.03]" style={{
+                            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231A2421' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"
+                        }} />
                     </div>
                 )
 
-            case 'desert':
+            case 'laranja_claro':
+                // Laranja Claro Vibrante
                 return (
-                    <div className="fixed inset-0 z-0 bg-[#1c1814] pointer-events-none">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#4a3b2a] via-[#261f18] to-[#0f0c0a]" />
-                        <div className="absolute inset-0 opacity-[0.05]"
-                            style={{
-                                backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23dcb482' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"
-                            }}
-                        />
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#ffe4d4] via-[#ffd4b8] to-[#ffcba0] pointer-events-none">
+                        <div className="absolute inset-0 opacity-[0.05]" style={{
+                            backgroundImage: "radial-gradient(circle at 50% 50%, rgba(212, 116, 44, 0.1) 0%, transparent 50%)"
+                        }} />
+                    </div>
+                )
+
+            case 'bege_aventura':
+                // Bege/Creme - Tema Aventura
+                return (
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#f5f0e8] via-[#e8dcc8] to-[#d4c8b0] pointer-events-none">
+                        {/* Mapa Topográfico Sutil */}
+                        <div className="absolute inset-0 opacity-[0.04]" style={{
+                            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7z' fill='%23D4742C' fill-opacity='0.4'/%3E%3C/svg%3E\")"
+                        }} />
+                    </div>
+                )
+
+            case 'azul_claro':
+                // Azul Claro Céu
+                return (
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#d4e8f5] via-[#e0f0ff] to-[#c8dce8] pointer-events-none">
+                        {/* Nuvens Sutis */}
+                        <div className="absolute inset-0 opacity-[0.06]" style={{
+                            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='200' height='100' viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='50' cy='50' rx='40' ry='20' fill='white' opacity='0.5'/%3E%3Cellipse cx='150' cy='60' rx='50' ry='25' fill='white' opacity='0.4'/%3E%3C/svg%3E\")",
+                            backgroundSize: "400px 200px"
+                        }} />
+                    </div>
+                )
+
+            case 'rosa_claro':
+                // Rosa Claro Suave
+                return (
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#ffd4e8] via-[#ffe8f0] to-[#ffc8dc] pointer-events-none">
+                        <div className="absolute inset-0 opacity-[0.04]" style={{
+                            backgroundImage: "radial-gradient(circle at 20% 30%, rgba(255, 182, 193, 0.2) 0%, transparent 50%)"
+                        }} />
+                    </div>
+                )
+
+            case 'amarelo_claro':
+                // Amarelo Claro Dourado
+                return (
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#fff8d4] via-[#ffeed4] to-[#ffe4b8] pointer-events-none">
+                        <div className="absolute inset-0 opacity-[0.05]" style={{
+                            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 10 L35 25 L50 25 L38 35 L43 50 L30 40 L17 50 L22 35 L10 25 L25 25 Z' fill='%23F59E0B' opacity='0.1'/%3E%3C/svg%3E\")",
+                            backgroundSize: "120px 120px"
+                        }} />
+                    </div>
+                )
+
+            case 'verde_menta':
+                // Verde Menta Refrescante
+                return (
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#d4f5e8] via-[#e0fff0] to-[#c8ffe0] pointer-events-none">
+                        <div className="absolute inset-0 opacity-[0.03]" style={{
+                            backgroundImage: "linear-gradient(45deg, rgba(26, 36, 33, 0.02) 25%, transparent 25%, transparent 75%, rgba(26, 36, 33, 0.02) 75%), linear-gradient(45deg, rgba(26, 36, 33, 0.02) 25%, transparent 25%, transparent 75%, rgba(26, 36, 33, 0.02) 75%)",
+                            backgroundSize: "60px 60px",
+                            backgroundPosition: "0 0, 30px 30px"
+                        }} />
+                    </div>
+                )
+
+            case 'lavanda':
+                // Lavanda Claro
+                return (
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#e8d4f5] via-[#f0e8ff] to-[#dcc8e8] pointer-events-none">
+                        <div className="absolute inset-0 opacity-[0.04]" style={{
+                            backgroundImage: "radial-gradient(circle at 70% 20%, rgba(147, 51, 234, 0.1) 0%, transparent 50%)"
+                        }} />
+                    </div>
+                )
+
+            case 'pêssego':
+                // Pêssego Claro
+                return (
+                    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#ffe8d4] via-[#fff0e0] to-[#ffd8c0] pointer-events-none">
+                        <div className="absolute inset-0 opacity-[0.05]" style={{
+                            backgroundImage: "radial-gradient(circle at 30% 40%, rgba(255, 160, 122, 0.15) 0%, transparent 50%)"
+                        }} />
                     </div>
                 )
 
             case 'default':
             default:
-                // Default theme is handled by global CSS (Verde Legendários)
-                return null
+                // Default: Cinza Claro (igual ao 'light')
+                return <div className="fixed inset-0 -z-10 bg-[#e6e6e6] pointer-events-none" />
         }
     }
 
-    return renderBackground()
+    return (
+        <>
+            {/* Debug indicator */}
+            <div className="fixed top-4 left-4 z-50 bg-black/80 text-white px-3 py-2 rounded text-xs font-mono">
+                Tema: {presetName}
+            </div>
+            {renderBackground()}
+        </>
+    )
 }
