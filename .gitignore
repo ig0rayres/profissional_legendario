@@ -57,3 +57,4 @@ coverage/
 supabase/functions/
 node_modules/
 .next/
+.env*.local

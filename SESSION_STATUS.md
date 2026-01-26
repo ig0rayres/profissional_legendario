@@ -43,6 +43,15 @@
   - profile-page-template-original-backup.tsx (template original)
   - LOGIC_MAP.md (mapeamento completo de lógica)
 
+### 6. **Sistema Social "Na Rota" & Validação IA (Descoberto pós-reset)**
+- ✅ **Upload de Provas:** Modal de criação de post permite vincular Confrarias e Projetos.
+- ✅ **Auto-Tagging:** Marca automaticamente o parceiro da confraria no post.
+- ✅ **Validação Automática (IA):**
+  - Endpoint: `/api/posts/auto-validate`
+  - Engine: GPT-4o-mini Vision
+  - Regra: Verifica presença de 2+ pessoas (Confraria) ou trabalho finalizado (Projeto).
+  - Ação: Se confiança ALTA -> Valida e pontua automaticamente (`validate_confraternity_proof_safe`).
+
 ---
 
 ## 🎯 ESTADO ATUAL
