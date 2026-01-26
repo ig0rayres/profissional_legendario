@@ -89,6 +89,15 @@ export interface ConfraternityStat {
         title: string
         date: string
     }
+    upcoming?: Array<{
+        id: string
+        proposed_date: string
+        location: string
+        partner: {
+            full_name: string
+            avatar_url?: string | null
+        }
+    }>
 }
 
 export interface RatingStats {
