@@ -303,17 +303,28 @@ export function ConfraternityCompleteForm({
     }
 
     const calculateRewards = () => {
+        // Filtrar fotos válidas para cálculo correto
+        const validPhotos = formData.photos.filter(url => url && url.trim() !== '' && !url.startsWith('blob:'))
         let xp = 50 // Base
-        xp += formData.photos.length * 20 // Fotos
+        xp += validPhotos.length * 20 // Fotos válidas apenas
         xp += formData.testimonial ? 15 : 0 // Depoimento
-        return xp
+        return { xp, validPhotosCount: validPhotos.length }
+    }
+
+    // Verificar se a data é futura
+    const isFutureDate = () => {
+        if (!formData.date || !formData.time) return false
+        const selectedDate = new Date(`${formData.date}T${formData.time}:00`)
+        return selectedDate > new Date()
     }
 
     const canSubmit = formData.photos.length > 0 &&
         validationResult?.approved &&
         !loading &&
         !uploadingPhotos &&
-        !validating
+        !validating &&
+        !isFutureDate() &&
+        formData.testimonial.trim() !== ''
 
     return (
         <div className="space-y-6">
@@ -364,6 +375,19 @@ export function ConfraternityCompleteForm({
                         />
                     </div>
                 </div>
+
+                {/* Aviso de data futura */}
+                {isFutureDate() && (
+                    <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-red-500" />
+                            <p className="text-sm text-red-900 dark:text-red-100">
+                                <span className="font-semibold">Data inválida:</span> A data da confraria não pode ser no futuro.
+                                Selecione uma data em que o encontro já aconteceu.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Local */}
                 <div className="space-y-2">
@@ -584,14 +608,14 @@ export function ConfraternityCompleteForm({
                     </p>
                     <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
                         <li>• +50 Vigor por realizar</li>
-                        {formData.photos.length > 0 && (
-                            <li>• +{formData.photos.length * 20} Vigor pelas fotos ({formData.photos.length}×20)</li>
+                        {calculateRewards().validPhotosCount > 0 && (
+                            <li>• +{calculateRewards().validPhotosCount * 20} Vigor pelas fotos ({calculateRewards().validPhotosCount}×20)</li>
                         )}
                         {formData.testimonial && (
                             <li>• +15 Vigor pelo depoimento</li>
                         )}
                         <li className="font-bold mt-2 pt-2 border-t border-green-300 dark:border-green-700">
-                            Total: +{calculateRewards()} Vigor
+                            Total: +{calculateRewards().xp} Vigor
                         </li>
                     </ul>
                 </div>
