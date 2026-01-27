@@ -202,23 +202,21 @@ export default async function RotaDoValentePage() {
                         {/* Imagem */}
                         <div className="relative">
                             <div
-                                className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl"
+                                className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl relative"
                                 style={{ backgroundColor: BRAND.verdeRota }}
                             >
+                                {/* Fallback background sempre visível */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                                    <Users className="w-32 h-32 text-white" />
+                                </div>
+                                {/* Imagem por cima (se existir) */}
                                 <Image
                                     src="/images/confraria-networking.jpg"
                                     alt="Networking na Confraria"
                                     width={800}
                                     height={600}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none'
-                                    }}
+                                    className="w-full h-full object-cover relative z-10"
                                 />
-                                {/* Fallback background */}
-                                <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                                    <Users className="w-32 h-32 text-white" />
-                                </div>
                             </div>
                             {/* Badge flutuante */}
                             <div
