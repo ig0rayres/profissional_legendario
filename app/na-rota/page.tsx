@@ -16,7 +16,8 @@ import {
     Zap,
     Plus,
     Loader2,
-    RefreshCw
+    RefreshCw,
+    HeartHandshake
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -94,61 +95,69 @@ export default function NaRotaPage() {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
+                {/* Stats Cards - Visual Premium */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <Card className="bg-white border-gray-200 shadow-sm">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-emerald-100 rounded-xl">
-                                <Users className="w-5 h-5 text-emerald-700" />
+                    {/* Membros */}
+                    <div className="group relative bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-4 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mt-8" />
+                        <div className="relative z-10 flex items-center gap-3">
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                                <Users className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <p className="text-xl font-bold text-gray-900">
+                                <p className="text-2xl font-bold text-white">
                                     {sidebarData?.totalMembers || '-'}
                                 </p>
-                                <p className="text-xs text-gray-500">Membros Ativos</p>
+                                <p className="text-xs text-emerald-100 font-medium">Membros Ativos</p>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
-                    <Card className="bg-white border-gray-200 shadow-sm">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-amber-100 rounded-xl">
-                                <Trophy className="w-5 h-5 text-amber-700" />
+                    {/* Publicações */}
+                    <div className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-4 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mt-8" />
+                        <div className="relative z-10 flex items-center gap-3">
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                                <Trophy className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <p className="text-xl font-bold text-gray-900">{posts.length}</p>
-                                <p className="text-xs text-gray-500">Publicações</p>
+                                <p className="text-2xl font-bold text-white">{posts.length}</p>
+                                <p className="text-xs text-amber-100 font-medium">Publicações</p>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
-                    <Card className="bg-white border-gray-200 shadow-sm">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-blue-100 rounded-xl">
-                                <Medal className="w-5 h-5 text-blue-700" />
+                    {/* Confrarias do Mês */}
+                    <div className="group relative bg-gradient-to-br from-[#D2691E] to-[#B85715] rounded-2xl p-4 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mt-8" />
+                        <div className="relative z-10 flex items-center gap-3">
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                                <HeartHandshake className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <p className="text-xl font-bold text-gray-900">
-                                    {sidebarData?.totalMedals || '-'}
+                                <p className="text-2xl font-bold text-white">
+                                    {sidebarData?.confraternityThisMonth || 0}
                                 </p>
-                                <p className="text-xs text-gray-500">Medalhas</p>
+                                <p className="text-xs text-orange-100 font-medium">Confrarias (mês)</p>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
-                    <Card className="bg-white border-gray-200 shadow-sm">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-purple-100 rounded-xl">
-                                <Calendar className="w-5 h-5 text-purple-700" />
+                    {/* Agenda */}
+                    <div className="group relative bg-gradient-to-br from-purple-500 to-violet-700 rounded-2xl p-4 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-default overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mt-8" />
+                        <div className="relative z-10 flex items-center gap-3">
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                                <Calendar className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <p className="text-xl font-bold text-gray-900">
+                                <p className="text-2xl font-bold text-white">
                                     {sidebarData?.upcomingConfrarias.length || 0}
                                 </p>
-                                <p className="text-xs text-gray-500">Confrarias Agendadas</p>
+                                <p className="text-xs text-purple-100 font-medium">Agenda</p>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Main Grid */}

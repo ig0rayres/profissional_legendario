@@ -13,33 +13,38 @@ import { RankInsignia } from '@/components/gamification/rank-insignia'
 import Image from 'next/image'
 ```
 
-## Estrutura do Avatar
+## Estrutura do Avatar (FRAME QUADRADA + PATENTE)
+
+**Padrão obrigatório em toda a plataforma:**
+- Frame **quadrada** (rounded-lg), não circular
+- Miniatura da patente no canto inferior direito
+- Border sutil da cor primária
 
 ```tsx
 <div className="relative">
-    {/* Avatar */}
+    {/* Avatar - FRAME QUADRADA */}
     {user.avatar_url ? (
         <Image
             src={user.avatar_url}
             alt={user.full_name}
             width={56}
             height={56}
-            className="rounded-full border-2 border-primary/20"
+            className="rounded-lg border-2 border-primary/20 object-cover"
         />
     ) : (
-        <div className="w-14 h-14 rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-lg border-2 border-primary/20 bg-primary/10 flex items-center justify-center">
             <span className="text-lg font-bold text-primary">
                 {user.full_name.charAt(0).toUpperCase()}
             </span>
         </div>
     )}
     
-    {/* Ícone da Patente - SEMPRE presente */}
+    {/* Ícone da Patente - SEMPRE presente no canto inferior direito */}
     <div className="absolute -bottom-1 -right-1" title={user.rank_name}>
         <RankInsignia 
             rankId={user.rank_id} 
             size="sm" 
-            variant="icon-only"
+            variant="avatar"
         />
     </div>
 </div>

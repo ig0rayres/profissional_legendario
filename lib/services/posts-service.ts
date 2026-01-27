@@ -51,6 +51,7 @@ export interface SidebarData {
     upcomingConfrarias: UpcomingConfraternity[]
     totalMembers: number
     totalMedals: number
+    confraternityThisMonth: number
 }
 
 export interface RankingUser {
@@ -324,15 +325,16 @@ export class PostsService {
      * Carrega dados para sidebar (ranking, medalhas, agenda) + contadores
      */
     async loadSidebarData(): Promise<SidebarData> {
-        const [ranking, recentMedals, upcomingConfrarias, totalMembers, totalMedals] = await Promise.all([
+        const [ranking, recentMedals, upcomingConfrarias, totalMembers, totalMedals, confraternityThisMonth] = await Promise.all([
             this.loadRanking(),
             this.loadRecentMedals(),
             this.loadUpcomingConfrarias(),
             this.getTotalMembers(),
-            this.getTotalMedals()
+            this.getTotalMedals(),
+            this.getConfraternityThisMonth()
         ])
 
-        return { ranking, recentMedals, upcomingConfrarias, totalMembers, totalMedals }
+        return { ranking, recentMedals, upcomingConfrarias, totalMembers, totalMedals, confraternityThisMonth }
     }
 
     private async getTotalMembers(): Promise<number> {
@@ -351,6 +353,22 @@ export class PostsService {
             const { count } = await this.supabase
                 .from('user_medals')
                 .select('*', { count: 'exact', head: true })
+            return count || 0
+        } catch {
+            return 0
+        }
+    }
+
+    private async getConfraternityThisMonth(): Promise<number> {
+        try {
+            // Primeiro dia do mês atual
+            const now = new Date()
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+            const { count } = await this.supabase
+                .from('confraternities')
+                .select('*', { count: 'exact', head: true })
+                .gte('date_occurred', firstDayOfMonth)
             return count || 0
         } catch {
             return 0
