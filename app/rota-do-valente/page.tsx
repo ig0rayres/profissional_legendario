@@ -125,15 +125,6 @@ export default async function RotaDoValentePage() {
                         }}
                     />
 
-                    {/* BRASÃO - Efeito Sombra Integrado */}
-                    <div className="absolute right-[-10%] bottom-[-10%] w-[800px] h-[800px] pointer-events-none mix-blend-soft-light opacity-30">
-                        <Image
-                            src="/images/brasao-rota.png"
-                            alt=""
-                            fill
-                            className="object-contain grayscale"
-                        />
-                    </div>
                 </div>
 
                 {/* Conteúdo do Hero */}
