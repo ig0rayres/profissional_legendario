@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Briefcase, Menu, X, LogOut, Store, Shield, Settings, Users, User, Flame } from 'lucide-react'
+import { Briefcase, Menu, X, LogOut, Store, Shield, Settings, User, Flame } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 import { RotabusinessLogo } from '@/components/branding/logo'
 import Image from 'next/image'
@@ -43,7 +43,7 @@ export function Header() {
                 <div className="flex items-center justify-between h-20">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-3 group">
-                        <RotabusinessLogo size={40} className="text-primary" />
+                        <RotabusinessLogo size={48} className="text-primary" />
                     </Link>
 
                     {/* Desktop Menu */}
@@ -58,12 +58,7 @@ export function Header() {
                             <Shield className="w-4 h-4 text-secondary" />
                             Rota do Valente
                         </Link>
-                        {user && (
-                            <Link href="/elo-da-rota" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2">
-                                <Users className="w-4 h-4 text-purple-500" />
-                                Elo da Rota
-                            </Link>
-                        )}
+
                         <Link href="/na-rota" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2">
                             <Flame className="w-4 h-4 text-orange-500" />
                             Na Rota
@@ -187,12 +182,7 @@ export function Header() {
                                 <Shield className="w-4 h-4 text-secondary" />
                                 Rota do Valente
                             </Link>
-                            {user && (
-                                <Link href="/elo-da-rota" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2" onClick={() => setMenuOpen(false)}>
-                                    <Users className="w-4 h-4 text-purple-500" />
-                                    Elo da Rota
-                                </Link>
-                            )}
+
                             <Link href="/na-rota" className="text-foreground hover:text-primary transition-colors font-semibold flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                                 <Flame className="w-4 h-4 text-orange-500" />
                                 Na Rota
