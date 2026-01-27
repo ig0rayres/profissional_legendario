@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+// Marcar como dinâmica pois usa request.headers
+export const dynamic = 'force-dynamic'
+
 /**
  * CRON JOB: Enviar notificações pós-confraria
  * 
