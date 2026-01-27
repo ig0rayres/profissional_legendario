@@ -32,6 +32,8 @@ import { createClient } from '@/lib/supabase/client'
 import { DynamicIcon, AVAILABLE_ICONS } from '@/components/rota-valente/dynamic-icon'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { SeasonsManager } from '@/components/admin/SeasonsManager'
+import { Calendar } from 'lucide-react'
 
 // ============================================
 // TIPOS
@@ -433,6 +435,10 @@ export default function RotaValenteAdminPage() {
                         <Crown className="w-4 h-4 mr-2" />
                         Ranking ({ranking.length})
                     </TabsTrigger>
+                    <TabsTrigger value="temporadas">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Temporadas
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* ============================================ */}
@@ -509,6 +515,13 @@ export default function RotaValenteAdminPage() {
                             </TableBody>
                         </Table>
                     </div>
+                </TabsContent>
+
+                {/* ============================================ */}
+                {/* TAB: TEMPORADAS */}
+                {/* ============================================ */}
+                <TabsContent value="temporadas">
+                    <SeasonsManager />
                 </TabsContent>
 
                 {/* ============================================ */}
