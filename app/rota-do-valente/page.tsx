@@ -139,14 +139,14 @@ export default async function RotaDoValentePage() {
                 {/* Conteúdo do Hero */}
                 <div className="relative z-10 container mx-auto px-4 py-20">
                     <div className="max-w-3xl">
-                        {/* Logo */}
+                        {/* Logo - Branca com sombra suave */}
                         <div className="mb-8">
                             <Image
                                 src="/images/logo-rotabusiness.png"
                                 alt="Rota Business Club"
                                 width={280}
                                 height={100}
-                                className="h-20 w-auto"
+                                className="h-20 w-auto drop-shadow-lg"
                             />
                         </div>
 
@@ -156,7 +156,7 @@ export default async function RotaDoValentePage() {
                             style={{ backgroundColor: BRAND.laranjaCume, color: 'white' }}
                         >
                             <Mountain className="w-4 h-4" />
-                            O Acampamento do Homem de Negócio
+                            O acampamento base do homem de negócio
                         </div>
 
                         {/* Título Principal */}
