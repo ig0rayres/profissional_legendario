@@ -210,7 +210,7 @@ export default async function RotaDoValentePage() {
                             </div>
                             {/* Badge flutuante */}
                             <div
-                                className="absolute -bottom-6 -right-6 py-4 px-6 rounded-xl shadow-lg"
+                                className="absolute bottom-4 right-4 py-4 px-6 rounded-xl shadow-lg z-20"
                                 style={{ backgroundColor: BRAND.laranjaCume }}
                             >
                                 <p className="text-white font-black text-2xl">500+</p>
