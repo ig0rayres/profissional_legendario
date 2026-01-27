@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import {
     Trophy, Crown, Medal, Award, Calendar, Users, Loader2,
-    RefreshCw, Edit, Check, Send, Gift, Clock, TrendingUp
+    RefreshCw, Edit, Check, Send, Gift, Clock, TrendingUp, Upload, Image as ImageIcon
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -33,6 +33,7 @@ interface Season {
     status: 'upcoming' | 'active' | 'finished'
     created_at: string
     finished_at: string | null
+    banner_url: string | null
 }
 
 interface SeasonPrize {
@@ -80,6 +81,11 @@ export function SeasonsManager() {
     // Encerrar temporada
     const [showFinishDialog, setShowFinishDialog] = useState(false)
     const [finishing, setFinishing] = useState(false)
+
+    // Upload de imagem
+    const [prizeImageUrl, setPrizeImageUrl] = useState('')
+    const [uploadingImage, setUploadingImage] = useState(false)
+    const [uploadingBanner, setUploadingBanner] = useState(false)
 
     const supabase = createClient()
 
@@ -141,6 +147,47 @@ export function SeasonsManager() {
         setEditingPrize(prize)
         setPrizeTitle(prize.title)
         setPrizeDescription(prize.description || '')
+        setPrizeImageUrl(prize.image_url || '')
+    }
+
+    const handleImageUpload = async (file: File, type: 'prize' | 'banner') => {
+        if (type === 'prize') setUploadingImage(true)
+        else setUploadingBanner(true)
+
+        try {
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${type}_${Date.now()}.${fileExt}`
+            const filePath = `seasons/${fileName}`
+
+            const { error: uploadError } = await supabase.storage
+                .from('public')
+                .upload(filePath, file, { upsert: true })
+
+            if (uploadError) throw uploadError
+
+            const { data: urlData } = supabase.storage
+                .from('public')
+                .getPublicUrl(filePath)
+
+            if (type === 'prize') {
+                setPrizeImageUrl(urlData.publicUrl)
+            } else if (activeSeason) {
+                // Atualizar banner da temporada diretamente
+                await supabase
+                    .from('seasons')
+                    .update({ banner_url: urlData.publicUrl })
+                    .eq('id', activeSeason.id)
+
+                toast.success('Banner atualizado!')
+                await loadData()
+            }
+        } catch (error) {
+            console.error('Error uploading:', error)
+            toast.error('Erro ao fazer upload')
+        } finally {
+            if (type === 'prize') setUploadingImage(false)
+            else setUploadingBanner(false)
+        }
     }
 
     const savePrize = async () => {
@@ -153,6 +200,7 @@ export function SeasonsManager() {
                 .update({
                     title: prizeTitle,
                     description: prizeDescription,
+                    image_url: prizeImageUrl || null,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', editingPrize.id)
@@ -185,15 +233,16 @@ export function SeasonsManager() {
 
             // 1. Registrar vencedores
             const top3 = ranking.slice(0, 3)
-            for (const [index, winner] of top3.entries()) {
-                const prize = prizes.find(p => p.position === index + 1)
+            for (let i = 0; i < top3.length; i++) {
+                const winner = top3[i]
+                const prize = prizes.find(p => p.position === i + 1)
 
                 await supabase
                     .from('season_winners')
                     .insert({
                         season_id: activeSeason.id,
                         user_id: winner.user_id,
-                        position: index + 1,
+                        position: i + 1,
                         xp_earned: winner.xp_month,
                         prize_id: prize?.id
                     })
@@ -242,13 +291,14 @@ export function SeasonsManager() {
             }
 
             // 5. Criar notificações para vencedores
-            for (const [index, winner] of top3.entries()) {
+            for (let i = 0; i < top3.length; i++) {
+                const winner = top3[i]
                 await supabase.from('notifications').insert({
                     user_id: winner.user_id,
                     type: 'season_winner',
-                    title: `🏆 Parabéns! Você ficou em ${index + 1}º lugar!`,
-                    body: `Você conquistou o ${index + 1}º lugar na temporada ${activeSeason.name} com ${winner.xp_month} XP!`,
-                    metadata: { season_id: activeSeason.id, position: index + 1 }
+                    title: `🏆 Parabéns! Você ficou em ${i + 1}º lugar!`,
+                    body: `Você conquistou o ${i + 1}º lugar na temporada ${activeSeason.name} com ${winner.xp_month} XP!`,
+                    metadata: { season_id: activeSeason.id, position: i + 1 }
                 })
             }
 
@@ -407,15 +457,75 @@ export function SeasonsManager() {
                         </div>
                     </div>
 
+                    {/* Banner da Temporada */}
+                    <Card className="border-primary/30 overflow-hidden">
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <ImageIcon className="w-4 h-4" />
+                                    Banner da Temporada
+                                </CardTitle>
+                                <label className="cursor-pointer">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) handleImageUpload(file, 'banner')
+                                        }}
+                                    />
+                                    <Button variant="outline" size="sm" disabled={uploadingBanner} asChild>
+                                        <span>
+                                            {uploadingBanner ? (
+                                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                            ) : (
+                                                <Upload className="w-4 h-4 mr-2" />
+                                            )}
+                                            Alterar Banner
+                                        </span>
+                                    </Button>
+                                </label>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            {activeSeason?.banner_url ? (
+                                <img
+                                    src={activeSeason.banner_url}
+                                    alt="Banner da temporada"
+                                    className="w-full h-48 object-cover rounded-lg"
+                                />
+                            ) : (
+                                <div className="w-full h-48 bg-muted/50 rounded-lg flex items-center justify-center border-2 border-dashed border-primary/20">
+                                    <div className="text-center">
+                                        <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                                        <p className="text-sm text-muted-foreground">Nenhum banner definido</p>
+                                        <p className="text-xs text-muted-foreground">Tamanho recomendado: 1200x400px</p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Prêmios */}
                     <div className="grid gap-4">
                         {prizes.map((prize) => (
                             <Card key={prize.id} className={`${getPositionBg(prize.position)}`}>
                                 <CardContent className="py-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-lg bg-background flex items-center justify-center">
-                                                {getPositionIcon(prize.position)}
-                                            </div>
+                                            {/* Imagem do prêmio ou ícone */}
+                                            {prize.image_url ? (
+                                                <img
+                                                    src={prize.image_url}
+                                                    alt={prize.title}
+                                                    className="w-16 h-16 rounded-lg object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-16 h-16 rounded-lg bg-background flex items-center justify-center border-2 border-dashed border-muted">
+                                                    {getPositionIcon(prize.position)}
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="font-bold text-lg">{prize.title}</p>
                                                 <p className="text-sm text-muted-foreground">
@@ -552,6 +662,50 @@ export function SeasonsManager() {
                                 value={prizeDescription}
                                 onChange={(e) => setPrizeDescription(e.target.value)}
                             />
+                        </div>
+
+                        {/* Upload de imagem */}
+                        <div className="space-y-2">
+                            <Label>Imagem do Prêmio</Label>
+                            <div className="flex items-center gap-4">
+                                {prizeImageUrl ? (
+                                    <img
+                                        src={prizeImageUrl}
+                                        alt="Prêmio"
+                                        className="w-20 h-20 rounded-lg object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                                    </div>
+                                )}
+                                <div className="flex-1">
+                                    <label className="cursor-pointer">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0]
+                                                if (file) handleImageUpload(file, 'prize')
+                                            }}
+                                        />
+                                        <Button variant="outline" size="sm" disabled={uploadingImage} asChild>
+                                            <span>
+                                                {uploadingImage ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                                ) : (
+                                                    <Upload className="w-4 h-4 mr-2" />
+                                                )}
+                                                Carregar Imagem
+                                            </span>
+                                        </Button>
+                                    </label>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        JPG, PNG até 5MB
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>

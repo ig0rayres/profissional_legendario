@@ -15,7 +15,7 @@ import { DynamicIcon } from '@/components/rota-valente/dynamic-icon'
 import { cn } from '@/lib/utils'
 import { getCurrentSeasonMonth } from '@/lib/api/rota-valente'
 import { getMultiplier, getPlanName } from '@/lib/subscription/multipliers'
-import { SeasonBanner } from '@/components/seasons/SeasonBanner'
+import { SeasonPromoBanner } from '@/components/seasons/SeasonPromoBanner'
 
 interface UserGamification {
     total_points: number
@@ -176,8 +176,8 @@ export default function RotaDoValenteDashboardPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column: Stats & Progress */}
                     <div className="lg:col-span-2 space-y-8">
-                        {/* Season Banner */}
-                        <SeasonBanner userId={user?.id} />
+                        {/* Season Promo Banner - Versão Épica */}
+                        <SeasonPromoBanner showFullVersion={true} />
 
                         {/* XP and Rank Card */}
                         <Card className="border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden">
