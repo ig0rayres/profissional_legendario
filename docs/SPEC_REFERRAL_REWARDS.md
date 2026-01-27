@@ -23,7 +23,8 @@ Duas novas mecânicas para o Rota Business Club:
 | Regra | Descrição |
 |-------|-----------|
 | **Comissão** | 100% da primeira mensalidade do indicado |
-| **Disponibilidade** | Saque disponível 45 dias após pagamento do indicado |
+| **Disponibilidade** | Saque disponível **60 dias** após pagamento do indicado |
+| **Adimplência** | ⚠️ Comissão só é liberada se o indicado estiver **em dia** (sem inadimplência) |
 | **Aplicação** | Apenas primeiro pagamento (não inclui upgrades posteriores) |
 | **Plano Grátis** | Se indicado entrar grátis, comissão aplicada no primeiro upgrade futuro |
 | **Persistência** | Vínculo indicador-indicado é permanente |
@@ -36,7 +37,8 @@ UC1: Indicação Direta
 2. Pessoa B acessa o link e se cadastra no Plano Veterano (R$99/mês)
 3. Pessoa B paga a primeira mensalidade
 4. Sistema registra comissão de R$99 para Usuário A
-5. Após 45 dias, Usuário A pode solicitar saque
+5. Sistema verifica se Pessoa B está adimplente
+6. Após 60 dias (e com Pessoa B em dia), Usuário A pode solicitar saque
 
 UC2: Indicação com Cadastro Grátis
 1. Usuário A indica Pessoa C
@@ -44,7 +46,8 @@ UC2: Indicação com Cadastro Grátis
 3. 3 meses depois, Pessoa C faz upgrade para Veterano (R$99/mês)
 4. Sistema detecta que C foi indicado por A
 5. Comissão de R$99 creditada para Usuário A
-6. Após 45 dias do upgrade, saque disponível
+6. Sistema verifica adimplência de Pessoa C
+7. Após 60 dias (e com Pessoa C em dia), saque disponível
 
 UC3: Solicitação de Saque
 1. Usuário A tem R$297 disponíveis para saque
@@ -123,7 +126,7 @@ CREATE TABLE referrals (
     
     -- Comissão
     commission_amount DECIMAL(10,2),
-    commission_available_at TIMESTAMPTZ, -- first_payment_date + 45 days
+    commission_available_at TIMESTAMPTZ, -- first_payment_date + 60 days
     commission_status VARCHAR(20) DEFAULT 'pending' CHECK (commission_status IN ('pending', 'available', 'requested', 'paid')),
     
     UNIQUE(referred_id) -- Uma pessoa só pode ser indicada por uma pessoa
@@ -471,10 +474,11 @@ Notificações de Temporada:
 
 ## ⚠️ PONTOS DE ATENÇÃO
 
-1. **Sem Stripe ainda**: O sistema de primeiro pagamento depende de integração com gateway. Inicialmente pode ser manual via Admin.
+1. **Stripe Integrado (Modo Teste)**: O gateway de pagamento já está configurado. Webhooks podem ser usados para detectar o primeiro pagamento automaticamente.
 
 2. **Fraude**: Usuários podem criar contas fake para ganhar comissão. Considerar:
-   - Comissão só após 45 dias
+   - Comissão só após 60 dias
+   - Verificação de adimplência do indicado
    - Validação de e-mail único
    - Revisão manual para valores altos
 
