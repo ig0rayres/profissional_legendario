@@ -553,14 +553,26 @@ Cada usuário tem um link único para convidar novos membros. Ao trazer alguém,
 
 ### Regras de Negócio
 
-| Regra | Valor |
-|-------|-------|
-| **Comissão** | 100% da primeira mensalidade |
-| **Prazo para Saque** | 60 dias após pagamento do indicado |
-| **Adimplência** | Comissão só liberada se indicado estiver em dia |
-| **Aplicação** | Apenas 1º pagamento (não inclui upgrades) |
-| **Plano Grátis** | Se indicado entrar grátis, comissão no 1º upgrade |
-| **Persistência** | Vínculo indicador-indicado é permanente |
+| Regra | Valor | Gerenciado por |
+|-------|-------|----------------|
+| **Comissão** | 100% da primeira mensalidade | Admin |
+| **Prazo para liberação** | 60 dias após pagamento | Admin |
+| **Adimplência** | Comissão SÓ liberada se indicado estiver em dia | Admin |
+| **Valor mínimo para saque** | **R$ 250,00** | Admin |
+| **Tipo** | Apenas 1º pagamento | Admin |
+| **Persistência** | Vínculo indicador-indicado é permanente | - |
+
+> ⚠️ **IMPORTANTE:** Todas as configurações são gerenciadas via painel Admin e propagam automaticamente para toda a plataforma.
+
+### Tabela de Configuração (Admin)
+
+| Campo | Descrição | Valor Padrão |
+|-------|-----------|--------------|
+| `commission_percentage` | Porcentagem da comissão | 100% |
+| `commission_type` | Tipo de comissão | `first_payment` |
+| `release_days` | Dias para liberar comissão | 60 |
+| `require_referred_active` | Exige indicado adimplente | ✅ Sim |
+| `min_withdrawal_amount` | Valor mínimo para saque | R$ 250,00 |
 
 ### Link de Indicação
 
@@ -569,19 +581,31 @@ URL: https://rotabusinessclub.com.br/r/{slug}
 Exemplo: https://rotabusinessclub.com.br/r/igor-ayres
 ```
 
-### Fluxo
+### Fluxo Completo
 
 ```
 1. Usuário A compartilha seu link
 2. Pessoa B acessa e se cadastra
-3. B contrata plano Veterano (R$99)
+3. B contrata plano (ex: Veterano R$97)
 4. B paga primeira mensalidade
-5. Sistema registra comissão de R$99 para A
-6. Sistema verifica adimplência de B por 60 dias
-7. Se B continuar em dia: comissão liberada
-8. A solicita saque (via PIX ou transferência)
-9. Admin processa pagamento
+5. Sistema registra comissão de R$97 para A (status: pendente)
+6. Sistema aguarda 60 dias
+7. Após 60 dias:
+   - SE B está adimplente → comissão liberada (status: disponível)
+   - SE B está inadimplente → comissão cancelada
+8. A acumula saldo até atingir R$250
+9. A solicita saque via PIX
+10. Admin aprova e processa pagamento
 ```
+
+### Estados da Comissão
+
+| Status | Descrição |
+|--------|-----------|
+| `pending` | Aguardando prazo de 60 dias |
+| `available` | Liberada, disponível para saque |
+| `withdrawn` | Já foi sacada |
+| `cancelled` | Cancelada (indicado inadimplente) |
 
 ### Painel do Usuário (Dashboard > Financeiro)
 
@@ -593,34 +617,41 @@ Exemplo: https://rotabusinessclub.com.br/r/igor-ayres
 ├─────────────────────────────────────────┤
 │ 💰 RESUMO FINANCEIRO                    │
 │ Saldo Disponível: R$ 594,00             │
-│ Saldo Pendente: R$ 297,00               │
-│ Total Ganho: R$ 891,00                  │
-│ [SOLICITAR SAQUE]                       │
+│ Saldo Pendente: R$ 291,00               │
+│ Total Ganho: R$ 885,00                  │
+│                                         │
+│ ⚠️ Mínimo para saque: R$ 250,00         │
+│ [SOLICITAR SAQUE] (habilitado se >= 250)│
 ├─────────────────────────────────────────┤
-│ 👥 SUAS INDICAÇÕES                      │
+│ 👥 SUAS INDICAÇÕES (3)                  │
 │ ┌─────────────────────────────────────┐ │
-│ │ João Silva      | R$99 | ✅ Disp.  │ │
-│ │ Maria Santos    | R$99 | ⏳ 45d    │ │
-│ │ Pedro Oliveira  | R$99 | ⏳ 60d    │ │
+│ │ João Silva      | R$97  | ✅ Disp.  │ │
+│ │ Maria Santos    | R$97  | ⏳ 45d    │ │
+│ │ Pedro Oliveira  | R$97  | ⏳ 60d    │ │
 │ └─────────────────────────────────────┘ │
 └─────────────────────────────────────────┘
 ```
 
 ### Solicitação de Saque
 
-1. Usuário informa valor
-2. Escolhe: PIX ou Transferência
-3. Informa dados bancários
-4. Solicitação enviada para Admin
-5. Admin aprova e processa
-6. Status atualizado para "Pago"
+**Pré-requisitos:**
+1. Saldo disponível >= R$ 250,00
+2. Não ter saque pendente
+
+**Fluxo:**
+1. Usuário informa valor (mín. R$250)
+2. Informa chave PIX
+3. Solicitação enviada para Admin
+4. Admin aprova e processa
+5. Status atualizado para "Pago"
 
 ### Notificações
 
 - "🎉 João Silva se cadastrou usando seu link!"
-- "💰 Sua comissão de R$99 foi creditada!"
-- "✅ Sua comissão de R$99 está disponível para saque!"
-- "💸 Seu saque de R$500 foi processado!"
+- "💰 Comissão de R$97 registrada! Aguarde 60 dias para liberação."
+- "✅ Sua comissão de R$97 está disponível para saque!"
+- "💸 Seu saque de R$250 foi processado!"
+- "❌ Comissão cancelada: indicado ficou inadimplente."
 
 ---
 
