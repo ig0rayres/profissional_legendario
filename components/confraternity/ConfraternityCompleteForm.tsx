@@ -171,10 +171,12 @@ export function ConfraternityCompleteForm({
                 approved: false,
                 people_count: 0,
                 confidence: 'low',
-                reason: 'Erro ao validar foto',
+                reason: 'Não foi possível validar a foto. Envie uma foto da reunião (presencial ou online) com pelo menos 2 pessoas visíveis.',
                 error: 'Erro de conexão'
             })
-            toast.error('Erro ao validar foto')
+            toast.error('Erro ao validar foto', {
+                description: 'Tente enviar outra foto mostrando a reunião com 2+ pessoas'
+            })
         } finally {
             setValidating(false)
         }
@@ -496,13 +498,13 @@ export function ConfraternityCompleteForm({
                                     </>
                                 ) : (
                                     <>
-                                        <AlertCircle className="h-5 w-5 text-red-500" />
+                                        <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
                                         <div>
                                             <p className="text-sm font-semibold text-red-900 dark:text-red-100">
                                                 ❌ Foto Não Aprovada
                                             </p>
                                             <p className="text-xs text-red-700 dark:text-red-300">
-                                                {validationResult.reason || 'Envie uma foto que mostre você e seu parceiro de confraria'}
+                                                {validationResult.reason || 'A foto precisa mostrar a reunião (presencial ou online) com pelo menos 2 pessoas visíveis.'}
                                             </p>
                                         </div>
                                     </>
