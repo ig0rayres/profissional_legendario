@@ -8,6 +8,8 @@ import { PlanManager } from '@/components/admin/PlanManager'
 import { CouponManager } from '@/components/admin/CouponManager'
 import { CampaignManager } from '@/components/admin/CampaignManager'
 import { ReferralManager } from '@/components/admin/ReferralManager'
+import { CommissionReportsManager } from '@/components/admin/CommissionReportsManager'
+import { PrizePaymentManager } from '@/components/admin/PrizePaymentManager'
 import { DollarSign } from 'lucide-react'
 
 export default function FinanceiroPage() {
@@ -25,17 +27,19 @@ export default function FinanceiroPage() {
                         Gestão Financeira
                     </h1>
                     <p className="text-muted-foreground">
-                        Gerencie planos, cupons, campanhas, comissões e acompanhe métricas financeiras
+                        Gerencie planos, cupons, campanhas, comissões, prêmios e relatórios
                     </p>
                 </div>
             </div>
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 lg:w-[750px]">
+                <TabsList className="grid w-full grid-cols-7 lg:w-[1000px]">
                     <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                     <TabsTrigger value="planos">Planos</TabsTrigger>
                     <TabsTrigger value="comissoes">Comissões</TabsTrigger>
+                    <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+                    <TabsTrigger value="premios">Prêmios</TabsTrigger>
                     <TabsTrigger value="cupons">Cupons</TabsTrigger>
                     <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
                 </TabsList>
@@ -75,6 +79,36 @@ export default function FinanceiroPage() {
                     </Card>
                 </TabsContent>
 
+                {/* Relatórios Tab */}
+                <TabsContent value="relatorios" className="space-y-6">
+                    <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle className="text-primary">Relatórios de Comissões</CardTitle>
+                            <CardDescription>
+                                Visualize relatórios mensais e exporte dados
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <CommissionReportsManager />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Prêmios Tab */}
+                <TabsContent value="premios" className="space-y-6">
+                    <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle className="text-primary">Pagamento de Prêmios</CardTitle>
+                            <CardDescription>
+                                Gerencie pagamentos Pix para vencedores das temporadas
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <PrizePaymentManager />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
                 {/* Cupons Tab */}
                 <TabsContent value="cupons" className="space-y-6">
                     <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
@@ -108,4 +142,5 @@ export default function FinanceiroPage() {
         </div>
     )
 }
+
 
