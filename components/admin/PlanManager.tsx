@@ -666,14 +666,26 @@ export function PlanManager() {
                                             <Users className="w-4 h-4" />
                                             <span className="text-xs font-medium">Confrarias/Mês</span>
                                         </div>
-                                        <p className="text-xl font-bold">{plan.max_confraternities_month}</p>
+                                        <p className="text-xl font-bold flex items-center gap-1">
+                                            {plan.max_confraternities_month === null || plan.max_confraternities_month === 0 ? (
+                                                <><Infinity className="w-5 h-5" /> Ilimitado</>
+                                            ) : (
+                                                plan.max_confraternities_month
+                                            )}
+                                        </p>
                                     </div>
                                     <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
                                         <div className="flex items-center gap-2 text-purple-600 mb-1">
                                             <ShoppingBag className="w-4 h-4" />
                                             <span className="text-xs font-medium">Anúncios Mkt</span>
                                         </div>
-                                        <p className="text-xl font-bold">{plan.max_marketplace_ads}</p>
+                                        <p className="text-xl font-bold flex items-center gap-1">
+                                            {plan.max_marketplace_ads === null || plan.max_marketplace_ads === 0 ? (
+                                                <><Infinity className="w-5 h-5" /> Ilimitado</>
+                                            ) : (
+                                                plan.max_marketplace_ads
+                                            )}
+                                        </p>
                                     </div>
                                 </div>
 

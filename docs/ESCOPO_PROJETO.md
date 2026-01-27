@@ -62,12 +62,12 @@ A plataforma usa metáforas militares e de aventura:
 
 ### Tabela de Planos
 
-| Plano | Preço | Multiplicador XP | Cor | Benefícios |
-|-------|-------|------------------|-----|------------|
-| **Recruta** | Grátis | 1.0x | Cinza | Acesso básico, 2 Elos/mês, 1 Confraria/mês |
-| **Veterano** | R$ 99/mês | 1.5x | Verde | Elos ilimitados, 4 Confrarias/mês, Chat ilimitado |
-| **Elite** | R$ 299/mês | 3.0x | Laranja | 10 Confrarias/mês, Destaque no feed, Suporte prioritário |
-| **Lendário** | R$ 499/mês | 5.0x | ⭐ Dourado | **TUDO ILIMITADO** - Confrarias, Elos, Chat, Portfólio + Acesso VIP + Mentoria |
+| Plano | Preço | Multiplicador XP | Cor |
+|-------|-------|------------------|-----|
+| **Recruta** | R$ 0,00/mês | 1.0x | Cinza |
+| **Veterano** | R$ 97,00/mês | 1.5x | Verde |
+| **Elite** | R$ 127,00/mês | 3.0x | Laranja |
+| **Lendário** | R$ 247,00/mês | 5.0x | ⭐ Dourado |
 
 ### Regras de Negócio
 
@@ -81,15 +81,41 @@ A plataforma usa metáforas militares e de aventura:
 
 | Recurso | Recruta | Veterano | Elite | Lendário |
 |---------|---------|----------|-------|----------|
-| Elos (conexões) | 2/mês | Ilimitado | Ilimitado | ♾️ Ilimitado |
-| Confrarias | 0 | 4/mês | 10/mês | ♾️ Ilimitado |
-| Mensagens Chat | 10/dia | Ilimitado | Ilimitado | ♾️ Ilimitado |
-| Fotos Portfólio | 5 | 20 | 50 | ♾️ Ilimitado |
-| Destaque Feed | ❌ | ❌ | ✅ | ✅ Premium |
-| Acesso VIP | ❌ | ❌ | ❌ | ✅ |
-| Mentoria Exclusiva | ❌ | ❌ | ❌ | ✅ |
+| Elos Máximos | 10 | 100 | ∞ Ilimitado | ∞ Ilimitado |
+| Confrarias/Mês | 0 | 4 | 10 | ∞ Ilimitado |
+| Anúncios Marketplace | 0 | 2 | 10 | ∞ Ilimitado |
+| Destaque no Ranking | ❌ | ❌ | ✅ | ✅ |
 
-> ⚠️ **Nota:** O plano Lendário possui **TUDO ILIMITADO** - sem limites de confrarias, elos, mensagens ou portfólio.
+### Features por Plano
+
+**RECRUTA (Grátis)**
+- Acesso à comunidade
+- Perfil básico
+- Receber convites de confraria
+- Até 10 elos
+
+**VETERANO (R$ 97/mês)**
+- Tudo do Recruta
+- Multiplicador VIGOR 1.5x
+- Enviar 4 convites de confraria/mês
+- Até 100 elos
+- 2 anúncios no marketplace
+
+**ELITE (R$ 127/mês)**
+- Tudo do Veterano
+- Multiplicador VIGOR 3x
+- Enviar 10 convites de confraria/mês
+- Elos ilimitados
+- 10 anúncios no marketplace
+- Destaque no ranking
+
+**LENDÁRIO (R$ 247/mês)**
+- Tudo do Elite
+- Multiplicador VIGOR 5x
+- Elos ilimitados
+- Confrarias ilimitadas
+- Anúncios de marketplace ilimitados
+- Destaque no ranking
 
 ---
 
