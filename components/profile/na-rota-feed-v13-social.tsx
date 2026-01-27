@@ -50,18 +50,35 @@ export function NaRotaFeedV13({
                         full_name,
                         avatar_url
                     ),
-                    user_has_liked:post_likes!post_likes_post_id_fkey(user_id)
+                    user_has_liked:post_likes!post_likes_post_id_fkey(user_id),
+                    confraternity:confraternities!posts_confraternity_id_fkey(
+                        id,
+                        date_occurred,
+                        member1:profiles!confraternities_member1_id_fkey(id, full_name, avatar_url),
+                        member2:profiles!confraternities_member2_id_fkey(id, full_name, avatar_url)
+                    )
                 `)
                 .order('created_at', { ascending: false })
                 .limit(20)
 
             // Filter based on feed type
             if (feedType === 'user') {
-                query = query.eq('user_id', userId)
+                // Para feed do usuário: posts que ele criou OU confrarias que ele participou
+                const { data: confraternityIds } = await supabase
+                    .from('confraternities')
+                    .select('id')
+                    .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
+
+                const confIds = confraternityIds?.map(c => c.id) || []
+
+                if (confIds.length > 0) {
+                    query = query.or(`user_id.eq.${userId},confraternity_id.in.(${confIds.join(',')})`)
+                } else {
+                    query = query.eq('user_id', userId)
+                }
             } else if (feedType === 'global') {
                 query = query.eq('visibility', 'public')
             } else if (feedType === 'connections') {
-                // This would need a more complex query with joins
                 query = query.in('visibility', ['public', 'connections'])
             }
 
@@ -70,10 +87,18 @@ export function NaRotaFeedV13({
             if (error) throw error
 
             // Transform data to include user_has_liked boolean
-            const transformedPosts = (data || []).map(post => ({
-                ...post,
-                user_has_liked: post.user_has_liked?.some((like: any) => like.user_id === currentUserId)
-            }))
+            // Also dedupe posts (in case same confraternity post appears twice)
+            const seenIds = new Set<string>()
+            const transformedPosts = (data || [])
+                .filter(post => {
+                    if (seenIds.has(post.id)) return false
+                    seenIds.add(post.id)
+                    return true
+                })
+                .map(post => ({
+                    ...post,
+                    user_has_liked: post.user_has_liked?.some((like: any) => like.user_id === currentUserId)
+                }))
 
             setPosts(transformedPosts)
         } catch (error) {

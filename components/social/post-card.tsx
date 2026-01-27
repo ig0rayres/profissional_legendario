@@ -38,6 +38,13 @@ interface Post {
         rank_name?: string
     }
     user_has_liked?: boolean
+    // Confraternity joined data
+    confraternity?: {
+        id: string
+        date_occurred: string | null
+        member1: { id: string; full_name: string; avatar_url: string | null } | null
+        member2: { id: string; full_name: string; avatar_url: string | null } | null
+    } | null
 }
 
 interface PostCardProps {
@@ -125,31 +132,90 @@ export function PostCard({
     }
 
     return (
-        <Card className="bg-white border-2 border-gray-200 shadow-lg hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 overflow-hidden group">
+        <Card className={cn(
+            "bg-white border-2 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group",
+            post.confraternity_id
+                ? "border-[#D2691E]/40 hover:border-[#D2691E]"
+                : "border-gray-200 hover:border-[#D2691E]/30"
+        )}>
             <CardContent className="p-0">
+                {/* Confraternity Badge Banner */}
+                {post.confraternity_id && (
+                    <div className="bg-gradient-to-r from-[#D2691E] to-[#B85715] px-4 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Users className="w-5 h-5 text-white" />
+                            <span className="text-white font-bold text-sm uppercase tracking-wide">
+                                Confraria
+                            </span>
+                        </div>
+                        <div className="text-white/90 text-xs font-medium">
+                            {post.confraternity?.date_occurred
+                                ? new Date(post.confraternity.date_occurred).toLocaleDateString('pt-BR')
+                                : formatRelativeTime(post.created_at)
+                            }
+                        </div>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        {/* Avatar */}
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-                            {post.user?.avatar_url ? (
-                                <Image
-                                    src={post.user.avatar_url}
-                                    alt={post.user.full_name}
-                                    fill
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">
-                                    {post.user?.full_name?.charAt(0) || '?'}
+                        {/* Avatar(s) - Double for confraternity */}
+                        {post.confraternity_id && post.confraternity ? (
+                            <div className="flex -space-x-2">
+                                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 border-2 border-white z-10">
+                                    {post.confraternity.member1?.avatar_url ? (
+                                        <Image
+                                            src={post.confraternity.member1.avatar_url}
+                                            alt={post.confraternity.member1.full_name}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold bg-gray-100">
+                                            {post.confraternity.member1?.full_name?.charAt(0) || '?'}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 border-2 border-white">
+                                    {post.confraternity.member2?.avatar_url ? (
+                                        <Image
+                                            src={post.confraternity.member2.avatar_url}
+                                            alt={post.confraternity.member2.full_name}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold bg-gray-100">
+                                            {post.confraternity.member2?.full_name?.charAt(0) || '?'}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                                {post.user?.avatar_url ? (
+                                    <Image
+                                        src={post.user.avatar_url}
+                                        alt={post.user.full_name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">
+                                        {post.user?.full_name?.charAt(0) || '?'}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* User info */}
                         <div>
                             <p className="text-sm font-bold text-[#2D3142]">
-                                {post.user?.full_name || 'Usuário'}
+                                {post.confraternity_id && post.confraternity
+                                    ? `${post.confraternity.member1?.full_name || 'Usuário'} e ${post.confraternity.member2?.full_name || 'Parceiro'}`
+                                    : post.user?.full_name || 'Usuário'
+                                }
                             </p>
                             <p className="text-xs text-gray-600">
                                 {formatRelativeTime(post.created_at)}
@@ -157,8 +223,17 @@ export function PostCard({
                         </div>
                     </div>
 
-                    {/* Menu (only for owner) */}
-                    {isOwner && (
+                    {/* Confraternity Seal (right side) */}
+                    {post.confraternity_id && (
+                        <div className="flex-shrink-0">
+                            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                                <Users className="w-7 h-7 text-white" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Menu (only for owner, not for confraternity) */}
+                    {isOwner && !post.confraternity_id && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
