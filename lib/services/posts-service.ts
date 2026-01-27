@@ -292,17 +292,18 @@ export class PostsService {
 
     private async loadRanking(limit = 5): Promise<RankingUser[]> {
         try {
+            // Usa user_gamification que é a tabela correta no sistema
             const { data, error } = await this.supabase
-                .from('gamification_stats')
+                .from('user_gamification')
                 .select(`
                     user_id,
-                    total_xp,
+                    total_points,
                     current_rank_id,
                     user:profiles!user_id(
                         id, full_name, avatar_url, slug, rota_number
                     )
                 `)
-                .order('total_xp', { ascending: false })
+                .order('total_points', { ascending: false })
                 .limit(limit)
 
             if (error) throw error
@@ -313,7 +314,7 @@ export class PostsService {
                 avatar_url: (item.user as any)?.avatar_url,
                 slug: (item.user as any)?.slug,
                 rota_number: (item.user as any)?.rota_number,
-                vigor: item.total_xp,
+                vigor: item.total_points || 0,
                 rank_id: item.current_rank_id
             }))
         } catch (error) {
@@ -324,14 +325,15 @@ export class PostsService {
 
     private async loadRecentMedals(limit = 5): Promise<RecentMedal[]> {
         try {
+            // Usa user_medals que é a tabela correta no sistema
             const { data, error } = await this.supabase
-                .from('user_badges')
+                .from('user_medals')
                 .select(`
                     user_id,
-                    badge_id,
+                    medal_id,
                     earned_at,
                     user:profiles!user_id(full_name, avatar_url),
-                    badge:badges!badge_id(name, icon_key)
+                    medal:medals!medal_id(name, icon)
                 `)
                 .order('earned_at', { ascending: false })
                 .limit(limit)
@@ -340,10 +342,13 @@ export class PostsService {
 
             return (data || []).map(item => ({
                 user_id: item.user_id,
-                medal_id: item.badge_id,
+                medal_id: item.medal_id,
                 earned_at: item.earned_at,
                 user: item.user as any,
-                medal: item.badge as any
+                medal: {
+                    name: (item.medal as any)?.name || 'Medalha',
+                    icon_key: (item.medal as any)?.icon || 'Award'
+                }
             }))
         } catch (error) {
             console.error('Erro ao carregar medalhas:', error)
