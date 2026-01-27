@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import {
     Trophy, Crown, Medal, Award, Calendar, Users, Loader2,
-    RefreshCw, Edit, Check, Send, Gift, Clock, TrendingUp, Upload, Image as ImageIcon
+    RefreshCw, Edit, Check, Send, Gift, Clock, TrendingUp, Upload, Image as ImageIcon, Sparkles
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -86,6 +86,7 @@ export function SeasonsManager() {
     const [prizeImageUrl, setPrizeImageUrl] = useState('')
     const [uploadingImage, setUploadingImage] = useState(false)
     const [uploadingBanner, setUploadingBanner] = useState(false)
+    const [enhancingImage, setEnhancingImage] = useState(false)
 
     const supabase = createClient()
 
@@ -187,6 +188,43 @@ export function SeasonsManager() {
         } finally {
             if (type === 'prize') setUploadingImage(false)
             else setUploadingBanner(false)
+        }
+    }
+
+    const enhanceImageWithAI = async () => {
+        if (!editingPrize || !prizeImageUrl) {
+            toast.error('Primeiro faça upload de uma imagem')
+            return
+        }
+
+        setEnhancingImage(true)
+        try {
+            const response = await fetch('/api/seasons/enhance-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imageUrl: prizeImageUrl,
+                    prizeTitle: prizeTitle,
+                    position: editingPrize.position
+                })
+            })
+
+            const data = await response.json()
+
+            if (data.mode === 'demo') {
+                toast.info('Modo demonstração', {
+                    description: 'Configure REPLICATE_API_TOKEN para usar IA real'
+                })
+                console.log('Prompt gerado:', data.promptGenerated)
+            } else if (data.enhancedUrl) {
+                setPrizeImageUrl(data.enhancedUrl)
+                toast.success('Imagem melhorada com IA!')
+            }
+        } catch (error) {
+            console.error('Error enhancing image:', error)
+            toast.error('Erro ao melhorar imagem')
+        } finally {
+            setEnhancingImage(false)
         }
     }
 
@@ -701,6 +739,23 @@ export function SeasonsManager() {
                                             </span>
                                         </Button>
                                     </label>
+
+                                    {/* Botão Melhorar com IA */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={enhanceImageWithAI}
+                                        disabled={!prizeImageUrl || enhancingImage}
+                                        className="border-purple-500/50 text-purple-500 hover:bg-purple-500/10"
+                                    >
+                                        {enhancingImage ? (
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4 mr-2" />
+                                        )}
+                                        Melhorar com IA
+                                    </Button>
+
                                     <p className="text-xs text-muted-foreground mt-1">
                                         JPG, PNG até 5MB
                                     </p>
