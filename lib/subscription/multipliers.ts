@@ -45,10 +45,11 @@ export function getPlanName(planId: string | null | undefined): string {
 
 /**
  * Lista de todos os planos disponíveis
+ * CORES: Conforme Manual da Marca
  */
 export const ALL_PLANS = [
     { id: 'recruta', name: 'Recruta', multiplier: 1, color: 'gray' },
-    { id: 'veterano', name: 'Veterano', multiplier: 1.5, color: '#1E4D40' }, // Verde Rota
-    { id: 'elite', name: 'Elite', multiplier: 3, color: '#B87333' }, // Cobre
+    { id: 'veterano', name: 'Veterano', multiplier: 1.5, color: '#214C3B' }, // Verde Trilha
+    { id: 'elite', name: 'Elite', multiplier: 3, color: '#CC5500' }, // Laranja Cume
     { id: 'lendario', name: 'Lendário', multiplier: 5, color: '#FFD700' }, // Dourado
 ]

@@ -17,7 +17,7 @@ const patchConfig = {
     confraria: {
         label: 'CONFRARIA',
         icon: Users,
-        // Bronze/cobre escuro - representa networking e parceria
+        // Representa networking e parceria
         bg: 'bg-stone-800',
         border: 'border-stone-600',
         text: 'text-stone-200',
