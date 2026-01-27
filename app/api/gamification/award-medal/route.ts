@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getMultiplier } from '@/lib/subscription/multipliers'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
             .maybeSingle()
 
         const planId = subscription?.plan_id || 'recruta'
-        const multiplier = planId === 'elite' ? 3 : planId === 'veterano' ? 1.5 : 1
+        const multiplier = getMultiplier(planId)
         const basePoints = medal.points_reward || 0
         const finalPoints = Math.round(basePoints * multiplier)
 

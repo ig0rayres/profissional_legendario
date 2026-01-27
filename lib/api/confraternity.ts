@@ -69,8 +69,8 @@ export async function canSendInvite(userId: string): Promise<{
 
         const planType = subscription?.plan_id || 'recruta'
 
-        // Recruta: 0, Veterano: 4, Elite: 10
-        const maxInvites = planType === 'elite' ? 10 : planType === 'veterano' ? 4 : 0
+        // Recruta: 0, Veterano: 4, Elite: 10, Lendário: 15
+        const maxInvites = planType === 'lendario' ? 15 : planType === 'elite' ? 10 : planType === 'veterano' ? 4 : 0
 
         // Recruta não pode enviar
         if (maxInvites === 0) {

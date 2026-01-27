@@ -611,26 +611,27 @@ export default async function RotaDoValentePage() {
                         </div>
 
                         {/* Multiplicadores */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
                             {[
                                 { name: 'Recruta', multiplier: '1x', desc: 'Plano básico', color: 'gray' },
                                 { name: 'Veterano', multiplier: '1.5x', desc: 'Para quem quer crescer', color: BRAND.verdeRota },
-                                { name: 'Elite', multiplier: '3x', desc: 'Visibilidade máxima', color: BRAND.cobre },
+                                { name: 'Elite', multiplier: '3x', desc: 'Visibilidade premium', color: BRAND.cobre },
+                                { name: 'Lendário', multiplier: '5x', desc: 'Status máximo', color: '#FFD700' },
                             ].map((plan, i) => (
                                 <div
                                     key={plan.name}
-                                    className={`p-8 rounded-2xl text-center ${i === 2 ? 'shadow-xl scale-105' : 'shadow-md'}`}
+                                    className={`p-6 rounded-2xl text-center ${i === 3 ? 'shadow-xl scale-105 ring-2 ring-yellow-400' : 'shadow-md'}`}
                                     style={{
-                                        backgroundColor: i === 2 ? BRAND.petroleo : BRAND.areia,
-                                        color: i === 2 ? 'white' : BRAND.petroleo
+                                        backgroundColor: i === 3 ? BRAND.petroleo : BRAND.areia,
+                                        color: i === 3 ? 'white' : BRAND.petroleo
                                     }}
                                 >
                                     <p className="text-sm font-bold uppercase tracking-wider mb-2 opacity-70">
                                         {plan.name}
                                     </p>
                                     <p
-                                        className="text-5xl font-black mb-2"
-                                        style={{ color: i === 2 ? BRAND.cobre : plan.color }}
+                                        className="text-4xl font-black mb-2"
+                                        style={{ color: i === 3 ? '#FFD700' : plan.color }}
                                     >
                                         {plan.multiplier}
                                     </p>

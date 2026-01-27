@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth/context'
 import { DynamicIcon } from '@/components/rota-valente/dynamic-icon'
 import { cn } from '@/lib/utils'
 import { getCurrentSeasonMonth } from '@/lib/api/rota-valente'
+import { getMultiplier, getPlanName } from '@/lib/subscription/multipliers'
 
 interface UserGamification {
     total_points: number
@@ -121,9 +122,8 @@ export default function RotaDoValenteDashboardPage() {
 
         // Multiplicador
         const planId = subscriptionResult.data?.plan_id || 'recruta'
-        const multipliers: Record<string, number> = { recruta: 1, veterano: 1.5, elite: 3 }
-        setMultiplier(multipliers[planId] || 1)
-        setPlanName(planId === 'elite' ? 'Elite' : planId === 'veterano' ? 'Veterano' : 'Recruta')
+        setMultiplier(getMultiplier(planId))
+        setPlanName(getPlanName(planId))
 
         setLoading(false)
     }
@@ -311,9 +311,9 @@ export default function RotaDoValenteDashboardPage() {
                                 <p className="text-sm text-muted-foreground mb-4">
                                     Seu plano {planName} multiplica todo Vigor conquistado!
                                 </p>
-                                {multiplier < 3 && (
+                                {multiplier < 5 && (
                                     <Button variant="outline" className="w-full border-secondary text-secondary hover:bg-secondary hover:text-white">
-                                        Upgrade para Elite (3x)
+                                        {multiplier < 3 ? 'Upgrade para Elite (3x)' : 'Upgrade para Lendário (5x)'}
                                     </Button>
                                 )}
                             </CardContent>

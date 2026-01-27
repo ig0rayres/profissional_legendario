@@ -346,6 +346,7 @@ export default function UsersPage() {
             'recruta': { label: 'Recruta', color: 'bg-gray-500' },
             'veterano': { label: 'Veterano', color: 'bg-blue-500' },
             'elite': { label: 'Elite', color: 'bg-purple-500' },
+            'lendario': { label: 'Lendário', color: 'bg-yellow-500' },
         }
         const plan = plans[planId] || plans['recruta']
         return <Badge className={`${plan.color} text-white`}>{plan.label}</Badge>

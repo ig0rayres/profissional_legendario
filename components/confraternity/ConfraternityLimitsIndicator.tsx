@@ -48,13 +48,15 @@ export function ConfraternityLimitsIndicator({ userId }: ConfraternityLimitsIndi
     const planLabels = {
         recruta: 'Recruta',
         veterano: 'Veterano',
-        elite: 'Elite'
+        elite: 'Elite',
+        lendario: 'Lendário'
     }
 
     const planColors = {
         recruta: 'text-gray-600',
         veterano: 'text-blue-600',
-        elite: 'text-purple-600'
+        elite: 'text-purple-600',
+        lendario: 'text-yellow-600'
     }
 
     // Calcular dias até próximo reset (sempre dia 1 do próximo mês)
@@ -123,13 +125,16 @@ export function ConfraternityLimitsIndicator({ userId }: ConfraternityLimitsIndi
                             <span>Renova em {daysUntilReset} dias</span>
                         </div>
 
-                        {/* Upgrade hint (se não for Elite) */}
-                        {limits.planType !== 'elite' && (
-                            <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                                <p className="text-sm text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                        {/* Upgrade hint (se não for Lendário) */}
+                        {limits.planType !== 'lendario' && (
+                            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                                <p className="text-sm text-yellow-900 dark:text-yellow-100 flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4" />
                                     <span>
-                                        Upgrade para <strong>Elite</strong> e tenha <strong>10 convites/mês</strong>!
+                                        {limits.planType === 'elite'
+                                            ? <>Upgrade para <strong>Lendário</strong> e tenha <strong>15 convites/mês</strong>!</>
+                                            : <>Upgrade para <strong>Elite</strong> e tenha <strong>10 convites/mês</strong>!</>
+                                        }
                                     </span>
                                 </p>
                             </div>

@@ -252,7 +252,7 @@ export function NewCampaignDialog({ open, onOpenChange }: NewCampaignDialogProps
                                 <div>
                                     <Label>Filtrar por Tipo de Conta</Label>
                                     <div className="grid grid-cols-3 gap-3 mt-2">
-                                        {['Recruta', 'Veterano', 'Elite'].map((plan) => (
+                                        {['Recruta', 'Veterano', 'Elite', 'Lendário'].map((plan) => (
                                             <div key={plan} className="flex items-center space-x-2">
                                                 <Checkbox
                                                     id={`plan-${plan}`}
@@ -343,7 +343,7 @@ export function NewCampaignDialog({ open, onOpenChange }: NewCampaignDialogProps
                                 <div className="mb-3 p-3 bg-muted/20 rounded-md border border-primary/10">
                                     <Label className="text-sm font-semibold mb-2 block">Filtrar por Plano de Assinatura</Label>
                                     <div className="flex gap-3">
-                                        {['Recruta', 'Veterano', 'Elite'].map((plan) => (
+                                        {['Recruta', 'Veterano', 'Elite', 'Lendário'].map((plan) => (
                                             <div key={plan} className="flex items-center space-x-2">
                                                 <Checkbox
                                                     id={`plan-filter-${plan}`}
