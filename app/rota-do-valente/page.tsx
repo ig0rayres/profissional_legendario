@@ -124,32 +124,21 @@ export default async function RotaDoValentePage() {
                             background: `linear-gradient(135deg, ${BRAND.petroleo}ee 0%, ${BRAND.verdeRota}dd 50%, ${BRAND.petroleo}cc 100%)`
                         }}
                     />
-                </div>
 
-                {/* BRASÃO - Marca d'água no canto direito do Hero */}
-                <div className="absolute right-0 bottom-0 w-[500px] h-[500px] opacity-[0.08] pointer-events-none">
-                    <Image
-                        src="/images/brasao-rota.png"
-                        alt=""
-                        fill
-                        className="object-contain"
-                    />
+                    {/* BRASÃO - Efeito Sombra Integrado */}
+                    <div className="absolute right-[-10%] bottom-[-10%] w-[800px] h-[800px] pointer-events-none mix-blend-soft-light opacity-30">
+                        <Image
+                            src="/images/brasao-rota.png"
+                            alt=""
+                            fill
+                            className="object-contain grayscale"
+                        />
+                    </div>
                 </div>
 
                 {/* Conteúdo do Hero */}
                 <div className="relative z-10 container mx-auto px-4 py-20">
                     <div className="max-w-3xl">
-                        {/* Logo - Branca com sombra suave */}
-                        <div className="mb-8">
-                            <Image
-                                src="/images/logo-rotabusiness.png"
-                                alt="Rota Business Club"
-                                width={280}
-                                height={100}
-                                className="h-20 w-auto drop-shadow-lg"
-                            />
-                        </div>
-
                         {/* Badge */}
                         <div
                             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest mb-6"
