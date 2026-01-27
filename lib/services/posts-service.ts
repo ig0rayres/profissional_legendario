@@ -27,10 +27,7 @@ export interface Post {
     content: string | null
     media_urls: string[]
     visibility: 'public' | 'connections' | 'private'
-    post_type: 'confraria' | 'em_campo' | 'projeto_entregue' | null
     confraternity_id: string | null
-    project_id: string | null
-    medal_id: string | null
     likes_count: number
     comments_count: number
     created_at: string
@@ -74,7 +71,7 @@ export interface RecentMedal {
     }
     medal: {
         name: string
-        icon: string
+        icon_key: string
     }
 }
 
@@ -97,7 +94,7 @@ export class PostsService {
         this.supabase = supabase
     }
 
-    // Query SELECT padronizada
+    // Query SELECT padronizada - usando apenas colunas que existem no banco
     private get basePostSelect() {
         return `
             id,
@@ -105,10 +102,7 @@ export class PostsService {
             content,
             media_urls,
             visibility,
-            post_type,
             confraternity_id,
-            project_id,
-            medal_id,
             likes_count,
             comments_count,
             created_at,
@@ -196,10 +190,7 @@ export class PostsService {
                 content: post.content,
                 media_urls: post.media_urls || [],
                 visibility: post.visibility,
-                post_type: post.post_type,
                 confraternity_id: post.confraternity_id,
-                project_id: post.project_id,
-                medal_id: post.medal_id,
                 likes_count: post.likes_count || 0,
                 comments_count: post.comments_count || 0,
                 created_at: post.created_at,
@@ -340,7 +331,7 @@ export class PostsService {
                     badge_id,
                     earned_at,
                     user:profiles!user_id(full_name, avatar_url),
-                    badge:badges!badge_id(name, icon)
+                    badge:badges!badge_id(name, icon_key)
                 `)
                 .order('earned_at', { ascending: false })
                 .limit(limit)
