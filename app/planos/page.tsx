@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Check, Shield, Zap, Crown, Loader2, ArrowRight } from 'lucide-react'
+import { Check, Shield, Zap, Crown, Gem, Loader2, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface PlanConfig {
@@ -34,6 +34,11 @@ const TIER_CONFIG: Record<string, { icon: typeof Shield, popular: boolean, gradi
         icon: Crown,
         popular: true,
         gradient: 'from-primary/20 to-emerald-500/20'
+    },
+    lendario: {
+        icon: Gem,
+        popular: false,
+        gradient: 'from-yellow-500/20 to-amber-500/20'
     }
 }
 
@@ -41,7 +46,8 @@ const TIER_CONFIG: Record<string, { icon: typeof Shield, popular: boolean, gradi
 const TIER_DESCRIPTIONS: Record<string, string> = {
     recruta: 'O início da sua jornada na guilda.',
     veterano: 'Para quem já provou seu valor no campo.',
-    elite: 'A força máxima da elite de negócios.'
+    elite: 'A força máxima da elite de negócios.',
+    lendario: 'O topo absoluto. Lendas nunca são esquecidas.'
 }
 
 export default function PlansPage() {
