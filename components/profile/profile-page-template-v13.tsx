@@ -18,10 +18,8 @@ import * as LucideIcons from 'lucide-react'
 import { MOCK_CATEGORIES } from '@/lib/data/mock'
 
 // ✨ CARDS V13 - SUBSTITUINDO OS ANTIGOS
-import { ProjectsCounterV13 } from '@/components/profile/cards-v13-brand-colors'
-import { ElosDaRotaV13 } from '@/components/profile/cards-v13-brand-colors'
-import { ConfraternityStatsV13 } from '@/components/profile/cards-v13-brand-colors'
-import { NaRotaFeedV13 } from '@/components/profile/cards-v13-brand-colors'
+import { ProjectsCounterV13, ElosDaRotaV13, ConfraternityStatsV13 } from '@/components/profile/cards-v13-brand-colors'
+import { NaRotaFeedV13 } from '@/components/profile/na-rota-feed-v13-social'
 
 interface ProfilePageTemplateV13Props {
     profileData: CompleteProfileData
@@ -113,13 +111,12 @@ export function ProfilePageTemplateV13({ profileData, nextRank, backUrl = '/prof
                             earnedProezas={earnedProezas || []}
                         />
 
-                        {/* FEED NA ROTA - V13 ✨ NOVO */}
+                        {/* FEED NA ROTA - V13 ✨ NOVO (Busca posts automaticamente) */}
                         <NaRotaFeedV13
                             userId={profile.id}
                             userName={profile.full_name}
                             userAvatar={profile.avatar_url}
-                            ratings={ratings}
-                            portfolio={portfolio}
+                            showCreateButton={isOwner}
                         />
                     </div>
 

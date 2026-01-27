@@ -17,7 +17,8 @@ import * as LucideIcons from 'lucide-react'
 import { MOCK_CATEGORIES } from '@/lib/data/mock'
 
 // CARDS V13 - Novos componentes com estilo atualizado
-import { ProjectsCounterV13, ElosDaRotaV13, ConfraternityStatsV13, NaRotaFeedV13 } from '@/components/profile/cards-v13-brand-colors'
+import { ProjectsCounterV13, ElosDaRotaV13, ConfraternityStatsV13 } from '@/components/profile/cards-v13-brand-colors'
+import { NaRotaFeedV13 } from '@/components/profile/na-rota-feed-v13-social'
 import { BattleHistory } from '@/components/gamification/battle-history'
 
 
@@ -104,8 +105,6 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                             userName={profile.full_name}
                             userAvatar={profile.avatar_url}
                             showCreateButton={isOwner}
-                            ratings={ratings}
-                            portfolio={portfolio}
                         />
                     </div>
 
