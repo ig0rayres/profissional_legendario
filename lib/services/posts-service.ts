@@ -49,6 +49,8 @@ export interface SidebarData {
     ranking: RankingUser[]
     recentMedals: RecentMedal[]
     upcomingConfrarias: UpcomingConfraternity[]
+    totalMembers: number
+    totalMedals: number
 }
 
 export interface RankingUser {
@@ -319,16 +321,40 @@ export class PostsService {
     }
 
     /**
-     * Carrega dados para sidebar (ranking, medalhas, agenda)
+     * Carrega dados para sidebar (ranking, medalhas, agenda) + contadores
      */
     async loadSidebarData(): Promise<SidebarData> {
-        const [ranking, recentMedals, upcomingConfrarias] = await Promise.all([
+        const [ranking, recentMedals, upcomingConfrarias, totalMembers, totalMedals] = await Promise.all([
             this.loadRanking(),
             this.loadRecentMedals(),
-            this.loadUpcomingConfrarias()
+            this.loadUpcomingConfrarias(),
+            this.getTotalMembers(),
+            this.getTotalMedals()
         ])
 
-        return { ranking, recentMedals, upcomingConfrarias }
+        return { ranking, recentMedals, upcomingConfrarias, totalMembers, totalMedals }
+    }
+
+    private async getTotalMembers(): Promise<number> {
+        try {
+            const { count } = await this.supabase
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+            return count || 0
+        } catch {
+            return 0
+        }
+    }
+
+    private async getTotalMedals(): Promise<number> {
+        try {
+            const { count } = await this.supabase
+                .from('user_medals')
+                .select('*', { count: 'exact', head: true })
+            return count || 0
+        } catch {
+            return 0
+        }
     }
 
     private async loadRanking(limit = 5): Promise<RankingUser[]> {

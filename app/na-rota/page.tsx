@@ -103,7 +103,7 @@ export default function NaRotaPage() {
                             </div>
                             <div>
                                 <p className="text-xl font-bold text-gray-900">
-                                    {sidebarData?.ranking.length ? '50+' : '-'}
+                                    {sidebarData?.totalMembers || '-'}
                                 </p>
                                 <p className="text-xs text-gray-500">Membros Ativos</p>
                             </div>
@@ -129,7 +129,7 @@ export default function NaRotaPage() {
                             </div>
                             <div>
                                 <p className="text-xl font-bold text-gray-900">
-                                    {sidebarData?.recentMedals.length ? '120+' : '-'}
+                                    {sidebarData?.totalMedals || '-'}
                                 </p>
                                 <p className="text-xs text-gray-500">Medalhas</p>
                             </div>
@@ -189,9 +189,9 @@ export default function NaRotaPage() {
                                                 className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors"
                                             >
                                                 <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${index === 0 ? 'bg-amber-500 text-white' :
-                                                        index === 1 ? 'bg-gray-400 text-white' :
-                                                            index === 2 ? 'bg-amber-700 text-white' :
-                                                                'bg-gray-100 text-gray-600'
+                                                    index === 1 ? 'bg-gray-400 text-white' :
+                                                        index === 2 ? 'bg-amber-700 text-white' :
+                                                            'bg-gray-100 text-gray-600'
                                                     }`}>
                                                     {index === 0 ? <Crown className="w-3.5 h-3.5" /> : index + 1}
                                                 </div>
@@ -476,17 +476,19 @@ export default function NaRotaPage() {
                         </Card>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Modal de Criação V2 */}
-            {user && (
-                <CreatePostModalV2
-                    open={createModalOpen}
-                    onOpenChange={setCreateModalOpen}
-                    userId={user.id}
-                    onPostCreated={handlePostCreated}
-                />
-            )}
-        </div>
+            {
+                user && (
+                    <CreatePostModalV2
+                        open={createModalOpen}
+                        onOpenChange={setCreateModalOpen}
+                        userId={user.id}
+                        onPostCreated={handlePostCreated}
+                    />
+                )
+            }
+        </div >
     )
 }
