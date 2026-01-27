@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { registerCommission } from '@/lib/services/referral-service'
 
 export const dynamic = 'force-dynamic'
 
@@ -208,6 +209,24 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
             throw insertError
         }
         console.log('[Stripe Webhook] Subscription CREATED for user:', userId, 'tier:', planTier)
+
+        // Registrar comissão se for indicado (primeiro pagamento)
+        if (session.amount_total && session.amount_total > 0) {
+            const paymentAmount = session.amount_total / 100
+            try {
+                const result = await registerCommission(
+                    userId,
+                    paymentAmount,
+                    session.payment_intent as string || undefined
+                )
+
+                if (result.success) {
+                    console.log('[Stripe Webhook] First payment commission registered:', result.commissionAmount, 'for referrer of user:', userId)
+                }
+            } catch (error) {
+                console.error('[Stripe Webhook] Error registering first commission:', error)
+            }
+        }
     }
 }
 
@@ -347,6 +366,37 @@ async function handleSubscriptionDeleted(supabase: any, subscription: Stripe.Sub
  */
 async function handlePaymentSucceeded(supabase: any, invoice: Stripe.Invoice) {
     if (!invoice.subscription) return
+
+    // Buscar user_id da subscription
+    const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('user_id')
+        .eq('stripe_subscription_id', invoice.subscription as string)
+        .single()
+
+    if (subscription?.user_id) {
+        // Valor pago (em centavos -> reais)
+        const paymentAmount = (invoice.amount_paid || 0) / 100
+
+        // Registrar comissão se for indicado
+        if (paymentAmount > 0) {
+            try {
+                const result = await registerCommission(
+                    subscription.user_id,
+                    paymentAmount,
+                    invoice.payment_intent as string || undefined,
+                    invoice.id
+                )
+
+                if (result.success) {
+                    console.log('[Stripe Webhook] Commission registered:', result.commissionAmount, 'for user:', subscription.user_id)
+                }
+            } catch (error) {
+                console.error('[Stripe Webhook] Error registering commission:', error)
+                // Não impede o fluxo principal
+            }
+        }
+    }
 
     await supabase
         .from('subscriptions')
