@@ -140,6 +140,14 @@ export default function RegisterPage() {
             // Pass rotaNumber (now required)
             await signUp(data.email, data.password, data.fullName, data.cpf, data.pista, 'recruta', data.rotaNumber)
 
+            // Registrar indicação (se veio de link de indicação)
+            try {
+                await fetch('/api/referral/register', { method: 'POST' })
+            } catch (e) {
+                // Ignora erro de indicação, não impede o cadastro
+                console.log('[Referral] Erro ao registrar indicação:', e)
+            }
+
             // Limpar dados salvos após cadastro bem-sucedido
             if (typeof window !== 'undefined') {
                 sessionStorage.removeItem('registerFormData')
