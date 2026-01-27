@@ -230,15 +230,13 @@ export default async function RotaDoValentePage() {
                                 className="text-4xl md:text-5xl font-black mb-6 leading-tight"
                                 style={{ color: BRAND.petroleo }}
                             >
-                                Networking Poderoso<br />e Transformador
+                                Alianças Forjadas<br />no Desafio
                             </h2>
-                            <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                                Assim como um acampamento de montanhistas é o ponto de encontro para planejamento e troca de experiências,
-                                a <strong>Rota do Valente</strong> é o espaço onde o networking ganha um novo significado.
+                            <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                                No Rota Business Club, networking não é apenas troca de cartões, é sobre <strong style={{ color: BRAND.petroleo }}>cobrir a retaguarda</strong> um do outro.
                             </p>
                             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                                As <strong style={{ color: BRAND.laranjaCume }}>Confrarias</strong> são mais que reuniões — são encontros de
-                                mentes e corações alinhados, onde a confiança se constrói e as parcerias se firmam.
+                                Assim como na trilha, aqui você encontra parceiros que estendem a mão para te puxar para o próximo nível. Conexões reais, testadas e aprovadas pelo fogo da jornada empreendedora.
                             </p>
                             <div className="flex items-center gap-6">
                                 <div className="flex items-center gap-3">
