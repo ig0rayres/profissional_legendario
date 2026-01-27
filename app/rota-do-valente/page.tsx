@@ -126,6 +126,16 @@ export default async function RotaDoValentePage() {
                     />
                 </div>
 
+                {/* BRASÃO - Marca d'água no canto direito do Hero */}
+                <div className="absolute right-0 bottom-0 w-[500px] h-[500px] opacity-[0.08] pointer-events-none">
+                    <Image
+                        src="/images/brasao-rota.png"
+                        alt=""
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+
                 {/* Conteúdo do Hero */}
                 <div className="relative z-10 container mx-auto px-4 py-20">
                     <div className="max-w-3xl">
@@ -594,8 +604,18 @@ export default async function RotaDoValentePage() {
             {/* ====================================================== */}
             {/* SEÇÃO 7 - Sistema de Pontos */}
             {/* ====================================================== */}
-            <section className="py-24" style={{ backgroundColor: 'white' }}>
-                <div className="container mx-auto px-4">
+            <section className="py-24 relative overflow-hidden" style={{ backgroundColor: 'white' }}>
+                {/* BRASÃO - Decoração no canto esquerdo */}
+                <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-[400px] h-[400px] opacity-[0.05] pointer-events-none">
+                    <Image
+                        src="/images/brasao-rota.png"
+                        alt=""
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+
+                <div className="container mx-auto px-4 relative z-10">
                     <div className="max-w-4xl mx-auto">
                         {/* Header */}
                         <div className="text-center mb-16">
@@ -674,8 +694,18 @@ export default async function RotaDoValentePage() {
             {/* ====================================================== */}
             {/* CTA FINAL */}
             {/* ====================================================== */}
-            <section className="py-24" style={{ backgroundColor: BRAND.petroleo }}>
-                <div className="container mx-auto px-4 text-center">
+            <section className="py-24 relative overflow-hidden" style={{ backgroundColor: BRAND.petroleo }}>
+                {/* BRASÃO - Centralizado ao fundo com opacidade */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-[0.06] pointer-events-none">
+                    <Image
+                        src="/images/brasao-rota.png"
+                        alt=""
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+
+                <div className="container mx-auto px-4 text-center relative z-10">
                     <h2 className="text-4xl md:text-6xl font-black text-white mb-6 max-w-3xl mx-auto leading-tight">
                         O Mercado Espera<br />
                         pelos <span style={{ color: BRAND.laranjaCume }}>Valentes</span>
@@ -705,7 +735,7 @@ export default async function RotaDoValentePage() {
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
                             <Image
-                                src="/images/logo-rota-valente.png"
+                                src="/images/logo-rotabusiness.png"
                                 alt="Rota Business Club"
                                 width={160}
                                 height={50}
