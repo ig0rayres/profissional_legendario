@@ -196,30 +196,51 @@ git add -A && git commit -m "feat: descrição" && git push
 
 ---
 
-## 📅 ÚLTIMA SESSÃO: 25/01/2026
+## 📅 ÚLTIMA SESSÃO: 26/01/2026
 
-### 🎨 Painel do Usuário - Redesign
+### 🔧 Correções de Gamificação
 
-**Componentes V2 Premium:**
-- `projects-counter-v2.tsx` - Contador de projetos
-- `elos-da-rota-v2.tsx` - Conexões com patentes
-- `confraternity-stats-v2.tsx` - Confrarias estilizadas
-- `user-mural-v2.tsx` - Feed "Na Rota" com timeline
+**Problema Identificado:**
+- Pontos de convite de confraria (+10) NÃO estavam sendo creditados
+- RLS policies restritivas bloqueavam inserções
 
-**3 Variações de Design:**
-| Versão | Estilo |
-|--------|--------|
-| V3 | Militar (fundo escuro) |
-| V4 | Executivo (profissional) |
-| V5 | Elegante (minimalista) |
+**Correções Aplicadas (Rafael DBA):**
+- `points_history` - Policy INSERT corrigida
+- `user_medals` - Policy INSERT corrigida
+- `user_achievements` - Policy INSERT criada
+- `user_season_badges` - Policy INSERT criada
 
-**Páginas de Demo:**
-- `/demo-v2` - Preview V2 sem login
-- `/demo-versoes` - Comparador V3/V4/V5
+**Documentação:** `.agent/AUDITORIA_RLS_GAMIFICACAO.md`
 
-**Próximo:** Escolher layout final e aplicar no dashboard!
+### 🤝 Fluxo Bilateral de Confraria
+
+**Implementado:**
+- Parceiro agora recebe notificação quando confraria é registrada
+- Página de confirmação: `/elo-da-rota/confraria/confirmar/[id]`
+- Parceiro adiciona depoimento e recebe pontos (+50 + 15)
+- Ambos os participantes recebem pontos justamente
+
+**Pontos de Confraria:**
+| Etapa | Pontos |
+|-------|--------|
+| Enviar convite | +10 |
+| Aceitar convite | +10 |
+| Registrar realização | +50 + fotos + depoimento |
+| Confirmar (parceiro) | +50 + depoimento |
+
+### 🔔 UI de Notificações (Lucas UX)
+
+- Sino de confraria com animação "bell-ring" vibrando
+- Efeito glow-pulse pulsante
+- Popup de convites pendentes inline (sem navegação)
+- Cores alinhadas com paleta da marca
+
+**Animações adicionadas ao Tailwind:**
+- `animate-bell-ring` - Sino vibrando
+- `animate-glow-pulse` - Brilho pulsante
 
 ---
 
 *Mantenha este arquivo sincronizado com `CONTEXTO_PROJETO.md`*
+
 
