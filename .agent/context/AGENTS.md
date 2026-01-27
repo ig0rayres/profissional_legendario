@@ -33,12 +33,15 @@
   /profile                # Avatar, capa, dados de perfil
   /gamification           # Patentes, medalhas, histórico
   /notifications          # Centro de notificações
+  /social                 # 📱 FEED NA ROTA - posts, confrarias
+  /confraternity          # Formulários de confraria
 
 /lib
   /auth/context.tsx       # ⚠️ NÃO MODIFICAR sem necessidade
   /supabase/client.ts     # Cliente browser
   /supabase/server.ts     # Cliente server
   /api/gamification.ts    # 🔥 Função awardBadge() - USAR SEMPRE
+  /api/confraternity.ts   # 🔥 Funções de confraria
 
 /docs                     # Documentação detalhada
 ```
@@ -53,7 +56,8 @@
 - **Gamificação** - XP, patentes, vigor mensal, medalhas
 - **Elos (Conexões)** - Solicitação, aceite/rejeição, realtime
 - **Chat** - Mensagens 1:1, arquivos, emojis, mensagens do sistema
-- **Confrarias** - Convites, pontos, limites por plano
+- **Confrarias** - Convites, completar, pontos, limites por plano ✅ ATUALIZADO
+- **Feed Na Rota** - Posts de confraria, fotos, curtidas ✅ ATUALIZADO
 - **Notificações** - Centro + sino + modal de medalhas
 - **Admin** - Dashboard, gestão de usuários e planos
 - **Verificação Gorra** - OCR com OpenAI Vision
@@ -63,6 +67,44 @@
 - Stripe (gateway de pagamento)
 - Marketplace (produtos/serviços)
 - Eventos (criação e inscrições)
+- Pontos automáticos para parceiro de confraria
+
+---
+
+## 📅 ÚLTIMA SESSÃO: 26/01/2026 (23:48)
+
+### 🎯 PONTO DE RETOMADA
+
+**O que foi implementado:**
+1. ✅ Posts de confraria aparecem no feed de AMBOS participantes
+2. ✅ Visual especial com banner laranja "CONFRARIA"
+3. ✅ Selo grande no lado direito
+4. ✅ Avatares duplos sobrepostos
+5. ✅ Nome "Fulano e Beltrano" no header
+6. ✅ Data do encontro no banner
+7. ✅ Card de confraria some após completar
+8. ✅ Data/hora nos posts
+
+**O que testar:**
+```sql
+-- Limpar dados de teste
+DELETE FROM posts WHERE confraternity_id IS NOT NULL;
+DELETE FROM confraternities;
+DELETE FROM confraternity_invites;
+```
+
+Fluxo: Veterano envia → Recruta aceita → Recruta completa → Post aparece para ambos
+
+**Próximos passos:**
+- Pontos automáticos para parceiro (atualmente só quem completa ganha)
+- Notificações de comentário
+- Melhorias UX no feed
+
+**Feedback do usuário para corrigir:**
+- [ ] Menos laranja no banner/selo de confraria
+- [ ] Link no nome e avatar das postagens (ir para perfil)
+- [ ] Pontos de quem escreveu a postagem (Recruta OK, Veterano não recebeu)
+- [ ] Melhorar badge/selo de confraria (visual)
 
 ---
 
@@ -84,10 +126,39 @@ await awardBadge(userId, 'medal_id')
 5. Badge de não lidas atualizado
 6. Registro em `user_medals` e `points_history`
 
-### Usuário Sistema (Chat)
-- **ID:** `00000000-0000-0000-0000-000000000000`
-- **Nome:** Rota Business Club
-- **Avatar:** `/logo-rota-icon.png`
+---
+
+## 🤝 SISTEMA DE CONFRARIAS ✅ ATUALIZADO
+
+### Fluxo Completo
+```
+1. Veterano envia convite (+10 XP)
+2. Recruta aceita convite (+10 XP)
+3. Recruta (ou Veterano) completa:
+   - Upload de foto ✅
+   - Depoimento ✅
+   - Data do encontro ✅
+4. Post criado aparece no feed de AMBOS
+5. Status do invite → "completed"
+6. Card de confraria some do painel
+```
+
+### Pontos de Confraria
+| Ação | XP |
+|------|-----|
+| Enviar convite | +10 |
+| Aceitar convite | +10 |
+| Completar (base) | +50 |
+| Cada foto válida | +20 |
+| Depoimento | +15 |
+
+### Arquivos Importantes
+| Arquivo | Função |
+|---------|--------|
+| `lib/api/confraternity.ts` | Lógica de backend |
+| `components/confraternity/ConfraternityCompleteForm.tsx` | Formulário |
+| `components/social/post-card.tsx` | Visual do post |
+| `components/profile/na-rota-feed-v13-social.tsx` | Feed |
 
 ---
 
@@ -114,17 +185,19 @@ npm run build
 
 # Rodar acessível na rede
 npm run dev -- --hostname 0.0.0.0
+
+# Conectar ao banco
+source <(cat ~/.gemini/credentials.enc | base64 -d) && PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $SUPABASE_DB_HOST -p 5432 -d postgres -U postgres
 ```
 
 ---
 
 ## 📊 USUÁRIOS DE TESTE
 
-| Nome | Role | Plano | Multiplicador |
-|------|------|-------|---------------|
-| Usuario Recruta | user | Recruta | x1 |
-| Usuario Veterano | user | Veterano | x1.5 |
-| Usuario Elite_Mod | user | Elite | x3 |
+| Nome | Role | Plano | ID |
+|------|------|-------|----|
+| Recruta Teste | user | Recruta | d1cd4db4-b79f-4ef1-9724-9d80f458aed8 |
+| Veterano Teste | user | Veterano | (verificar no banco) |
 
 ---
 
@@ -135,48 +208,28 @@ npm run dev -- --hostname 0.0.0.0
 | `/api/system-message` | POST | Envia mensagem do sistema (bypassa RLS) |
 | `/api/ocr/gorra` | POST | Extrai ID da gorra via OpenAI Vision |
 | `/api/profile/me` | GET | Perfil do usuário logado |
-| `/api/profile/[id]` | GET | Perfil por ID |
+| `/api/validate-confraternity` | POST | Valida foto de confraria com IA |
+| `/api/gamification/award-points` | POST | Credita pontos |
 
 ---
 
-## ⚙️ VARIÁVEIS DE AMBIENTE
+## 🗄️ BANCO DE DADOS - TABELAS IMPORTANTES
 
-### Obrigatórias
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-```
+### confraternity_invites
+- `status`: 'pending' → 'accepted' → 'completed'
+- `sender_id`, `receiver_id` - IDs dos participantes
+- `proposed_date` - Data proposta
 
-### Opcionais
-```bash
-OPENAI_API_KEY=sk-proj-...    # OCR Gorra
-STRIPE_SECRET_KEY=sk_...      # Pagamentos (futuro)
-RESEND_API_KEY=re_...         # Email (configurado no Supabase)
-```
+### confraternities
+- `member1_id`, `member2_id` - IDs dos participantes
+- `date_occurred` - Data do encontro
+- `photos` - JSONB com URLs
+- `post_id` - ID do post criado
 
----
-
-## 🎨 DESIGN SYSTEM
-
-| Aspecto | Valor |
-|---------|-------|
-| **Cor Primária** | Verde (#166534) |
-| **Cor Accent** | Laranja |
-| **Font** | Inter |
-| **Tema** | Dark mode com glassmorphism |
-| **Estilo** | Militar/valente |
-
----
-
-## 📚 DOCUMENTAÇÃO DETALHADA
-
-| Arquivo | Conteúdo |
-|---------|----------|
-| `CONTEXTO_PROJETO.md` | Contexto completo do projeto |
-| `docs/GUIA_DEPLOY_VERCEL.md` | Guia de deploy + troubleshooting |
-| `docs/SISTEMA_MEDALHAS.md` | Regras completas de medalhas |
-| `docs/RESUMO_*.md` | Resumos de sessões anteriores |
+### posts
+- `confraternity_id` - Se é post de confraria
+- `media_urls` - JSONB com URLs das fotos
+- `user_id` - Quem criou
 
 ---
 
@@ -196,51 +249,14 @@ git add -A && git commit -m "feat: descrição" && git push
 
 ---
 
-## 📅 ÚLTIMA SESSÃO: 26/01/2026
+## � DOCUMENTAÇÃO DETALHADA
 
-### 🔧 Correções de Gamificação
-
-**Problema Identificado:**
-- Pontos de convite de confraria (+10) NÃO estavam sendo creditados
-- RLS policies restritivas bloqueavam inserções
-
-**Correções Aplicadas (Rafael DBA):**
-- `points_history` - Policy INSERT corrigida
-- `user_medals` - Policy INSERT corrigida
-- `user_achievements` - Policy INSERT criada
-- `user_season_badges` - Policy INSERT criada
-
-**Documentação:** `.agent/AUDITORIA_RLS_GAMIFICACAO.md`
-
-### 🤝 Fluxo Bilateral de Confraria
-
-**Implementado:**
-- Parceiro agora recebe notificação quando confraria é registrada
-- Página de confirmação: `/elo-da-rota/confraria/confirmar/[id]`
-- Parceiro adiciona depoimento e recebe pontos (+50 + 15)
-- Ambos os participantes recebem pontos justamente
-
-**Pontos de Confraria:**
-| Etapa | Pontos |
-|-------|--------|
-| Enviar convite | +10 |
-| Aceitar convite | +10 |
-| Registrar realização | +50 + fotos + depoimento |
-| Confirmar (parceiro) | +50 + depoimento |
-
-### 🔔 UI de Notificações (Lucas UX)
-
-- Sino de confraria com animação "bell-ring" vibrando
-- Efeito glow-pulse pulsante
-- Popup de convites pendentes inline (sem navegação)
-- Cores alinhadas com paleta da marca
-
-**Animações adicionadas ao Tailwind:**
-- `animate-bell-ring` - Sino vibrando
-- `animate-glow-pulse` - Brilho pulsante
+| Arquivo | Conteúdo |
+|---------|----------|
+| `CONTEXTO_PROJETO.md` | Contexto completo + ponto de retomada |
+| `docs/GUIA_DEPLOY_VERCEL.md` | Guia de deploy + troubleshooting |
+| `docs/SISTEMA_MEDALHAS.md` | Regras completas de medalhas |
 
 ---
 
 *Mantenha este arquivo sincronizado com `CONTEXTO_PROJETO.md`*
-
-
