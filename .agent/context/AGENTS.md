@@ -14,6 +14,8 @@
 | **URL Produção** | https://rotabusinessclub.com.br |
 | **Hospedagem** | Vercel (Hobby) + Cloudflare (DNS/CDN) |
 | **Email** | Resend (via Supabase SMTP) |
+| **Design System** | [BRAND_GUIDELINES.md](../documentation/BRAND_GUIDELINES.md) |
+| **Brasão** | `/images/brasao-rota.png` (Ícone oficial limpo) |
 
 ---
 
