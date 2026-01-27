@@ -168,8 +168,8 @@ export default function PlansPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background py-16 px-4">
-            <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen bg-background pt-24 pb-16 px-4">
+            <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-12">
                     <h1 className="text-4xl md:text-5xl font-black text-primary mb-4">
@@ -180,24 +180,38 @@ export default function PlansPage() {
                     </p>
                 </div>
 
-                {/* Plans Grid */}
-                <div className="grid md:grid-cols-3 gap-6">
+                {/* Plans Grid - 4 colunas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {plans.map((plan) => {
                         const config = TIER_CONFIG[plan.tier] || TIER_CONFIG.recruta
                         const Icon = config.icon
                         const isCurrentPlan = currentPlan === plan.tier
                         const isPopular = config.popular
+                        const isElite = plan.tier === 'elite'
 
                         return (
                             <Card
                                 key={plan.id}
-                                className={`relative overflow-hidden border-2 transition-all duration-300 hover:scale-105 ${isPopular
-                                    ? 'border-primary shadow-lg shadow-primary/20'
-                                    : 'border-primary/20 hover:border-primary/40'
+                                className={`relative overflow-hidden border-2 transition-all duration-300 hover:scale-105 ${isElite
+                                    ? 'border-[#D2691E] shadow-2xl shadow-[#D2691E]/40 ring-2 ring-[#D2691E]/30 bg-gradient-to-br from-[#D2691E]/10 via-card to-card'
+                                    : isPopular
+                                        ? 'border-primary shadow-lg shadow-primary/20'
+                                        : 'border-primary/20 hover:border-primary/40'
                                     }`}
                             >
-                                {/* Popular Badge */}
-                                {isPopular && (
+                                {/* Elite Badge Premium */}
+                                {isElite && (
+                                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 z-10">
+                                        <span className="bg-gradient-to-r from-[#D2691E] to-[#FF8C42] text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-[#D2691E]/50 flex items-center gap-1">
+                                            <Crown className="w-3 h-3" />
+                                            RECOMENDADO
+                                            <Crown className="w-3 h-3" />
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Popular Badge (outros) */}
+                                {isPopular && !isElite && (
                                     <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-sm font-bold rounded-bl-lg">
                                         RECOMENDADO
                                     </div>
@@ -206,19 +220,21 @@ export default function PlansPage() {
                                 {/* Gradient Background */}
                                 <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-50`} />
 
-                                <CardHeader className="relative">
+                                <CardHeader className="relative pt-8">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className={`p-3 rounded-lg ${isPopular ? 'bg-orange-500/20' : 'bg-primary/20'}`}>
-                                            <Icon className={`w-6 h-6 ${isPopular ? 'text-orange-500' : 'text-primary'}`} />
+                                        <div className={`p-3 rounded-lg ${isElite
+                                            ? 'bg-gradient-to-br from-[#D2691E] to-[#FF8C42] shadow-lg shadow-[#D2691E]/50'
+                                            : isPopular ? 'bg-orange-500/20' : 'bg-primary/20'}`}>
+                                            <Icon className={`w-6 h-6 ${isElite ? 'text-white' : isPopular ? 'text-orange-500' : 'text-primary'}`} />
                                         </div>
                                         <div>
-                                            <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                                            <CardTitle className={`text-2xl ${isElite ? 'text-[#D2691E]' : ''}`}>{plan.name}</CardTitle>
                                             <CardDescription>{TIER_DESCRIPTIONS[plan.tier]}</CardDescription>
                                         </div>
                                     </div>
 
                                     <div className="mt-4">
-                                        <span className="text-4xl font-black text-primary">
+                                        <span className={`text-4xl font-black ${isElite ? 'text-[#D2691E]' : 'text-primary'}`}>
                                             {formatPrice(plan.price)}
                                         </span>
                                         {plan.price > 0 && (
