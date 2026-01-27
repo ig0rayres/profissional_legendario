@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { formatCurrency } from '@/lib/api/financial'
+import { clearPlanCache } from '@/lib/services/plan-service'
 import { Save, Edit, Check, X, Zap, Link2, Users, ShoppingBag, Infinity, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -108,6 +109,9 @@ export function PlanManager() {
             toast.success('Plano atualizado', {
                 description: 'As alterações foram salvas com sucesso'
             })
+
+            // Limpa cache para propagar alterações em toda plataforma
+            clearPlanCache()
 
             setEditingId(null)
             setEditForm({})

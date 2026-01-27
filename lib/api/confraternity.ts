@@ -5,6 +5,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { awardPoints, awardBadge, awardAchievement } from '@/lib/api/gamification'
+import { getConfraternityLimit, isUnlimited } from '@/lib/services/plan-service'
 
 // Types
 export interface ConfraternityInvite {
@@ -69,10 +70,13 @@ export async function canSendInvite(userId: string): Promise<{
 
         const planType = subscription?.plan_id || 'recruta'
 
-        // Recruta: 0, Veterano: 4, Elite: 10, Lendário: 15
-        const maxInvites = planType === 'lendario' ? 15 : planType === 'elite' ? 10 : planType === 'veterano' ? 4 : 0
+        // Buscar limite de confrarias do banco (via plan-service)
+        const maxConfraternities = await getConfraternityLimit(planType)
 
-        // Recruta não pode enviar
+        // null = ilimitado, usamos 9999 como valor alto para cálculos
+        const maxInvites = isUnlimited(maxConfraternities) ? 9999 : (maxConfraternities || 0)
+
+        // Recruta não pode enviar (limite = 0)
         if (maxInvites === 0) {
             return {
                 canSend: false,

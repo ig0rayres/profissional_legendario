@@ -1,28 +1,25 @@
 /**
  * Configuração de multiplicadores de Vigor por plano
  * 
- * PLANOS:
- * - Recruta: 1x (gratuito)
- * - Veterano: 1.5x
- * - Elite: 3x
- * - Lendário: 5x (novo!)
+ * ⚠️ ATENÇÃO: Este arquivo fornece funções helper, mas a FONTE DA VERDADE
+ * é a tabela `plan_config` no Supabase.
+ * 
+ * Para dados dinâmicos, use: @/lib/services/plan-service
  */
 
-export const PLAN_MULTIPLIERS: Record<string, number> = {
-    recruta: 1,
-    veterano: 1.5,
-    elite: 3,
-    lendario: 5, // Novo plano!
-}
+import { getMultiplierSync, getMultiplierByTier, getAllPlans } from '@/lib/services/plan-service'
+
+// Re-exporta funções do plan-service para compatibilidade
+export { getMultiplierByTier as getMultiplierAsync }
+export { getAllPlans }
 
 /**
- * Retorna o multiplicador de vigor baseado no plano
- * @param planId - ID do plano (recruta, veterano, elite, lendario)
- * @returns Multiplicador (1, 1.5, 3 ou 5)
+ * @deprecated Use getMultiplierByTier do plan-service para dados atualizados
+ * Retorna o multiplicador de vigor baseado no plano (versão síncrona com cache)
  */
 export function getMultiplier(planId: string | null | undefined): number {
-    if (!planId) return 1
-    return PLAN_MULTIPLIERS[planId.toLowerCase()] || 1
+    // Usa cache do plan-service se disponível
+    return getMultiplierSync(planId)
 }
 
 /**
@@ -44,12 +41,20 @@ export function getPlanName(planId: string | null | undefined): string {
 }
 
 /**
- * Lista de todos os planos disponíveis
- * CORES: Conforme Manual da Marca
+ * @deprecated Use getAllPlans() do plan-service para dados atualizados do banco
+ * Lista de planos (fallback estático - preferir dados do banco)
  */
 export const ALL_PLANS = [
     { id: 'recruta', name: 'Recruta', multiplier: 1, color: 'gray' },
-    { id: 'veterano', name: 'Veterano', multiplier: 1.5, color: '#214C3B' }, // Verde Trilha
-    { id: 'elite', name: 'Elite', multiplier: 3, color: '#CC5500' }, // Laranja Cume
-    { id: 'lendario', name: 'Lendário', multiplier: 5, color: '#FFD700' }, // Dourado
+    { id: 'veterano', name: 'Veterano', multiplier: 1.5, color: '#214C3B' },
+    { id: 'elite', name: 'Elite', multiplier: 3, color: '#CC5500' },
+    { id: 'lendario', name: 'Lendário', multiplier: 5, color: '#FFD700' },
 ]
+
+// Fallback hardcoded - usado apenas se banco não disponível
+export const PLAN_MULTIPLIERS: Record<string, number> = {
+    recruta: 1,
+    veterano: 1.5,
+    elite: 3,
+    lendario: 5,
+}
