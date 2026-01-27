@@ -261,12 +261,19 @@ export function ConfraternityCompleteForm({
                     ? `${formData.description}\n\n📝 ${formData.testimonial}`
                     : formData.testimonial
 
+                console.log('[Post] Creating with:', {
+                    user_id: currentUserId,
+                    content: postContent?.substring(0, 50),
+                    media_urls: validPhotos,
+                    visibility: formData.visibility
+                })
+
                 const { data: post, error: postError } = await supabase
                     .from('posts')
                     .insert({
                         user_id: currentUserId,
                         content: postContent,
-                        media_urls: formData.photos,
+                        media_urls: validPhotos, // Usar apenas fotos com URLs válidas (não blobs)
                         confraternity_id: result.confraternityId,
                         ai_validation: validationResult,
                         visibility: formData.visibility
@@ -640,7 +647,23 @@ export function ConfraternityCompleteForm({
                     </RadioGroup>
                 </div>
 
-                {/* Recompensas Preview */}
+                {/* Publicar no Feed */}
+                <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <Checkbox
+                        id="publishToFeed"
+                        checked={publishToFeed}
+                        onCheckedChange={(checked) => setPublishToFeed(checked === true)}
+                    />
+                    <div className="flex-1">
+                        <Label htmlFor="publishToFeed" className="font-semibold cursor-pointer">
+                            📱 Publicar no Feed "Na Rota"
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                            Sua confraria aparecerá no feed para outros membros verem
+                        </p>
+                    </div>
+                </div>
+
                 <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
                     <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-2">
                         🎁 Recompensas ao finalizar:

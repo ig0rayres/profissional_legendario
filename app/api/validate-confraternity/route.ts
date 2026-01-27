@@ -57,30 +57,34 @@ export async function POST(request: NextRequest) {
                         content: [
                             {
                                 type: 'text',
-                                text: `Analise esta imagem e verifique se ela mostra uma reunião ou confraternização entre 2 ou mais pessoas.
+                                text: `Você é um validador de fotos de encontros profissionais.
 
-Critérios para APROVAÇÃO:
-- Deve haver pelo menos 2 pessoas visíveis na foto
-- Deve parecer uma reunião, encontro, confraternização ou momento social
-- Pode ser em restaurante, café, escritório, área externa, casa, etc.
-- Selfies com 2+ pessoas são aceitas
+TAREFA: Verificar se a imagem mostra um encontro/reunião entre DUAS OU MAIS pessoas.
 
-Critérios para REJEIÇÃO:
-- Foto de apenas 1 pessoa (selfie solo)
-- Foto de paisagem/cenário sem pessoas
-- Foto de objetos/comida sem pessoas visíveis
-- Imagem muito desfocada ou escura para identificar pessoas
-- Fotos de tela/prints de outras fotos
+✅ APROVAR SE:
+- Há 2+ pessoas na foto (mesmo que parcialmente visíveis)
+- Parece ser um encontro, reunião, confraternização, almoço, café, etc.
+- Selfies com 2+ pessoas são VÁLIDAS
+- Fotos de grupo são VÁLIDAS
+- Pessoas em uniformes/jaquetas iguais indicam evento = VÁLIDO
+- Pessoas sentadas à mesa, em pé conversando, em ambiente externo = VÁLIDO
+- Videochamadas mostrando 2+ pessoas na tela = VÁLIDO
+- Se der para ver partes de 2 corpos (braços, mãos, ombros) mesmo sem rostos completos = VÁLIDO
 
-Responda APENAS com um JSON válido no formato:
+❌ REJEITAR APENAS SE:
+- Foto claramente de apenas 1 pessoa sozinha
+- Foto sem nenhuma pessoa visível (só paisagem/objetos)
+- Imagem completamente desfocada/escura
+
+IMPORTANTE: Na dúvida, APROVE. É melhor aprovar uma foto limítrofe do que rejeitar um encontro legítimo.
+
+Responda APENAS com JSON:
 {
-  "approved": true ou false,
-  "people_count": número de pessoas detectadas (0 se não conseguir identificar),
-  "confidence": "high" ou "medium" ou "low",
-  "reason": "explicação breve em português"
-}
-
-IMPORTANTE: Responda SOMENTE o JSON, sem texto adicional.`
+  "approved": true/false,
+  "people_count": número (mínimo 2 para aprovação),
+  "confidence": "high"/"medium"/"low",
+  "reason": "explicação em português, 1 frase"
+}`
                             },
                             {
                                 type: 'image_url',
@@ -93,7 +97,7 @@ IMPORTANTE: Responda SOMENTE o JSON, sem texto adicional.`
                     }
                 ],
                 max_tokens: 200,
-                temperature: 0
+                temperature: 0.1
             })
         })
 
