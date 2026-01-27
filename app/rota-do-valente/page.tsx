@@ -20,7 +20,7 @@ import {
     Medal,
     Trophy,
     Crown,
-    HeartHeartHandshake,
+    HeartHandshake,
     CheckCircle2
 } from 'lucide-react'
 
