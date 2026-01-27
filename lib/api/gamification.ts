@@ -122,7 +122,7 @@ export async function checkEloPointsAlreadyAwarded(
 
 /**
  * Award points to a user for completing an action
- * Updates user_gamification directly
+ * Uses server-side API to bypass RLS
  */
 export async function awardPoints(
     userId: string,
@@ -130,139 +130,41 @@ export async function awardPoints(
     actionType: string,
     description?: string,
     metadata?: Record<string, any>,
-    skipMultiplier: boolean = false  // Se true, não aplica multiplicador (já foi aplicado externamente)
+    skipMultiplier: boolean = false
 ): Promise<{ success: boolean; xpAwarded: number; error?: string }> {
     try {
-        const supabase = createClient()
+        console.log('[Gamification] Calling API to award', baseAmount, 'points to user', userId, 'for', actionType)
 
-        console.log('[Gamification] Awarding', baseAmount, 'points to user', userId, 'for', actionType, skipMultiplier ? '(skip multiplier)' : '')
-
-        let multiplier = 1
-        let planId = 'recruta'
-        let finalAmount = baseAmount
-
-        // Aplicar multiplicador apenas se não foi skipado
-        if (!skipMultiplier) {
-            // 1. Buscar plano do usuário para aplicar multiplicador
-            const { data: subscription } = await supabase
-                .from('subscriptions')
-                .select('plan_id')
-                .eq('user_id', userId)
-                .eq('status', 'active')
-                .single()
-
-            // Multiplicadores: Recruta x1, Veterano x1.5, Elite x3
-            planId = subscription?.plan_id || 'recruta'
-            multiplier = planId === 'elite' ? 3 : planId === 'veterano' ? 1.5 : 1
-            finalAmount = Math.round(baseAmount * multiplier)
-        }
-
-        console.log('[Gamification] Plan:', planId, 'Multiplier:', multiplier, 'Final:', finalAmount)
-
-        // 2. Obter pontos atuais (ou criar registro se não existir)
-        let { data: currentStats, error: fetchError } = await supabase
-            .from('user_gamification')
-            .select('total_points')
-            .eq('user_id', userId)
-            .maybeSingle()
-
-        // Se não existe registro, criar um novo
-        if (!currentStats) {
-            console.log('[Gamification] Creating new gamification record for user:', userId)
-            const { error: insertError } = await supabase
-                .from('user_gamification')
-                .insert({
-                    user_id: userId,
-                    total_points: 0,
-                    current_rank_id: 'novato',
-                    monthly_vigor: 0,
-                    last_activity_at: new Date().toISOString()
-                })
-
-            if (insertError) {
-                console.error('[Gamification] Error creating gamification record:', insertError)
-                return { success: false, xpAwarded: 0, error: insertError.message }
-            }
-            currentStats = { total_points: 0 }
-        }
-
-        if (fetchError) {
-            console.error('[Gamification] Error fetching current stats:', fetchError)
-            return { success: false, xpAwarded: 0, error: fetchError.message }
-        }
-
-        const currentPoints = currentStats?.total_points || 0
-        const newPoints = currentPoints + finalAmount
-
-        // 3. Atualizar pontos
-        const { error: updateError } = await supabase
-            .from('user_gamification')
-            .update({
-                total_points: newPoints,
-                last_activity_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+        // Chamar API server-side que usa service_role_key
+        const response = await fetch('/api/gamification/award-points', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points: baseAmount,
+                actionType,
+                description,
+                metadata,
+                skipMultiplier
             })
-            .eq('user_id', userId)
+        })
 
-        if (updateError) {
-            console.error('[Gamification] Error updating points:', updateError)
-            return { success: false, xpAwarded: 0, error: updateError.message }
+        const result = await response.json()
+
+        if (!result.success) {
+            console.error('[Gamification] API error:', result.error)
+            return { success: false, xpAwarded: 0, error: result.error }
         }
 
-        console.log('[Gamification] Points updated:', currentPoints, '->', newPoints)
-
-        // 4. Registrar no histórico de pontos
-        try {
-            await supabase
-                .from('points_history')
-                .insert({
-                    user_id: userId,
-                    points: finalAmount,
-                    action_type: actionType,
-                    description: description || null,
-                    metadata: {
-                        base_amount: baseAmount,
-                        multiplier: multiplier,
-                        plan_id: planId,
-                        previous_total: currentPoints,
-                        new_total: newPoints,
-                        ...metadata
-                    }
-                })
-            console.log('[Gamification] Points history recorded')
-        } catch (historyError) {
-            console.error('[Gamification] Error recording history (non-critical):', historyError)
-        }
-
-        // 5. Verificar e atualizar rank se necessário
-        try {
-            const { data: ranks } = await supabase
-                .from('ranks')
-                .select('id, points_required')
-                .order('points_required', { ascending: false })
-
-            if (ranks) {
-                for (const rank of ranks) {
-                    if (newPoints >= rank.points_required) {
-                        await supabase
-                            .from('user_gamification')
-                            .update({ current_rank_id: rank.id })
-                            .eq('user_id', userId)
-                        console.log('[Gamification] Rank updated to:', rank.id)
-                        break
-                    }
-                }
-            }
-        } catch (rankError) {
-            console.error('[Gamification] Error updating rank:', rankError)
-        }
-
+        console.log('[Gamification] API success:', result)
         return {
             success: true,
-            xpAwarded: finalAmount
+            xpAwarded: result.xpAwarded
         }
     } catch (error: any) {
-        console.error('[Gamification] Exception awarding points:', error)
+        console.error('[Gamification] Exception calling award API:', error)
         return {
             success: false,
             xpAwarded: 0,
