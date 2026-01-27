@@ -32,10 +32,10 @@ export const metadata: Metadata = {
 
 // Cores do Manual da Marca
 const BRAND = {
-    verdeRota: '#214C3B',
-    cobre: '#B87333',
-    areia: '#EFEDE8',
-    petroleo: '#0E2A2F',
+    verdeRota: '#214C3B',      // Verde Trilha (principal)
+    laranjaCume: '#CC5500',    // Laranja Cume (Burnt Orange) - acento e CTAs
+    areia: '#EFEDE8',          // Areia (backgrounds claros)
+    petroleo: '#0E2A2F',       // Petróleo (textos escuros)
 }
 
 // Componente para renderizar ícone Lucide dinamicamente
@@ -132,7 +132,7 @@ export default async function RotaDoValentePage() {
                         {/* Logo */}
                         <div className="mb-8">
                             <Image
-                                src="/images/logo-rota-valente.png"
+                                src="/images/logo-rotabusiness.png"
                                 alt="Rota Business Club"
                                 width={280}
                                 height={100}
@@ -143,7 +143,7 @@ export default async function RotaDoValentePage() {
                         {/* Badge */}
                         <div
                             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest mb-6"
-                            style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                            style={{ backgroundColor: BRAND.laranjaCume, color: 'white' }}
                         >
                             <Mountain className="w-4 h-4" />
                             O Acampamento do Homem de Negócio
@@ -152,7 +152,7 @@ export default async function RotaDoValentePage() {
                         {/* Título Principal */}
                         <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
                             ROTA DO<br />
-                            <span style={{ color: BRAND.cobre }}>VALENTE</span>
+                            <span style={{ color: BRAND.laranjaCume }}>VALENTE</span>
                         </h1>
 
                         {/* Subtítulo */}
@@ -167,7 +167,7 @@ export default async function RotaDoValentePage() {
                                 <Button
                                     size="lg"
                                     className="h-14 px-8 text-sm font-black rounded-lg uppercase"
-                                    style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                                    style={{ backgroundColor: BRAND.laranjaCume, color: 'white' }}
                                 >
                                     Comece Sua Jornada
                                     <ArrowRight className="ml-2 w-5 h-5" />
@@ -221,7 +221,7 @@ export default async function RotaDoValentePage() {
                             {/* Badge flutuante */}
                             <div
                                 className="absolute -bottom-6 -right-6 py-4 px-6 rounded-xl shadow-lg"
-                                style={{ backgroundColor: BRAND.cobre }}
+                                style={{ backgroundColor: BRAND.laranjaCume }}
                             >
                                 <p className="text-white font-black text-2xl">500+</p>
                                 <p className="text-white/80 text-sm font-medium">Confrarias Realizadas</p>
@@ -247,16 +247,16 @@ export default async function RotaDoValentePage() {
                                 a <strong>Rota do Valente</strong> é o espaço onde o networking ganha um novo significado.
                             </p>
                             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                                As <strong style={{ color: BRAND.cobre }}>Confrarias</strong> são mais que reuniões — são encontros de
+                                As <strong style={{ color: BRAND.laranjaCume }}>Confrarias</strong> são mais que reuniões — são encontros de
                                 mentes e corações alinhados, onde a confiança se constrói e as parcerias se firmam.
                             </p>
                             <div className="flex items-center gap-6">
                                 <div className="flex items-center gap-3">
-                                    <HeartHandshake className="w-6 h-6" style={{ color: BRAND.cobre }} />
+                                    <HeartHandshake className="w-6 h-6" style={{ color: BRAND.laranjaCume }} />
                                     <span className="font-bold text-gray-800">Reuniões 1x1</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Users className="w-6 h-6" style={{ color: BRAND.cobre }} />
+                                    <Users className="w-6 h-6" style={{ color: BRAND.laranjaCume }} />
                                     <span className="font-bold text-gray-800">Rede Viva</span>
                                 </div>
                             </div>
@@ -306,7 +306,7 @@ export default async function RotaDoValentePage() {
                                     <div
                                         className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-white"
                                         style={{
-                                            backgroundColor: index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota
+                                            backgroundColor: index === displayRanks.length - 1 ? BRAND.laranjaCume : BRAND.verdeRota
                                         }}
                                     >
                                         <DynamicIcon name={rank.icon || 'Shield'} className="w-7 h-7 text-white" />
@@ -335,26 +335,26 @@ export default async function RotaDoValentePage() {
                                 className="p-6 rounded-xl text-center hover:shadow-lg transition-all hover:-translate-y-1"
                                 style={{
                                     backgroundColor: BRAND.areia,
-                                    borderLeft: `4px solid ${index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota}`
+                                    borderLeft: `4px solid ${index === displayRanks.length - 1 ? BRAND.laranjaCume : BRAND.verdeRota}`
                                 }}
                             >
                                 <div
                                     className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
                                     style={{
-                                        backgroundColor: `${index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota}20`
+                                        backgroundColor: `${index === displayRanks.length - 1 ? BRAND.laranjaCume : BRAND.verdeRota}20`
                                     }}
                                 >
                                     <DynamicIcon
                                         name={rank.icon || 'Shield'}
                                         className="w-6 h-6"
-                                        style={{ color: index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota } as React.CSSProperties}
+                                        style={{ color: index === displayRanks.length - 1 ? BRAND.laranjaCume : BRAND.verdeRota } as React.CSSProperties}
                                     />
                                 </div>
                                 <h3 className="font-bold text-gray-800 mb-1">{rank.name}</h3>
                                 <p className="text-xs text-gray-500">{rank.description}</p>
                                 <p
                                     className="mt-3 text-xs font-bold"
-                                    style={{ color: BRAND.cobre }}
+                                    style={{ color: BRAND.laranjaCume }}
                                 >
                                     {rank.points_required}+ Vigor
                                 </p>
@@ -374,7 +374,7 @@ export default async function RotaDoValentePage() {
                     <div className="text-center mb-16">
                         <div
                             className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
-                            style={{ backgroundColor: `${BRAND.cobre}20`, color: BRAND.cobre }}
+                            style={{ backgroundColor: `${BRAND.laranjaCume}20`, color: BRAND.laranjaCume }}
                         >
                             Ferramentas da Jornada
                         </div>
@@ -403,7 +403,7 @@ export default async function RotaDoValentePage() {
                                 Encontros estratégicos 1x1 onde você constrói relacionamentos sólidos,
                                 troca conhecimento e cria oportunidades de negócio reais.
                             </p>
-                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.cobre }}>
+                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.laranjaCume }}>
                                 <CheckCircle2 className="w-4 h-4" />
                                 Recompensado por cada reunião
                             </div>
@@ -413,9 +413,9 @@ export default async function RotaDoValentePage() {
                         <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
                             <div
                                 className="w-16 h-16 rounded-xl flex items-center justify-center mb-6"
-                                style={{ backgroundColor: `${BRAND.cobre}15` }}
+                                style={{ backgroundColor: `${BRAND.laranjaCume}15` }}
                             >
-                                <Camera className="w-8 h-8" style={{ color: BRAND.cobre }} />
+                                <Camera className="w-8 h-8" style={{ color: BRAND.laranjaCume }} />
                             </div>
                             <h3 className="text-2xl font-black mb-4" style={{ color: BRAND.petroleo }}>
                                 Registro de Batalha
@@ -424,7 +424,7 @@ export default async function RotaDoValentePage() {
                                 Seu diário de campo. Documente cada projeto, cada entrega,
                                 cada desafio superado com fotos e vídeos reais.
                             </p>
-                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.cobre }}>
+                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.laranjaCume }}>
                                 <CheckCircle2 className="w-4 h-4" />
                                 Portfólio vivo que atrai clientes
                             </div>
@@ -445,7 +445,7 @@ export default async function RotaDoValentePage() {
                                 Lance projetos e entregue com excelência. A Rota premia cada etapa,
                                 incentivando inovação, execução e comprometimento.
                             </p>
-                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.cobre }}>
+                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.laranjaCume }}>
                                 <CheckCircle2 className="w-4 h-4" />
                                 Pontos por lançamento e entrega
                             </div>
@@ -503,7 +503,7 @@ export default async function RotaDoValentePage() {
                                         </p>
                                         <p
                                             className="text-xs font-bold"
-                                            style={{ color: BRAND.cobre }}
+                                            style={{ color: BRAND.laranjaCume }}
                                         >
                                             +{medal.points_reward} Vigor
                                         </p>
@@ -521,7 +521,7 @@ export default async function RotaDoValentePage() {
             {/* ====================================================== */}
             <section
                 className="py-24"
-                style={{ background: `linear-gradient(135deg, ${BRAND.cobre}15 0%, ${BRAND.areia} 100%)` }}
+                style={{ background: `linear-gradient(135deg, ${BRAND.laranjaCume}15 0%, ${BRAND.areia} 100%)` }}
             >
                 <div className="container mx-auto px-4">
                     {/* Header */}
@@ -529,7 +529,7 @@ export default async function RotaDoValentePage() {
                         <div>
                             <div
                                 className="inline-flex items-center gap-2 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
-                                style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                                style={{ backgroundColor: BRAND.laranjaCume, color: 'white' }}
                             >
                                 <Calendar className="w-4 h-4" />
                                 Resetam Todo Mês
@@ -546,9 +546,9 @@ export default async function RotaDoValentePage() {
                         </div>
                         <div
                             className="text-right px-6 py-4 rounded-xl"
-                            style={{ backgroundColor: `${BRAND.cobre}20` }}
+                            style={{ backgroundColor: `${BRAND.laranjaCume}20` }}
                         >
-                            <Flame className="w-8 h-8 mx-auto mb-2" style={{ color: BRAND.cobre }} />
+                            <Flame className="w-8 h-8 mx-auto mb-2" style={{ color: BRAND.laranjaCume }} />
                             <p className="text-sm font-bold text-gray-800">Temporada Ativa</p>
                             <p className="text-xs text-gray-500">Janeiro 2026</p>
                         </div>
@@ -572,7 +572,7 @@ export default async function RotaDoValentePage() {
                             >
                                 <div
                                     className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-                                    style={{ backgroundColor: BRAND.cobre }}
+                                    style={{ backgroundColor: BRAND.laranjaCume }}
                                 >
                                     <DynamicIcon name={proeza.icon || 'Flame'} className="w-7 h-7 text-white" />
                                 </div>
@@ -580,7 +580,7 @@ export default async function RotaDoValentePage() {
                                 <p className="text-xs text-gray-500 mb-3">{proeza.description}</p>
                                 <div
                                     className="inline-block px-3 py-1 rounded-full text-xs font-bold"
-                                    style={{ backgroundColor: `${BRAND.cobre}15`, color: BRAND.cobre }}
+                                    style={{ backgroundColor: `${BRAND.laranjaCume}15`, color: BRAND.laranjaCume }}
                                 >
                                     +{proeza.points_base} Vigor
                                 </div>
@@ -615,7 +615,7 @@ export default async function RotaDoValentePage() {
                             {[
                                 { name: 'Recruta', multiplier: '1x', desc: 'Plano básico', color: 'gray' },
                                 { name: 'Veterano', multiplier: '1.5x', desc: 'Para quem quer crescer', color: BRAND.verdeRota },
-                                { name: 'Elite', multiplier: '3x', desc: 'Visibilidade premium', color: BRAND.cobre },
+                                { name: 'Elite', multiplier: '3x', desc: 'Visibilidade premium', color: BRAND.laranjaCume },
                                 { name: 'Lendário', multiplier: '5x', desc: 'Status máximo', color: '#FFD700' },
                             ].map((plan, i) => (
                                 <div
@@ -661,7 +661,7 @@ export default async function RotaDoValentePage() {
                                 ].map((item) => (
                                     <div key={item.action} className="flex justify-between items-center p-4 bg-white rounded-lg">
                                         <span className="text-sm text-gray-700">{item.action}</span>
-                                        <span className="font-bold text-sm" style={{ color: BRAND.cobre }}>{item.points}</span>
+                                        <span className="font-bold text-sm" style={{ color: BRAND.laranjaCume }}>{item.points}</span>
                                     </div>
                                 ))}
                             </div>
@@ -678,7 +678,7 @@ export default async function RotaDoValentePage() {
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-4xl md:text-6xl font-black text-white mb-6 max-w-3xl mx-auto leading-tight">
                         O Mercado Espera<br />
-                        pelos <span style={{ color: BRAND.cobre }}>Valentes</span>
+                        pelos <span style={{ color: BRAND.laranjaCume }}>Valentes</span>
                     </h2>
                     <p className="text-xl text-white/80 mb-10 max-w-xl mx-auto">
                         Você está pronto para a próxima escalada?
@@ -687,7 +687,7 @@ export default async function RotaDoValentePage() {
                         <Button
                             size="lg"
                             className="h-16 px-12 text-lg font-black rounded-xl uppercase"
-                            style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                            style={{ backgroundColor: BRAND.laranjaCume, color: 'white' }}
                         >
                             Junte-se ao Acampamento
                             <ArrowRight className="ml-3 w-6 h-6" />
