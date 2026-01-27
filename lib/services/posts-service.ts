@@ -292,31 +292,39 @@ export class PostsService {
 
     private async loadRanking(limit = 5): Promise<RankingUser[]> {
         try {
-            // Usa user_gamification que é a tabela correta no sistema
-            const { data, error } = await this.supabase
+            // Query separada - primeiro busca gamification, depois perfis
+            const { data: gamificationData, error: gamError } = await this.supabase
                 .from('user_gamification')
-                .select(`
-                    user_id,
-                    total_points,
-                    current_rank_id,
-                    user:profiles!user_id(
-                        id, full_name, avatar_url, slug, rota_number
-                    )
-                `)
+                .select('user_id, total_points, current_rank_id')
                 .order('total_points', { ascending: false })
                 .limit(limit)
 
-            if (error) throw error
+            if (gamError) throw gamError
+            if (!gamificationData || gamificationData.length === 0) return []
 
-            return (data || []).map(item => ({
-                id: item.user_id,
-                full_name: (item.user as any)?.full_name || 'Usuário',
-                avatar_url: (item.user as any)?.avatar_url,
-                slug: (item.user as any)?.slug,
-                rota_number: (item.user as any)?.rota_number,
-                vigor: item.total_points || 0,
-                rank_id: item.current_rank_id
-            }))
+            // Buscar perfis separadamente
+            const userIds = gamificationData.map(g => g.user_id)
+            const { data: profiles } = await this.supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url, slug, rota_number')
+                .in('id', userIds)
+
+            // Criar mapa de perfis
+            const profileMap = new Map<string, any>()
+            profiles?.forEach(p => profileMap.set(p.id, p))
+
+            return gamificationData.map(item => {
+                const profile = profileMap.get(item.user_id)
+                return {
+                    id: item.user_id,
+                    full_name: profile?.full_name || 'Usuário',
+                    avatar_url: profile?.avatar_url || null,
+                    slug: profile?.slug || null,
+                    rota_number: profile?.rota_number || null,
+                    vigor: item.total_points || 0,
+                    rank_id: item.current_rank_id
+                }
+            })
         } catch (error) {
             console.error('Erro ao carregar ranking:', error)
             return []
@@ -325,31 +333,54 @@ export class PostsService {
 
     private async loadRecentMedals(limit = 5): Promise<RecentMedal[]> {
         try {
-            // Usa user_medals que é a tabela correta no sistema
-            const { data, error } = await this.supabase
+            // Query separada - primeiro busca user_medals
+            const { data: userMedals, error: umError } = await this.supabase
                 .from('user_medals')
-                .select(`
-                    user_id,
-                    medal_id,
-                    earned_at,
-                    user:profiles!user_id(full_name, avatar_url),
-                    medal:medals!medal_id(name, icon)
-                `)
+                .select('user_id, medal_id, earned_at')
                 .order('earned_at', { ascending: false })
                 .limit(limit)
 
-            if (error) throw error
+            if (umError) throw umError
+            if (!userMedals || userMedals.length === 0) return []
 
-            return (data || []).map(item => ({
-                user_id: item.user_id,
-                medal_id: item.medal_id,
-                earned_at: item.earned_at,
-                user: item.user as any,
-                medal: {
-                    name: (item.medal as any)?.name || 'Medalha',
-                    icon_key: (item.medal as any)?.icon || 'Award'
+            // Buscar perfis
+            const userIds = Array.from(new Set(userMedals.map(um => um.user_id)))
+            const { data: profiles } = await this.supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url')
+                .in('id', userIds)
+
+            // Buscar medalhas
+            const medalIds = Array.from(new Set(userMedals.map(um => um.medal_id)))
+            const { data: medals } = await this.supabase
+                .from('medals')
+                .select('id, name, icon')
+                .in('id', medalIds)
+
+            // Criar mapas
+            const profileMap = new Map<string, any>()
+            profiles?.forEach(p => profileMap.set(p.id, p))
+
+            const medalMap = new Map<string, any>()
+            medals?.forEach(m => medalMap.set(m.id, m))
+
+            return userMedals.map(item => {
+                const profile = profileMap.get(item.user_id)
+                const medal = medalMap.get(item.medal_id)
+                return {
+                    user_id: item.user_id,
+                    medal_id: item.medal_id,
+                    earned_at: item.earned_at,
+                    user: {
+                        full_name: profile?.full_name || 'Usuário',
+                        avatar_url: profile?.avatar_url || null
+                    },
+                    medal: {
+                        name: medal?.name || 'Medalha',
+                        icon_key: medal?.icon || 'Award'
+                    }
                 }
-            }))
+            })
         } catch (error) {
             console.error('Erro ao carregar medalhas:', error)
             return []
@@ -358,23 +389,40 @@ export class PostsService {
 
     private async loadUpcomingConfrarias(limit = 5): Promise<UpcomingConfraternity[]> {
         try {
-            const { data, error } = await this.supabase
+            // Query separada - primeiro busca convites
+            const { data: invites, error: invError } = await this.supabase
                 .from('confraternity_invites')
-                .select(`
-                    id,
-                    proposed_date,
-                    location,
-                    sender:profiles!sender_id(id, full_name, avatar_url, slug, rota_number),
-                    receiver:profiles!receiver_id(id, full_name, avatar_url, slug, rota_number)
-                `)
+                .select('id, proposed_date, location, sender_id, receiver_id')
                 .eq('status', 'accepted')
                 .gte('proposed_date', new Date().toISOString())
                 .order('proposed_date', { ascending: true })
                 .limit(limit)
 
-            if (error) throw error
+            if (invError) throw invError
+            if (!invites || invites.length === 0) return []
 
-            return (data || []) as any
+            // Buscar perfis de senders e receivers
+            const allUserIds = Array.from(new Set([
+                ...invites.map(i => i.sender_id),
+                ...invites.map(i => i.receiver_id)
+            ]))
+
+            const { data: profiles } = await this.supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url, slug, rota_number')
+                .in('id', allUserIds)
+
+            // Criar mapa
+            const profileMap = new Map<string, any>()
+            profiles?.forEach(p => profileMap.set(p.id, p))
+
+            return invites.map(inv => ({
+                id: inv.id,
+                proposed_date: inv.proposed_date,
+                location: inv.location,
+                sender: profileMap.get(inv.sender_id) || { id: inv.sender_id, full_name: 'Usuário' },
+                receiver: profileMap.get(inv.receiver_id) || { id: inv.receiver_id, full_name: 'Usuário' }
+            }))
         } catch (error) {
             console.error('Erro ao carregar confrarias:', error)
             return []
