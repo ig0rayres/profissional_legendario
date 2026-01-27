@@ -16,9 +16,20 @@
   - Ícones decorativos em cards e seções.
   - Elemento de identidade em CTAs.
 
-### 2. Logo Completa
+### 2. Logo Completa (Símbolo + Texto)
+**Sempre que nos referirmos a "Logo", estamos falando desta imagem.**
+
 - **Caminho:** `/images/logo-rotabusiness.png`
-- **Uso:** Header, Footer, Login.
+- **Descrição:** Brasão à esquerda + Texto "ROTA BUSINESS CLUB" à direita.
+- **Características Técnicas:**
+  - Fundo 100% transparente.
+  - Corte ajustado (sem margens vazias).
+  - Dimensões aproximadas: 584x219px (Proporção ~2.6:1).
+- **Usos Recomendados:**
+  - Header da aplicação (Barra de navegação).
+  - Footer.
+  - Tela de Login/Registro.
+  - Assinaturas de e-mail.
 
 ---
 
