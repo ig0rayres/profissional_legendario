@@ -172,22 +172,38 @@ export class PostsService {
             const { data, error } = await query
 
             if (error) throw error
+            if (!data) return []
+
+            // Type assertion para array de posts
+            const postsData = data as any[]
 
             // Buscar likes do usuário atual
             let likedPostIds = new Set<string>()
-            if (currentUserId && data && data.length > 0) {
+            if (currentUserId && postsData.length > 0) {
                 const { data: likes } = await this.supabase
                     .from('post_likes')
                     .select('post_id')
                     .eq('user_id', currentUserId)
-                    .in('post_id', data.map(p => p.id))
+                    .in('post_id', postsData.map(p => p.id))
 
                 likedPostIds = new Set(likes?.map(l => l.post_id) || [])
             }
 
             // Transformar dados
-            const posts: Post[] = (data || []).map(post => ({
-                ...post,
+            const posts: Post[] = postsData.map(post => ({
+                id: post.id,
+                user_id: post.user_id,
+                content: post.content,
+                media_urls: post.media_urls || [],
+                visibility: post.visibility,
+                post_type: post.post_type,
+                confraternity_id: post.confraternity_id,
+                project_id: post.project_id,
+                medal_id: post.medal_id,
+                likes_count: post.likes_count || 0,
+                comments_count: post.comments_count || 0,
+                created_at: post.created_at,
+                updated_at: post.updated_at,
                 user: post.user as PostUser,
                 confraternity: post.confraternity as PostConfraternity | null,
                 user_has_liked: likedPostIds.has(post.id)
