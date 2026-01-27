@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
     Save, Settings, Users, Wallet, Clock, CheckCircle, XCircle,
     AlertCircle, DollarSign, Link2, TrendingUp, Loader2, RefreshCw,
-    Eye, Check, X
+    Eye, Check, X, ArrowRight, UserPlus, Receipt
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/api/financial'
@@ -40,6 +41,33 @@ interface WithdrawalRequest {
     user?: { full_name: string, avatar_url: string | null }
 }
 
+interface Referral {
+    id: string
+    referrer_id: string
+    referred_id: string
+    status: string
+    referral_code: string | null
+    created_at: string
+    activated_at: string | null
+    referrer?: { full_name: string, avatar_url: string | null, slug: string }
+    referred?: { full_name: string, avatar_url: string | null }
+}
+
+interface Commission {
+    id: string
+    referrer_id: string
+    referred_id: string
+    payment_amount: number
+    commission_amount: number
+    commission_percentage: number
+    status: string
+    payment_date: string
+    release_date: string | null
+    available_at: string | null
+    referrer?: { full_name: string, avatar_url: string | null }
+    referred?: { full_name: string, avatar_url: string | null }
+}
+
 interface CommissionStats {
     total_referrals: number
     total_commissions: number
@@ -53,6 +81,8 @@ interface CommissionStats {
 export function ReferralManager() {
     const [config, setConfig] = useState<ReferralConfig | null>(null)
     const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([])
+    const [referrals, setReferrals] = useState<Referral[]>([])
+    const [commissions, setCommissions] = useState<Commission[]>([])
     const [stats, setStats] = useState<CommissionStats | null>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -69,6 +99,8 @@ export function ReferralManager() {
             await Promise.all([
                 loadConfig(),
                 loadWithdrawals(),
+                loadReferrals(),
+                loadCommissions(),
                 loadStats()
             ])
         } finally {
@@ -106,24 +138,58 @@ export function ReferralManager() {
         setWithdrawals(data || [])
     }
 
+    const loadReferrals = async () => {
+        const { data, error } = await supabase
+            .from('referrals')
+            .select(`
+                *,
+                referrer:profiles!referrer_id(full_name, avatar_url, slug),
+                referred:profiles!referred_id(full_name, avatar_url)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(100)
+
+        if (error) {
+            console.error('Error loading referrals:', error)
+            return
+        }
+        setReferrals(data || [])
+    }
+
+    const loadCommissions = async () => {
+        const { data, error } = await supabase
+            .from('referral_commissions')
+            .select(`
+                *,
+                referrer:profiles!referrer_id(full_name, avatar_url),
+                referred:profiles!referred_id(full_name, avatar_url)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(100)
+
+        if (error) {
+            console.error('Error loading commissions:', error)
+            return
+        }
+        setCommissions(data || [])
+    }
+
     const loadStats = async () => {
-        // Buscar estatísticas agregadas
-        const { data: commissions } = await supabase
+        const { data: commissionsData } = await supabase
             .from('referral_commissions')
             .select('status, commission_amount')
 
-        if (commissions) {
+        if (commissionsData) {
             const stats: CommissionStats = {
                 total_referrals: 0,
-                total_commissions: commissions.length,
-                pending_commissions: commissions.filter(c => c.status === 'pending').length,
-                available_commissions: commissions.filter(c => c.status === 'available').length,
-                total_amount: commissions.reduce((sum, c) => sum + Number(c.commission_amount), 0),
-                pending_amount: commissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.commission_amount), 0),
-                available_amount: commissions.filter(c => c.status === 'available').reduce((sum, c) => sum + Number(c.commission_amount), 0)
+                total_commissions: commissionsData.length,
+                pending_commissions: commissionsData.filter(c => c.status === 'pending').length,
+                available_commissions: commissionsData.filter(c => c.status === 'available').length,
+                total_amount: commissionsData.reduce((sum, c) => sum + Number(c.commission_amount), 0),
+                pending_amount: commissionsData.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.commission_amount), 0),
+                available_amount: commissionsData.filter(c => c.status === 'available').reduce((sum, c) => sum + Number(c.commission_amount), 0)
             }
 
-            // Contar referrals
             const { count } = await supabase
                 .from('referrals')
                 .select('*', { count: 'exact', head: true })
@@ -147,7 +213,6 @@ export function ReferralManager() {
 
             if (error) throw error
 
-            // Limpa cache para propagar alterações
             clearReferralConfigCache()
 
             toast.success('Configurações salvas!', {
@@ -218,9 +283,46 @@ export function ReferralManager() {
                 return <Badge variant="outline" className="border-green-500 text-green-500"><DollarSign className="w-3 h-3 mr-1" />Pago</Badge>
             case 'rejected':
                 return <Badge variant="outline" className="border-red-500 text-red-500"><XCircle className="w-3 h-3 mr-1" />Rejeitado</Badge>
+            case 'available':
+                return <Badge variant="outline" className="border-green-500 text-green-500"><CheckCircle className="w-3 h-3 mr-1" />Disponível</Badge>
+            case 'withdrawn':
+                return <Badge variant="outline" className="border-gray-500 text-gray-500"><Wallet className="w-3 h-3 mr-1" />Sacado</Badge>
+            case 'cancelled':
+                return <Badge variant="outline" className="border-red-500 text-red-500"><XCircle className="w-3 h-3 mr-1" />Cancelado</Badge>
+            case 'active':
+                return <Badge variant="outline" className="border-green-500 text-green-500"><CheckCircle className="w-3 h-3 mr-1" />Ativo</Badge>
             default:
                 return <Badge variant="outline">{status}</Badge>
         }
+    }
+
+    const getReferralStatusBadge = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Aguardando 1º Pagamento</Badge>
+            case 'active':
+                return <Badge variant="outline" className="border-green-500 text-green-500">Ativo</Badge>
+            case 'cancelled':
+                return <Badge variant="outline" className="border-red-500 text-red-500">Cancelado</Badge>
+            default:
+                return <Badge variant="outline">{status}</Badge>
+        }
+    }
+
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        })
+    }
+
+    const getDaysRemaining = (releaseDate: string | null) => {
+        if (!releaseDate) return null
+        const release = new Date(releaseDate)
+        const now = new Date()
+        const diff = Math.ceil((release.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        return diff > 0 ? diff : 0
     }
 
     if (loading) {
@@ -279,14 +381,28 @@ export function ReferralManager() {
 
             {/* Sub-tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="config" className="gap-2">
                         <Settings className="w-4 h-4" />
-                        Configurações
+                        <span className="hidden sm:inline">Configurações</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="referrals" className="gap-2">
+                        <UserPlus className="w-4 h-4" />
+                        <span className="hidden sm:inline">Indicações</span>
+                        <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                            {referrals.length}
+                        </Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="commissions" className="gap-2">
+                        <Receipt className="w-4 h-4" />
+                        <span className="hidden sm:inline">Comissões</span>
+                        <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                            {commissions.length}
+                        </Badge>
                     </TabsTrigger>
                     <TabsTrigger value="withdrawals" className="gap-2">
                         <Wallet className="w-4 h-4" />
-                        Saques
+                        <span className="hidden sm:inline">Saques</span>
                         {withdrawals.filter(w => w.status === 'pending').length > 0 && (
                             <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center">
                                 {withdrawals.filter(w => w.status === 'pending').length}
@@ -436,6 +552,169 @@ export function ReferralManager() {
                     )}
                 </TabsContent>
 
+                {/* Indicações Tab */}
+                <TabsContent value="referrals" className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Todas as Indicações</h3>
+                        <Button variant="outline" size="sm" onClick={loadReferrals}>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Atualizar
+                        </Button>
+                    </div>
+
+                    {referrals.length === 0 ? (
+                        <Card className="border-primary/20">
+                            <CardContent className="py-12 text-center">
+                                <UserPlus className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <p className="text-lg font-medium">Nenhuma indicação registrada</p>
+                                <p className="text-sm text-muted-foreground">
+                                    As indicações aparecerão aqui quando usuários se cadastrarem via link de indicação
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="space-y-3">
+                            {referrals.map((referral) => (
+                                <Card key={referral.id} className="border-primary/20">
+                                    <CardContent className="py-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                {/* Referrer */}
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="w-10 h-10">
+                                                        <AvatarImage src={referral.referrer?.avatar_url || ''} />
+                                                        <AvatarFallback className="bg-primary/20 text-primary">
+                                                            {referral.referrer?.full_name?.charAt(0) || '?'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium text-sm">{referral.referrer?.full_name || 'Indicador'}</p>
+                                                        <p className="text-xs text-muted-foreground">Indicador</p>
+                                                    </div>
+                                                </div>
+
+                                                <ArrowRight className="w-5 h-5 text-muted-foreground" />
+
+                                                {/* Referred */}
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="w-10 h-10">
+                                                        <AvatarImage src={referral.referred?.avatar_url || ''} />
+                                                        <AvatarFallback className="bg-green-500/20 text-green-500">
+                                                            {referral.referred?.full_name?.charAt(0) || '?'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium text-sm">{referral.referred?.full_name || 'Indicado'}</p>
+                                                        <p className="text-xs text-muted-foreground">Indicado</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-right">
+                                                {getReferralStatusBadge(referral.status)}
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    {formatDate(referral.created_at)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+
+                {/* Comissões Tab */}
+                <TabsContent value="commissions" className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Todas as Comissões</h3>
+                        <Button variant="outline" size="sm" onClick={loadCommissions}>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Atualizar
+                        </Button>
+                    </div>
+
+                    {commissions.length === 0 ? (
+                        <Card className="border-primary/20">
+                            <CardContent className="py-12 text-center">
+                                <Receipt className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <p className="text-lg font-medium">Nenhuma comissão registrada</p>
+                                <p className="text-sm text-muted-foreground">
+                                    As comissões serão geradas quando indicados fizerem o primeiro pagamento
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="space-y-3">
+                            {commissions.map((commission) => {
+                                const daysRemaining = getDaysRemaining(commission.release_date)
+
+                                return (
+                                    <Card key={commission.id} className="border-primary/20">
+                                        <CardContent className="py-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    {/* Referrer */}
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="w-10 h-10">
+                                                            <AvatarImage src={commission.referrer?.avatar_url || ''} />
+                                                            <AvatarFallback className="bg-primary/20 text-primary">
+                                                                {commission.referrer?.full_name?.charAt(0) || '?'}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <p className="font-medium text-sm">{commission.referrer?.full_name || 'Indicador'}</p>
+                                                            <p className="text-xs text-muted-foreground">vai receber</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="text-center px-4">
+                                                        <p className="text-lg font-bold text-primary">
+                                                            {formatCurrency(commission.commission_amount)}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {commission.commission_percentage}% de {formatCurrency(commission.payment_amount)}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Referred */}
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="text-right">
+                                                            <p className="font-medium text-sm">{commission.referred?.full_name || 'Indicado'}</p>
+                                                            <p className="text-xs text-muted-foreground">pagou em {formatDate(commission.payment_date)}</p>
+                                                        </div>
+                                                        <Avatar className="w-10 h-10">
+                                                            <AvatarImage src={commission.referred?.avatar_url || ''} />
+                                                            <AvatarFallback className="bg-green-500/20 text-green-500">
+                                                                {commission.referred?.full_name?.charAt(0) || '?'}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    {getStatusBadge(commission.status)}
+                                                    {commission.status === 'pending' && daysRemaining !== null && (
+                                                        <p className="text-xs text-yellow-500 mt-1">
+                                                            <Clock className="w-3 h-3 inline mr-1" />
+                                                            {daysRemaining} dias restantes
+                                                        </p>
+                                                    )}
+                                                    {commission.available_at && (
+                                                        <p className="text-xs text-green-500 mt-1">
+                                                            Liberado em {formatDate(commission.available_at)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    )}
+                </TabsContent>
+
                 {/* Saques Tab */}
                 <TabsContent value="withdrawals" className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -463,15 +742,18 @@ export function ReferralManager() {
                                     <CardContent className="py-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                                                    <Users className="w-5 h-5 text-primary" />
-                                                </div>
+                                                <Avatar className="w-10 h-10">
+                                                    <AvatarImage src={withdrawal.user?.avatar_url || ''} />
+                                                    <AvatarFallback className="bg-primary/20 text-primary">
+                                                        {withdrawal.user?.full_name?.charAt(0) || '?'}
+                                                    </AvatarFallback>
+                                                </Avatar>
                                                 <div>
                                                     <p className="font-medium">{withdrawal.user?.full_name || 'Usuário'}</p>
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                         <span>PIX: {withdrawal.pix_key}</span>
                                                         <span>•</span>
-                                                        <span>{new Date(withdrawal.created_at).toLocaleDateString('pt-BR')}</span>
+                                                        <span>{formatDate(withdrawal.created_at)}</span>
                                                     </div>
                                                 </div>
                                             </div>
