@@ -67,7 +67,7 @@ A plataforma usa metáforas militares e de aventura:
 | **Recruta** | Grátis | 1.0x | Cinza | Acesso básico, 2 Elos/mês, 1 Confraria/mês |
 | **Veterano** | R$ 99/mês | 1.5x | Verde | Elos ilimitados, 4 Confrarias/mês, Chat ilimitado |
 | **Elite** | R$ 299/mês | 3.0x | Laranja | 10 Confrarias/mês, Destaque no feed, Suporte prioritário |
-| **Lendário** | R$ 499/mês | 5.0x | ⭐ Dourado | Tudo ilimitado, 15 Confrarias/mês, Acesso VIP, Mentoria exclusiva |
+| **Lendário** | R$ 499/mês | 5.0x | ⭐ Dourado | **TUDO ILIMITADO** - Confrarias, Elos, Chat, Portfólio + Acesso VIP + Mentoria |
 
 ### Regras de Negócio
 
@@ -81,13 +81,15 @@ A plataforma usa metáforas militares e de aventura:
 
 | Recurso | Recruta | Veterano | Elite | Lendário |
 |---------|---------|----------|-------|----------|
-| Elos (conexões) | 2/mês | Ilimitado | Ilimitado | Ilimitado |
-| Confrarias | 1/mês | 4/mês | 10/mês | 15/mês |
-| Mensagens Chat | 10/dia | Ilimitado | Ilimitado | Ilimitado |
-| Fotos Portfólio | 5 | 20 | 50 | Ilimitado |
+| Elos (conexões) | 2/mês | Ilimitado | Ilimitado | ♾️ Ilimitado |
+| Confrarias | 0 | 4/mês | 10/mês | ♾️ Ilimitado |
+| Mensagens Chat | 10/dia | Ilimitado | Ilimitado | ♾️ Ilimitado |
+| Fotos Portfólio | 5 | 20 | 50 | ♾️ Ilimitado |
 | Destaque Feed | ❌ | ❌ | ✅ | ✅ Premium |
 | Acesso VIP | ❌ | ❌ | ❌ | ✅ |
 | Mentoria Exclusiva | ❌ | ❌ | ❌ | ✅ |
+
+> ⚠️ **Nota:** O plano Lendário possui **TUDO ILIMITADO** - sem limites de confrarias, elos, mensagens ou portfólio.
 
 ---
 
