@@ -7,6 +7,7 @@ import { FinancialMetrics } from '@/components/admin/FinancialMetrics'
 import { PlanManager } from '@/components/admin/PlanManager'
 import { CouponManager } from '@/components/admin/CouponManager'
 import { CampaignManager } from '@/components/admin/CampaignManager'
+import { ReferralManager } from '@/components/admin/ReferralManager'
 import { DollarSign } from 'lucide-react'
 
 export default function FinanceiroPage() {
@@ -24,16 +25,17 @@ export default function FinanceiroPage() {
                         Gestão Financeira
                     </h1>
                     <p className="text-muted-foreground">
-                        Gerencie planos, cupons, campanhas e acompanhe métricas financeiras
+                        Gerencie planos, cupons, campanhas, comissões e acompanhe métricas financeiras
                     </p>
                 </div>
             </div>
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+                <TabsList className="grid w-full grid-cols-5 lg:w-[750px]">
                     <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                     <TabsTrigger value="planos">Planos</TabsTrigger>
+                    <TabsTrigger value="comissoes">Comissões</TabsTrigger>
                     <TabsTrigger value="cupons">Cupons</TabsTrigger>
                     <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
                 </TabsList>
@@ -54,6 +56,21 @@ export default function FinanceiroPage() {
                         </CardHeader>
                         <CardContent>
                             <PlanManager />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Comissões Tab */}
+                <TabsContent value="comissoes" className="space-y-6">
+                    <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle className="text-primary">Sistema de Indicação e Comissões</CardTitle>
+                            <CardDescription>
+                                Gerencie configurações de indicação, comissões e solicitações de saque
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ReferralManager />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -91,3 +108,4 @@ export default function FinanceiroPage() {
         </div>
     )
 }
+
