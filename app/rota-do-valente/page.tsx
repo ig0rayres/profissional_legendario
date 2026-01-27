@@ -1,29 +1,50 @@
-// This page is a server component to allow metadata export.
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import {
-    Zap, Trophy, Medal, ArrowRight, Flame
-} from 'lucide-react'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
+// Rota do Valente - Landing Page
+// Design: Warm Expedition - O Acampamento do Homem de Negócio
 import { Metadata } from 'next'
-import { RotabusinessLogo } from '@/components/branding/logo'
+import Image from 'next/image'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
 import * as LucideIcons from 'lucide-react'
+import {
+    Users,
+    Camera,
+    Rocket,
+    Mountain,
+    ArrowRight,
+    Flame,
+    Calendar,
+    Shield,
+    Target,
+    Sword,
+    Medal,
+    Trophy,
+    Crown,
+    HeartHeartHandshake,
+    CheckCircle2
+} from 'lucide-react'
 
 export const metadata: Metadata = {
-    title: 'Rota do Valente | Sistema de Mérito e Elite Business',
-    description: 'A Rota do Valente é o sistema definitivo de hierarquia do Rota Business Club. Conquiste autoridade, eleve seu multiplicador de vigor e destaque-se como um profissional de alta performance.',
-    keywords: 'networking business, elite profissional, sistema de merito, rota business club, valor profissional, autoridade',
+    title: 'Rota do Valente | O Acampamento do Homem de Negócio',
+    description: 'A jornada épica para os verdadeiros guerreiros do mundo corporativo. Networking de alto valor, conquistas reais e seu caminho para o topo.',
+    keywords: 'networking business, confrarias, gamificação, rota business club, networking profissional',
+}
+
+// Cores do Manual da Marca
+const BRAND = {
+    verdeRota: '#214C3B',
+    cobre: '#B87333',
+    areia: '#EFEDE8',
+    petroleo: '#0E2A2F',
 }
 
 // Componente para renderizar ícone Lucide dinamicamente
-function DynamicIconServer({ name, className }: { name: string, className?: string }) {
-    const Icon = (LucideIcons as any)[name] || LucideIcons.Award
-    return <Icon className={className} strokeWidth={2} />
+function DynamicIcon({ name, className }: { name: string, className?: string }) {
+    const Icon = (LucideIcons as Record<string, React.ComponentType<{ className?: string }>>)[name] || LucideIcons.Award
+    return <Icon className={className} />
 }
 
-export default async function RotaDoValentePublicPage() {
+export default async function RotaDoValentePage() {
     const supabase = await createClient()
 
     // Fetch real ranks from database
@@ -36,8 +57,8 @@ export default async function RotaDoValentePublicPage() {
     const { data: medals } = await supabase
         .from('medals')
         .select('*')
-        .eq('is_permanent', true)
-        .order('display_order')
+        .order('points_reward', { ascending: true })
+        .limit(16)
 
     // Fetch proezas (mensais)
     const { data: proezas } = await supabase
@@ -45,196 +66,670 @@ export default async function RotaDoValentePublicPage() {
         .select('*')
         .eq('is_active', true)
         .order('display_order')
-        .limit(12)
+        .limit(8)
 
     const RANKS = ranks || []
     const MEDALS = medals || []
     const PROEZAS = proezas || []
 
+    // Fallback ranks se não houver no banco
+    const DEFAULT_RANKS = [
+        { id: 'novato', name: 'Novato', description: 'Iniciante na jornada', points_required: 0, icon: 'Shield' },
+        { id: 'especialista', name: 'Especialista', description: 'Ganhando experiência', points_required: 200, icon: 'Target' },
+        { id: 'guardiao', name: 'Guardião', description: 'Protegendo os valores', points_required: 500, icon: 'Sword' },
+        { id: 'comandante', name: 'Comandante', description: 'Líder respeitado', points_required: 1000, icon: 'Medal' },
+        { id: 'general', name: 'General', description: 'Mestre da jornada', points_required: 2000, icon: 'Trophy' },
+        { id: 'lenda', name: 'Lenda', description: 'Status lendário', points_required: 3500, icon: 'Crown' },
+    ]
+
+    const displayRanks = RANKS.length > 0 ? RANKS : DEFAULT_RANKS
+
+    // Fallback medals
+    const DEFAULT_MEDALS = [
+        { id: 'alistamento', name: 'Alistamento Concluído', description: 'Perfil 100% completo', points_reward: 100, category: 'perfil', icon: 'CheckCircle2' },
+        { id: 'primeiro_sangue', name: 'Primeiro Sangue', description: 'Primeira venda fechada', points_reward: 50, category: 'contratos', icon: 'Sword' },
+        { id: 'batismo', name: 'Batismo de Excelência', description: 'Primeira avaliação 5★', points_reward: 80, category: 'avaliacoes', icon: 'Star' },
+        { id: 'cinegrafista', name: 'Cinegrafista de Campo', description: 'Primeiro upload de trabalho', points_reward: 30, category: 'portfolio', icon: 'Camera' },
+        { id: 'missao', name: 'Missão Cumprida', description: 'Primeiro serviço concluído', points_reward: 100, category: 'servicos', icon: 'Target' },
+        { id: 'inabalavel', name: 'Inabalável', description: 'Média 5★ após 5 trabalhos', points_reward: 150, category: 'qualidade', icon: 'Shield' },
+        { id: 'irmandade', name: 'Irmandade', description: 'Contratar outro membro', points_reward: 75, category: 'networking', icon: 'HeartHandshake' },
+        { id: 'anfitriao', name: 'Anfitrião', description: 'Primeira confraria agendada', points_reward: 80, category: 'confraria', icon: 'Users' },
+        { id: 'presente', name: 'Presente', description: 'Participar de confraria', points_reward: 50, category: 'confraria', icon: 'Calendar' },
+        { id: 'cronista', name: 'Cronista', description: 'Postar fotos de confraria', points_reward: 60, category: 'confraria', icon: 'Camera' },
+        { id: 'lider_confraria', name: 'Líder da Confraria', description: 'Organizar 5 confrarias', points_reward: 250, category: 'confraria', icon: 'Crown' },
+        { id: 'veterano', name: 'Veterano de Guerra', description: 'Completar 20 serviços', points_reward: 300, category: 'experiencia', icon: 'Medal' },
+    ]
+
+    const displayMedals = MEDALS.length > 0 ? MEDALS : DEFAULT_MEDALS
+
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900">
-            {/* Simple Hero Section */}
-            <div className="border-b border-slate-200 bg-white">
-                <div className="container mx-auto px-4 py-24">
+        <div className="min-h-screen" style={{ backgroundColor: BRAND.areia }}>
+
+            {/* ====================================================== */}
+            {/* HERO SECTION - O Acampamento do Homem de Negócio */}
+            {/* ====================================================== */}
+            <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+                {/* Background com montanha */}
+                <div
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    style={{
+                        backgroundImage: 'url("/images/hero-mountain.jpg")',
+                        backgroundColor: BRAND.petroleo,
+                    }}
+                >
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background: `linear-gradient(135deg, ${BRAND.petroleo}ee 0%, ${BRAND.verdeRota}dd 50%, ${BRAND.petroleo}cc 100%)`
+                        }}
+                    />
+                </div>
+
+                {/* Conteúdo do Hero */}
+                <div className="relative z-10 container mx-auto px-4 py-20">
                     <div className="max-w-3xl">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] mb-8">
-                            Jornada de Honra
+                        {/* Logo */}
+                        <div className="mb-8">
+                            <Image
+                                src="/images/logo-rota-valente.png"
+                                alt="Rota Business Club"
+                                width={280}
+                                height={100}
+                                className="h-20 w-auto"
+                            />
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tighter uppercase leading-none text-slate-900">
-                            Rota do <span className="text-primary">Valente</span>
+
+                        {/* Badge */}
+                        <div
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest mb-6"
+                            style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                        >
+                            <Mountain className="w-4 h-4" />
+                            O Acampamento do Homem de Negócio
+                        </div>
+
+                        {/* Título Principal */}
+                        <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
+                            ROTA DO<br />
+                            <span style={{ color: BRAND.cobre }}>VALENTE</span>
                         </h1>
-                        <p className="text-xl text-slate-600 mb-10 leading-relaxed font-medium max-w-2xl">
-                            A jornada definitiva para os profissionais que buscam o topo.
-                            Acumule vigor através de sua dedicação, conquiste patentes de autoridade e consolide seu nome no Círculo de Elite do Rota Business Club.
+
+                        {/* Subtítulo */}
+                        <p className="text-xl text-white/90 mb-10 max-w-xl leading-relaxed font-medium">
+                            Networking de alto valor. Conquistas reais.<br />
+                            <strong>Seu caminho para o topo.</strong>
                         </p>
+
+                        {/* CTAs */}
                         <div className="flex flex-wrap gap-4">
                             <Link href="/auth/register">
-                                <Button size="lg" className="h-14 px-8 text-sm font-black bg-primary hover:bg-primary/90 text-white rounded-none uppercase">
-                                    Iniciar Alistamento
+                                <Button
+                                    size="lg"
+                                    className="h-14 px-8 text-sm font-black rounded-lg uppercase"
+                                    style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                                >
+                                    Comece Sua Jornada
+                                    <ArrowRight className="ml-2 w-5 h-5" />
                                 </Button>
                             </Link>
                             <Link href="/auth/login">
-                                <Button size="lg" variant="outline" className="h-14 px-8 text-sm font-black border-slate-300 text-slate-900 rounded-none uppercase hover:bg-slate-50">
-                                    Acessar Painel
+                                <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="h-14 px-8 text-sm font-black rounded-lg uppercase border-white/30 text-white hover:bg-white/10"
+                                >
+                                    Já sou Membro
                                 </Button>
                             </Link>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="container mx-auto px-4 py-24">
-                {/* How it Works - Industrial Style */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-slate-200 mb-32 bg-white shadow-sm">
-                    {[
-                        {
-                            icon: Zap,
-                            title: 'Vigor',
-                            desc: 'Energia conquistada através de ações práticas, conclusão de serviços e participação ativa.'
-                        },
-                        {
-                            icon: Trophy,
-                            title: 'Patentes',
-                            desc: 'Níveis de autoridade que aumentam seu multiplicador de vigor e visibilidade na plataforma.'
-                        },
-                        {
-                            icon: Flame,
-                            title: 'Proezas',
-                            desc: 'Conquistas mensais que comprovam suas habilidades e dedicação na jornada.'
-                        }
-                    ].map((pillar, i) => (
-                        <div key={i} className={cn("p-12 border-slate-100", i < 2 ? "md:border-r" : "")}>
-                            <div className="w-12 h-12 flex items-center justify-center mb-8 border border-primary/30 text-primary bg-primary/5">
-                                <pillar.icon className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-black mb-4 uppercase tracking-wider text-slate-900">{pillar.title}</h3>
-                            <p className="text-slate-500 text-sm leading-relaxed">{pillar.desc}</p>
-                        </div>
-                    ))}
+                {/* Scroll indicator */}
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 animate-bounce">
+                    <ArrowRight className="w-6 h-6 rotate-90" />
                 </div>
+            </section>
 
-                {/* Ranks Section */}
-                <div className="mb-32">
-                    <div className="flex items-center gap-4 mb-12">
-                        <div className="h-px flex-1 bg-slate-300" />
-                        <h2 className="text-3xl font-black uppercase tracking-widest text-slate-900 px-4">Hierarquia</h2>
-                        <div className="h-px flex-1 bg-slate-300" />
+
+            {/* ====================================================== */}
+            {/* SEÇÃO 2 - O Acampamento (Networking) */}
+            {/* ====================================================== */}
+            <section className="py-24" style={{ backgroundColor: BRAND.areia }}>
+                <div className="container mx-auto px-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                        {/* Imagem */}
+                        <div className="relative">
+                            <div
+                                className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl"
+                                style={{ backgroundColor: BRAND.verdeRota }}
+                            >
+                                <Image
+                                    src="/images/confraria-networking.jpg"
+                                    alt="Networking na Confraria"
+                                    width={800}
+                                    height={600}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                    }}
+                                />
+                                {/* Fallback background */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                                    <Users className="w-32 h-32 text-white" />
+                                </div>
+                            </div>
+                            {/* Badge flutuante */}
+                            <div
+                                className="absolute -bottom-6 -right-6 py-4 px-6 rounded-xl shadow-lg"
+                                style={{ backgroundColor: BRAND.cobre }}
+                            >
+                                <p className="text-white font-black text-2xl">500+</p>
+                                <p className="text-white/80 text-sm font-medium">Confrarias Realizadas</p>
+                            </div>
+                        </div>
+
+                        {/* Texto */}
+                        <div>
+                            <div
+                                className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
+                                style={{ backgroundColor: `${BRAND.verdeRota}20`, color: BRAND.verdeRota }}
+                            >
+                                O Acampamento
+                            </div>
+                            <h2
+                                className="text-4xl md:text-5xl font-black mb-6 leading-tight"
+                                style={{ color: BRAND.petroleo }}
+                            >
+                                Networking Poderoso<br />e Transformador
+                            </h2>
+                            <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                                Assim como um acampamento de montanhistas é o ponto de encontro para planejamento e troca de experiências,
+                                a <strong>Rota do Valente</strong> é o espaço onde o networking ganha um novo significado.
+                            </p>
+                            <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                                As <strong style={{ color: BRAND.cobre }}>Confrarias</strong> são mais que reuniões — são encontros de
+                                mentes e corações alinhados, onde a confiança se constrói e as parcerias se firmam.
+                            </p>
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-3">
+                                    <HeartHandshake className="w-6 h-6" style={{ color: BRAND.cobre }} />
+                                    <span className="font-bold text-gray-800">Reuniões 1x1</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Users className="w-6 h-6" style={{ color: BRAND.cobre }} />
+                                    <span className="font-bold text-gray-800">Rede Viva</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            {/* ====================================================== */}
+            {/* SEÇÃO 3 - A Montanha (Patentes) */}
+            {/* ====================================================== */}
+            <section className="py-24" style={{ backgroundColor: 'white' }}>
+                <div className="container mx-auto px-4">
+                    {/* Header */}
+                    <div className="text-center mb-16">
+                        <div
+                            className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
+                            style={{ backgroundColor: `${BRAND.verdeRota}15`, color: BRAND.verdeRota }}
+                        >
+                            A Montanha
+                        </div>
+                        <h2
+                            className="text-4xl md:text-5xl font-black mb-4"
+                            style={{ color: BRAND.petroleo }}
+                        >
+                            Hierarquia de Patentes
+                        </h2>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                            Cada pico representa um objetivo, cada trilha um desafio, e cada passo uma conquista.
+                        </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-slate-200 border border-slate-200 shadow-md">
-                        {RANKS.map((rank: any) => (
-                            <div key={rank.id} className="bg-white p-10 hover:bg-slate-50 transition-colors group">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="w-14 h-14 bg-secondary rounded-full flex items-center justify-center">
-                                        <DynamicIconServer name={rank.icon || 'Shield'} className="w-8 h-8 text-white" />
+                    {/* Barra de Progresso de Patentes */}
+                    <div className="relative max-w-5xl mx-auto mb-16">
+                        {/* Linha de conexão */}
+                        <div
+                            className="absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2 rounded-full"
+                            style={{ backgroundColor: `${BRAND.verdeRota}30` }}
+                        />
+
+                        {/* Patentes */}
+                        <div className="relative flex justify-between items-center">
+                            {displayRanks.map((rank: typeof DEFAULT_RANKS[0], index: number) => (
+                                <div key={rank.id} className="flex flex-col items-center">
+                                    {/* Ícone */}
+                                    <div
+                                        className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-white"
+                                        style={{
+                                            backgroundColor: index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota
+                                        }}
+                                    >
+                                        <DynamicIcon name={rank.icon || 'Shield'} className="w-7 h-7 text-white" />
                                     </div>
-                                    <div className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 border border-primary/20">
-                                        VIGOR DESDE {rank.points_required}
-                                    </div>
+                                    {/* Nome */}
+                                    <p
+                                        className="mt-3 font-bold text-sm uppercase tracking-wide"
+                                        style={{ color: BRAND.petroleo }}
+                                    >
+                                        {rank.name}
+                                    </p>
+                                    {/* Pontos */}
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        {rank.points_required} Vigor
+                                    </p>
                                 </div>
-                                <h3 className="text-2xl font-black uppercase mb-3 tracking-tight group-hover:text-primary transition-colors text-slate-900">
-                                    {rank.name}
-                                </h3>
-                                <p className="text-slate-500 text-xs mb-8 min-h-[48px] uppercase font-bold tracking-wider leading-relaxed">
-                                    {rank.description || 'Patente de honra e dedicação'}
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Cards de Patentes */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {displayRanks.map((rank: typeof DEFAULT_RANKS[0], index: number) => (
+                            <div
+                                key={rank.id}
+                                className="p-6 rounded-xl text-center hover:shadow-lg transition-all hover:-translate-y-1"
+                                style={{
+                                    backgroundColor: BRAND.areia,
+                                    borderLeft: `4px solid ${index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota}`
+                                }}
+                            >
+                                <div
+                                    className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                                    style={{
+                                        backgroundColor: `${index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota}20`
+                                    }}
+                                >
+                                    <DynamicIcon
+                                        name={rank.icon || 'Shield'}
+                                        className="w-6 h-6"
+                                        style={{ color: index === displayRanks.length - 1 ? BRAND.cobre : BRAND.verdeRota } as React.CSSProperties}
+                                    />
+                                </div>
+                                <h3 className="font-bold text-gray-800 mb-1">{rank.name}</h3>
+                                <p className="text-xs text-gray-500">{rank.description}</p>
+                                <p
+                                    className="mt-3 text-xs font-bold"
+                                    style={{ color: BRAND.cobre }}
+                                >
+                                    {rank.points_required}+ Vigor
                                 </p>
-                                <div className="flex items-center justify-between pt-6 border-t border-slate-100">
-                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                        REQUISITO: {rank.points_required} Vigor
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+
+            {/* ====================================================== */}
+            {/* SEÇÃO 4 - Ferramentas da Jornada */}
+            {/* ====================================================== */}
+            <section className="py-24" style={{ backgroundColor: BRAND.areia }}>
+                <div className="container mx-auto px-4">
+                    {/* Header */}
+                    <div className="text-center mb-16">
+                        <div
+                            className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
+                            style={{ backgroundColor: `${BRAND.cobre}20`, color: BRAND.cobre }}
+                        >
+                            Ferramentas da Jornada
+                        </div>
+                        <h2
+                            className="text-4xl md:text-5xl font-black mb-4"
+                            style={{ color: BRAND.petroleo }}
+                        >
+                            Como a Rota Gera Negócios Reais
+                        </h2>
+                    </div>
+
+                    {/* 3 Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        {/* Confrarias */}
+                        <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                            <div
+                                className="w-16 h-16 rounded-xl flex items-center justify-center mb-6"
+                                style={{ backgroundColor: `${BRAND.verdeRota}15` }}
+                            >
+                                <HeartHandshake className="w-8 h-8" style={{ color: BRAND.verdeRota }} />
+                            </div>
+                            <h3 className="text-2xl font-black mb-4" style={{ color: BRAND.petroleo }}>
+                                Confrarias
+                            </h3>
+                            <p className="text-gray-600 mb-6">
+                                Encontros estratégicos 1x1 onde você constrói relacionamentos sólidos,
+                                troca conhecimento e cria oportunidades de negócio reais.
+                            </p>
+                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.cobre }}>
+                                <CheckCircle2 className="w-4 h-4" />
+                                Recompensado por cada reunião
+                            </div>
+                        </div>
+
+                        {/* Registro de Batalha */}
+                        <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                            <div
+                                className="w-16 h-16 rounded-xl flex items-center justify-center mb-6"
+                                style={{ backgroundColor: `${BRAND.cobre}15` }}
+                            >
+                                <Camera className="w-8 h-8" style={{ color: BRAND.cobre }} />
+                            </div>
+                            <h3 className="text-2xl font-black mb-4" style={{ color: BRAND.petroleo }}>
+                                Registro de Batalha
+                            </h3>
+                            <p className="text-gray-600 mb-6">
+                                Seu diário de campo. Documente cada projeto, cada entrega,
+                                cada desafio superado com fotos e vídeos reais.
+                            </p>
+                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.cobre }}>
+                                <CheckCircle2 className="w-4 h-4" />
+                                Portfólio vivo que atrai clientes
+                            </div>
+                        </div>
+
+                        {/* Ciclo de Projetos */}
+                        <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                            <div
+                                className="w-16 h-16 rounded-xl flex items-center justify-center mb-6"
+                                style={{ backgroundColor: `${BRAND.verdeRota}15` }}
+                            >
+                                <Rocket className="w-8 h-8" style={{ color: BRAND.verdeRota }} />
+                            </div>
+                            <h3 className="text-2xl font-black mb-4" style={{ color: BRAND.petroleo }}>
+                                Ciclo de Projetos
+                            </h3>
+                            <p className="text-gray-600 mb-6">
+                                Lance projetos e entregue com excelência. A Rota premia cada etapa,
+                                incentivando inovação, execução e comprometimento.
+                            </p>
+                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: BRAND.cobre }}>
+                                <CheckCircle2 className="w-4 h-4" />
+                                Pontos por lançamento e entrega
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            {/* ====================================================== */}
+            {/* SEÇÃO 5 - Medalhas Permanentes */}
+            {/* ====================================================== */}
+            <section className="py-24" style={{ backgroundColor: 'white' }}>
+                <div className="container mx-auto px-4">
+                    {/* Header */}
+                    <div className="mb-16">
+                        <div
+                            className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
+                            style={{ backgroundColor: `${BRAND.verdeRota}15`, color: BRAND.verdeRota }}
+                        >
+                            Conquistas Permanentes
+                        </div>
+                        <h2
+                            className="text-4xl md:text-5xl font-black mb-4"
+                            style={{ color: BRAND.petroleo }}
+                        >
+                            Medalhas
+                        </h2>
+                        <p className="text-lg text-gray-600 max-w-2xl">
+                            Conquistas all-time que ficam para sempre no seu perfil. Marcos eternos da sua jornada.
+                        </p>
+                    </div>
+
+                    {/* Grid de Medalhas */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {displayMedals.map((medal: typeof DEFAULT_MEDALS[0]) => (
+                            <div
+                                key={medal.id}
+                                className="p-6 rounded-xl border-2 border-transparent hover:border-green-200 transition-all hover:shadow-md group"
+                                style={{ backgroundColor: BRAND.areia }}
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div
+                                        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                                        style={{ backgroundColor: BRAND.verdeRota }}
+                                    >
+                                        <DynamicIcon name={medal.icon || 'Award'} className="w-6 h-6 text-white" />
                                     </div>
-                                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold text-gray-800 text-sm mb-1 truncate">
+                                            {medal.name}
+                                        </h4>
+                                        <p className="text-xs text-gray-500 mb-2 line-clamp-2">
+                                            {medal.description}
+                                        </p>
+                                        <p
+                                            className="text-xs font-bold"
+                                            style={{ color: BRAND.cobre }}
+                                        >
+                                            +{medal.points_reward} Vigor
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
+            </section>
 
-                {/* Proezas Section (Mensais) */}
-                <div className="mb-32">
-                    <div className="flex flex-col md:flex-row items-end gap-6 mb-16">
-                        <div className="max-w-xl">
-                            <h2 className="text-4xl font-black uppercase mb-4 text-slate-900">Proezas Mensais</h2>
-                            <p className="text-slate-600 font-medium">Conquistas que resetam todo mês. Prove sua dedicação consistente e ganhe Vigor extra!</p>
+
+            {/* ====================================================== */}
+            {/* SEÇÃO 6 - Proezas do Mês */}
+            {/* ====================================================== */}
+            <section
+                className="py-24"
+                style={{ background: `linear-gradient(135deg, ${BRAND.cobre}15 0%, ${BRAND.areia} 100%)` }}
+            >
+                <div className="container mx-auto px-4">
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
+                        <div>
+                            <div
+                                className="inline-flex items-center gap-2 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
+                                style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                            >
+                                <Calendar className="w-4 h-4" />
+                                Resetam Todo Mês
+                            </div>
+                            <h2
+                                className="text-4xl md:text-5xl font-black mb-4"
+                                style={{ color: BRAND.petroleo }}
+                            >
+                                Proezas do Mês
+                            </h2>
+                            <p className="text-lg text-gray-600 max-w-xl">
+                                Desafios mensais que testam sua consistência e dedicação. Prove seu valor todo mês!
+                            </p>
+                        </div>
+                        <div
+                            className="text-right px-6 py-4 rounded-xl"
+                            style={{ backgroundColor: `${BRAND.cobre}20` }}
+                        >
+                            <Flame className="w-8 h-8 mx-auto mb-2" style={{ color: BRAND.cobre }} />
+                            <p className="text-sm font-bold text-gray-800">Temporada Ativa</p>
+                            <p className="text-xs text-gray-500">Janeiro 2026</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {PROEZAS.map((proeza: any) => (
-                            <div key={proeza.id} className="p-8 bg-white border border-slate-200 hover:border-secondary/50 transition-all flex flex-col items-center text-center group shadow-sm">
-                                <div className="w-14 h-14 bg-secondary rounded-full flex items-center justify-center mb-6 text-white shadow-lg shadow-secondary/20 group-hover:scale-110 transition-transform">
-                                    <DynamicIconServer name={proeza.icon || 'Flame'} className="w-7 h-7" />
+                    {/* Grid de Proezas */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        {(PROEZAS.length > 0 ? PROEZAS : [
+                            { id: 'rei', name: 'Rei do Mês', description: 'Mais confrarias validadas', points_base: 500, icon: 'Crown' },
+                            { id: 'social', name: 'Social Butterfly', description: 'Mais elos criados', points_base: 300, icon: 'Users' },
+                            { id: 'cronista', name: 'Cronista do Mês', description: 'Mais posts com fotos', points_base: 200, icon: 'Camera' },
+                            { id: 'top3', name: 'Top 3 do Mês', description: 'Top 3 no ranking mensal', points_base: 300, icon: 'Trophy' },
+                            { id: '5conf', name: '5 Confrarias', description: '5 confrarias no mês', points_base: 150, icon: 'HeartHandshake' },
+                            { id: '10posts', name: '10 Posts', description: '10 posts no mês', points_base: 100, icon: 'FileText' },
+                            { id: 'ativo', name: 'Ativo do Mês', description: 'Logou todos os dias', points_base: 200, icon: 'Calendar' },
+                            { id: 'workaholic', name: 'Workaholic', description: 'Mais projetos entregues', points_base: 500, icon: 'Rocket' },
+                        ]).map((proeza: { id: string; name: string; description: string; points_base: number; icon: string }) => (
+                            <div
+                                key={proeza.id}
+                                className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1 text-center"
+                            >
+                                <div
+                                    className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                                    style={{ backgroundColor: BRAND.cobre }}
+                                >
+                                    <DynamicIcon name={proeza.icon || 'Flame'} className="w-7 h-7 text-white" />
                                 </div>
-                                <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-slate-900">{proeza.name}</h4>
-                                <div className="text-[10px] font-black text-slate-400 uppercase mb-4">{proeza.description}</div>
-                                <div className="mt-auto px-3 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-400">
-                                    VALOR: {proeza.points_base} Vigor
+                                <h4 className="font-bold text-gray-800 mb-2">{proeza.name}</h4>
+                                <p className="text-xs text-gray-500 mb-3">{proeza.description}</p>
+                                <div
+                                    className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                                    style={{ backgroundColor: `${BRAND.cobre}15`, color: BRAND.cobre }}
+                                >
+                                    +{proeza.points_base} Vigor
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
+            </section>
 
-                {/* Medals Section (Permanentes) */}
-                <div className="mb-32">
-                    <div className="flex flex-col md:flex-row items-end gap-6 mb-16">
-                        <div className="max-w-xl">
-                            <h2 className="text-4xl font-black uppercase mb-4 text-slate-900">Medalhas Permanentes</h2>
-                            <p className="text-slate-600 font-medium">Conquistas ad aeternum que ficam para sempre no seu perfil. Marcos da sua jornada.</p>
+
+            {/* ====================================================== */}
+            {/* SEÇÃO 7 - Sistema de Pontos */}
+            {/* ====================================================== */}
+            <section className="py-24" style={{ backgroundColor: 'white' }}>
+                <div className="container mx-auto px-4">
+                    <div className="max-w-4xl mx-auto">
+                        {/* Header */}
+                        <div className="text-center mb-16">
+                            <h2
+                                className="text-4xl md:text-5xl font-black mb-4"
+                                style={{ color: BRAND.petroleo }}
+                            >
+                                Sistema de Pontos
+                            </h2>
+                            <p className="text-lg text-gray-600">
+                                Vigor é a energia que você acumula ao participar ativamente da comunidade.
+                            </p>
+                        </div>
+
+                        {/* Multiplicadores */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                            {[
+                                { name: 'Recruta', multiplier: '1x', desc: 'Plano básico', color: 'gray' },
+                                { name: 'Veterano', multiplier: '1.5x', desc: 'Para quem quer crescer', color: BRAND.verdeRota },
+                                { name: 'Elite', multiplier: '3x', desc: 'Visibilidade máxima', color: BRAND.cobre },
+                            ].map((plan, i) => (
+                                <div
+                                    key={plan.name}
+                                    className={`p-8 rounded-2xl text-center ${i === 2 ? 'shadow-xl scale-105' : 'shadow-md'}`}
+                                    style={{
+                                        backgroundColor: i === 2 ? BRAND.petroleo : BRAND.areia,
+                                        color: i === 2 ? 'white' : BRAND.petroleo
+                                    }}
+                                >
+                                    <p className="text-sm font-bold uppercase tracking-wider mb-2 opacity-70">
+                                        {plan.name}
+                                    </p>
+                                    <p
+                                        className="text-5xl font-black mb-2"
+                                        style={{ color: i === 2 ? BRAND.cobre : plan.color }}
+                                    >
+                                        {plan.multiplier}
+                                    </p>
+                                    <p className="text-sm opacity-70">{plan.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Como ganhar pontos */}
+                        <div
+                            className="p-8 rounded-2xl"
+                            style={{ backgroundColor: BRAND.areia }}
+                        >
+                            <h3 className="font-bold text-xl mb-6 text-center" style={{ color: BRAND.petroleo }}>
+                                Como Ganhar Vigor
+                            </h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                    { action: 'Completar perfil', points: '+100' },
+                                    { action: 'Fazer confraria', points: '+50' },
+                                    { action: 'Postar trabalho', points: '+30' },
+                                    { action: 'Receber avaliação', points: '+20' },
+                                    { action: 'Lançar projeto', points: '+50' },
+                                    { action: 'Entregar projeto', points: '+100' },
+                                    { action: 'Indicar membro', points: '+150' },
+                                    { action: 'Conquistar medalha', points: 'Variável' },
+                                ].map((item) => (
+                                    <div key={item.action} className="flex justify-between items-center p-4 bg-white rounded-lg">
+                                        <span className="text-sm text-gray-700">{item.action}</span>
+                                        <span className="font-bold text-sm" style={{ color: BRAND.cobre }}>{item.points}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {MEDALS.map((medal: any) => (
-                            <div key={medal.id} className="p-8 bg-white border border-slate-200 hover:border-primary/50 transition-all flex flex-col items-center text-center group shadow-sm">
-                                <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6 text-white shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
-                                    <DynamicIconServer name={medal.icon || 'Award'} className="w-7 h-7" />
-                                </div>
-                                <h4 className="text-xs font-black uppercase tracking-widest mb-2 text-slate-900">{medal.name}</h4>
-                                <div className="text-[10px] font-black text-slate-400 uppercase mb-4">{medal.description}</div>
-                                <div className="mt-auto px-3 py-1 bg-primary/5 border border-primary/10 text-[9px] font-black text-primary">
-                                    VALOR: {medal.points_reward} Vigor
-                                </div>
-                            </div>
-                        ))}
-                    </div>
                 </div>
+            </section>
 
-                {/* Join Section */}
-                <div className="bg-primary p-12 md:p-24 text-center">
-                    <h2 className="text-4xl md:text-6xl font-black uppercase text-white mb-8 tracking-tighter">O Convite é para Poucos. A Glória é para os Fortes.</h2>
-                    <p className="text-white/90 text-lg mb-12 max-w-xl mx-auto font-black uppercase tracking-tight">
-                        Este não é apenas um diretório. É um ecossistema de honra, mérito e resultados extraordinários.
-                        Sua ascensão começa agora.
+
+            {/* ====================================================== */}
+            {/* CTA FINAL */}
+            {/* ====================================================== */}
+            <section className="py-24" style={{ backgroundColor: BRAND.petroleo }}>
+                <div className="container mx-auto px-4 text-center">
+                    <h2 className="text-4xl md:text-6xl font-black text-white mb-6 max-w-3xl mx-auto leading-tight">
+                        O Mercado Espera<br />
+                        pelos <span style={{ color: BRAND.cobre }}>Valentes</span>
+                    </h2>
+                    <p className="text-xl text-white/80 mb-10 max-w-xl mx-auto">
+                        Você está pronto para a próxima escalada?
                     </p>
                     <Link href="/auth/register">
-                        <Button className="h-16 px-12 text-lg font-black bg-black text-white hover:bg-gray-900 rounded-none uppercase transition-transform hover:scale-105 active:scale-95">
-                            Quero me Alistar
+                        <Button
+                            size="lg"
+                            className="h-16 px-12 text-lg font-black rounded-xl uppercase"
+                            style={{ backgroundColor: BRAND.cobre, color: 'white' }}
+                        >
+                            Junte-se ao Acampamento
+                            <ArrowRight className="ml-3 w-6 h-6" />
                         </Button>
                     </Link>
                 </div>
-            </div>
+            </section>
 
-            {/* Footer */}
-            <footer className="py-12 bg-white border-t border-slate-200 mt-20">
+
+            {/* ====================================================== */}
+            {/* FOOTER */}
+            {/* ====================================================== */}
+            <footer className="py-12" style={{ backgroundColor: BRAND.verdeRota }}>
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-3">
-                            <RotabusinessLogo size={30} />
+                        <div className="flex items-center gap-4">
+                            <Image
+                                src="/images/logo-rota-valente.png"
+                                alt="Rota Business Club"
+                                width={160}
+                                height={50}
+                                className="h-10 w-auto brightness-0 invert"
+                            />
                         </div>
-                        <div className="text-sm text-slate-500 font-medium">
-                            © 2024 Rota Business Club. Todos os direitos reservados.
-                        </div>
+                        <p className="text-white/70 text-sm">
+                            © 2026 Rota Business Club. Todos os direitos reservados.
+                        </p>
                         <div className="flex gap-6">
-                            <Link href="#" className="text-slate-500 hover:text-primary transition-colors text-sm font-bold uppercase tracking-wider">
+                            <Link href="/sobre" className="text-white/70 hover:text-white text-sm font-medium">
                                 Sobre
                             </Link>
-                            <Link href="#" className="text-slate-500 hover:text-primary transition-colors text-sm font-bold uppercase tracking-wider">
+                            <Link href="/planos" className="text-white/70 hover:text-white text-sm font-medium">
+                                Planos
+                            </Link>
+                            <Link href="/contato" className="text-white/70 hover:text-white text-sm font-medium">
                                 Contato
                             </Link>
                         </div>
                     </div>
                 </div>
             </footer>
+
         </div>
     )
 }
