@@ -39,9 +39,10 @@ const BRAND = {
 }
 
 // Componente para renderizar ícone Lucide dinamicamente
-function DynamicIcon({ name, className }: { name: string, className?: string }) {
-    const Icon = (LucideIcons as Record<string, React.ComponentType<{ className?: string }>>)[name] || LucideIcons.Award
-    return <Icon className={className} />
+function DynamicIcon({ name, className, style }: { name: string, className?: string, style?: React.CSSProperties }) {
+    const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string, style?: React.CSSProperties }>>
+    const Icon = icons[name] || icons['Award']
+    return <Icon className={className} style={style} />
 }
 
 export default async function RotaDoValentePage() {
