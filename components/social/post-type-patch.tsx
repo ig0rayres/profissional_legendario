@@ -125,7 +125,7 @@ export function PostTypePatch({
 
 interface PostTypeSealProps {
     type: PostType
-    size?: 'sm' | 'md' | 'lg'
+    size?: 'sm' | 'md' | 'lg' | 'xl'
     className?: string
 }
 
@@ -133,6 +133,7 @@ const sealSizeConfig = {
     sm: { container: 'w-8 h-8', icon: 'w-4 h-4' },
     md: { container: 'w-11 h-11', icon: 'w-5 h-5' },
     lg: { container: 'w-14 h-14', icon: 'w-7 h-7' },
+    xl: { container: 'w-18 h-18', icon: 'w-9 h-9' },
 }
 
 export function PostTypeSeal({
