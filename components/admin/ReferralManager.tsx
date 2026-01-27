@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
     Save, Settings, Users, Wallet, Clock, CheckCircle, XCircle,
     AlertCircle, DollarSign, Link2, TrendingUp, Loader2, RefreshCw,
-    Eye, Check, X, ArrowRight, UserPlus, Receipt
+    Eye, Check, X, ArrowRight, UserPlus, Receipt, Calendar
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/api/financial'
@@ -27,6 +27,7 @@ interface ReferralConfig {
     release_days: number
     require_referred_active: boolean
     min_withdrawal_amount: number
+    payment_day: number
     is_active: boolean
 }
 
@@ -522,6 +523,29 @@ export function ReferralManager() {
                                         </div>
                                         <p className="text-xs text-muted-foreground">
                                             Se ativo, comissão só é liberada se o indicado estiver adimplente
+                                        </p>
+                                    </div>
+
+                                    {/* Dia de pagamento */}
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <Calendar className="w-4 h-4 text-purple-500" />
+                                            Dia de Pagamento dos Saques
+                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">Dia</span>
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                max="28"
+                                                value={config.payment_day || 10}
+                                                onChange={(e) => setConfig({ ...config, payment_day: parseInt(e.target.value) || 10 })}
+                                                className="w-20"
+                                            />
+                                            <span className="text-muted-foreground">de cada mês</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Data fixa para processamento de todos os saques aprovados
                                         </p>
                                     </div>
                                 </div>

@@ -17,6 +17,7 @@ export interface ReferralConfig {
     release_days: number
     require_referred_active: boolean
     min_withdrawal_amount: number
+    payment_day: number
     is_active: boolean
 }
 
