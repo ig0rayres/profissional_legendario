@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
 import { ProfilePageTemplate } from '@/components/profile/profile-page-template'
+import { SharePostModal } from '@/components/social/share-post-modal'
 import type { CompleteProfileData, RankData } from '@/lib/profile/types'
 
 export default function DashboardPage() {
@@ -80,11 +81,17 @@ export default function DashboardPage() {
     }
 
     return (
-        <ProfilePageTemplate
-            profileData={profileData}
-            nextRank={nextRank}
-            backUrl="/"
-            isOwner={true}
-        />
+        <>
+            <ProfilePageTemplate
+                profileData={profileData}
+                nextRank={nextRank}
+                backUrl="/"
+                isOwner={true}
+            />
+            {/* Modal de compartilhamento (acionado via URL ?share_post=...) */}
+            <Suspense fallback={null}>
+                <SharePostModal userId={user?.id || ''} />
+            </Suspense>
+        </>
     )
 }

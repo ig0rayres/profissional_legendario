@@ -288,6 +288,43 @@ export function ConfraternityCompleteForm({
                             post_id: post.id
                         })
                         .eq('id', result.confraternityId)
+
+                    // 3. Buscar parceiro e enviar notificação para compartilhar
+                    const { data: confraternity } = await supabase
+                        .from('confraternities')
+                        .select('member1_id, member2_id')
+                        .eq('id', result.confraternityId)
+                        .single()
+
+                    if (confraternity) {
+                        const partnerId = confraternity.member1_id === currentUserId
+                            ? confraternity.member2_id
+                            : confraternity.member1_id
+
+                        const { data: userProfile } = await supabase
+                            .from('profiles')
+                            .select('full_name')
+                            .eq('id', currentUserId)
+                            .single()
+
+                        // Criar notificação para o parceiro compartilhar
+                        await supabase
+                            .from('notifications')
+                            .insert({
+                                user_id: partnerId,
+                                type: 'confraternity_post_share',
+                                title: '📸 Seu parceiro publicou sobre o encontro!',
+                                body: `${userProfile?.full_name || 'Seu parceiro'} postou sobre a confraria. Compartilhe no seu feed e ganhe Vigor!`,
+                                priority: 'high',
+                                action_url: `/dashboard?share_post=${post.id}`,
+                                metadata: {
+                                    post_id: post.id,
+                                    confraternity_id: result.confraternityId,
+                                    from_user_id: currentUserId,
+                                    from_user_name: userProfile?.full_name
+                                }
+                            })
+                    }
                 }
             }
 
