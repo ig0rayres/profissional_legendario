@@ -1,403 +1,151 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth/context'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-    Heart,
-    MessageCircle,
+    MapPin,
     Users,
-    CheckCircle2,
-    Loader2,
-    ImageIcon,
-    Flame,
     Trophy,
     Medal,
     Calendar,
-    Sparkles,
     Crown,
     Zap,
-    Target,
-    Shield
+    Plus,
+    Loader2,
+    RefreshCw
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
 import Image from 'next/image'
+
+// Componentes centralizados
+import { usePosts, useSidebarData } from '@/hooks/use-posts'
+import { getProfileUrl } from '@/lib/services/posts-service'
+import { PostCard } from '@/components/social/post-card'
+import { CreatePostModalV2 } from '@/components/social/create-post-modal-v2'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { MedalBadge } from '@/components/gamification/medal-badge'
-
-// ============================================
-// Interfaces
-// ============================================
-interface Post {
-    id: string
-    user_id: string
-    content: string | null
-    media_urls: string[]
-    confraternity_id: string | null
-    ai_validation: {
-        approved: boolean
-        people_count: number
-        confidence: string
-        reason: string
-    } | null
-    visibility: string
-    likes_count: number
-    comments_count: number
-    created_at: string
-    author: {
-        id: string
-        full_name: string
-        avatar_url: string | null
-        slug: string | null
-        rota_number: string | null
-    }
-    user_gamification: {
-        current_rank_id: string
-    } | null
-    liked_by_me?: boolean
-}
-
-interface RankingUser {
-    id: string
-    full_name: string
-    avatar_url: string | null
-    slug: string | null
-    rota_number: string | null
-    vigor: number
-    rank_id: string
-}
-
-interface RecentMedal {
-    user_id: string
-    medal_id: string
-    earned_at: string
-    user: {
-        full_name: string
-        avatar_url: string | null
-    }
-    medal: {
-        name: string
-        icon: string
-    }
-}
-
-interface UpcomingConfraternity {
-    id: string
-    proposed_date: string
-    location: string
-    sender: {
-        full_name: string
-        avatar_url: string | null
-    }
-    receiver: {
-        full_name: string
-        avatar_url: string | null
-    }
-}
 
 // ============================================
 // Main Component
 // ============================================
 export default function NaRotaPage() {
     const { user } = useAuth()
-    const supabase = createClient()
+    const [activeTab, setActiveTab] = useState<'global' | 'user' | 'connections'>('global')
+    const [createModalOpen, setCreateModalOpen] = useState(false)
 
-    // States
-    const [posts, setPosts] = useState<Post[]>([])
-    const [ranking, setRanking] = useState<RankingUser[]>([])
-    const [recentMedals, setRecentMedals] = useState<RecentMedal[]>([])
-    const [upcomingConfs, setUpcomingConfs] = useState<UpcomingConfraternity[]>([])
-    const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState('global')
-    const [likingPost, setLikingPost] = useState<string | null>(null)
+    // Hooks centralizados
+    const {
+        posts,
+        loading: loadingPosts,
+        refresh,
+        toggleLike,
+        deletePost,
+        loadMore,
+        hasMore
+    } = usePosts({
+        feedType: activeTab,
+        userId: user?.id,
+        autoLoad: true
+    })
 
+    const { data: sidebarData, loading: loadingSidebar } = useSidebarData()
+
+    // Recarregar quando tab muda
     useEffect(() => {
-        loadAllData()
-    }, [])
-
-    useEffect(() => {
-        loadPosts()
+        refresh()
     }, [activeTab])
 
-    async function loadAllData() {
-        setLoading(true)
-        await Promise.all([
-            loadPosts(),
-            loadRanking(),
-            loadRecentMedals(),
-            loadUpcomingConfrarias()
-        ])
-        setLoading(false)
+    const handlePostCreated = () => {
+        refresh()
     }
 
-    async function loadPosts() {
-        try {
-            let query = supabase
-                .from('posts')
-                .select(`
-                    *,
-                    author:profiles!user_id(
-                        id, full_name, avatar_url, slug, rota_number
-                    ),
-                    user_gamification:gamification_stats!user_id(
-                        current_rank_id
-                    )
-                `)
-                .order('created_at', { ascending: false })
-                .limit(10)
-
-            if (activeTab === 'global') {
-                query = query.eq('visibility', 'public')
-            } else if (activeTab === 'meus' && user) {
-                query = query.eq('user_id', user.id)
-            }
-
-            const { data, error } = await query
-
-            if (error) {
-                console.error('Erro ao carregar posts:', error)
-                setPosts([])
-                return
-            }
-
-            let postsWithLikes = data || []
-            if (user && data && data.length > 0) {
-                const { data: myLikes } = await supabase
-                    .from('post_likes')
-                    .select('post_id')
-                    .eq('user_id', user.id)
-                    .in('post_id', data.map(p => p.id))
-
-                const likedPostIds = new Set(myLikes?.map(l => l.post_id) || [])
-                postsWithLikes = data.map(p => ({
-                    ...p,
-                    liked_by_me: likedPostIds.has(p.id)
-                }))
-            }
-
-            setPosts(postsWithLikes as Post[])
-        } catch (error) {
-            console.error('Exceção ao carregar posts:', error)
-            setPosts([])
-        }
-    }
-
-    async function loadRanking() {
-        try {
-            const { data, error } = await supabase
-                .from('gamification_stats')
-                .select(`
-                    user_id,
-                    total_xp,
-                    current_rank_id,
-                    user:profiles!user_id(
-                        id, full_name, avatar_url, slug, rota_number
-                    )
-                `)
-                .order('total_xp', { ascending: false })
-                .limit(5)
-
-            if (error) {
-                console.error('Erro ao carregar ranking:', error)
-                return
-            }
-
-            const rankingData = (data || []).map(item => ({
-                id: item.user_id,
-                full_name: (item.user as any)?.full_name || 'Usuário',
-                avatar_url: (item.user as any)?.avatar_url,
-                slug: (item.user as any)?.slug,
-                rota_number: (item.user as any)?.rota_number,
-                vigor: item.total_xp,
-                rank_id: item.current_rank_id
-            }))
-
-            setRanking(rankingData)
-        } catch (error) {
-            console.error('Exceção ao carregar ranking:', error)
-        }
-    }
-
-    async function loadRecentMedals() {
-        try {
-            const { data, error } = await supabase
-                .from('user_badges')
-                .select(`
-                    user_id,
-                    badge_id,
-                    earned_at,
-                    user:profiles!user_id(full_name, avatar_url),
-                    badge:badges!badge_id(name, icon)
-                `)
-                .order('earned_at', { ascending: false })
-                .limit(5)
-
-            if (error) {
-                console.error('Erro ao carregar medalhas:', error)
-                return
-            }
-
-            // Mapear para o formato esperado
-            const mappedData = (data || []).map(item => ({
-                user_id: item.user_id,
-                medal_id: item.badge_id,
-                earned_at: item.earned_at,
-                user: item.user,
-                medal: item.badge
-            }))
-
-            setRecentMedals(mappedData as any)
-        } catch (error) {
-            console.error('Exceção ao carregar medalhas:', error)
-        }
-    }
-
-    async function loadUpcomingConfrarias() {
-        try {
-            const { data, error } = await supabase
-                .from('confraternity_invites')
-                .select(`
-                    id,
-                    proposed_date,
-                    location,
-                    sender:profiles!sender_id(full_name, avatar_url),
-                    receiver:profiles!receiver_id(full_name, avatar_url)
-                `)
-                .eq('status', 'accepted')
-                .gte('proposed_date', new Date().toISOString())
-                .order('proposed_date', { ascending: true })
-                .limit(5)
-
-            if (error) {
-                console.error('Erro ao carregar confrarias:', error)
-                return
-            }
-
-            setUpcomingConfs((data || []) as any)
-        } catch (error) {
-            console.error('Exceção ao carregar confrarias:', error)
-        }
-    }
-
-    async function toggleLike(postId: string) {
-        if (!user) return
-
-        setLikingPost(postId)
-        const post = posts.find(p => p.id === postId)
-        if (!post) return
-
-        try {
-            if (post.liked_by_me) {
-                await supabase
-                    .from('post_likes')
-                    .delete()
-                    .eq('post_id', postId)
-                    .eq('user_id', user.id)
-
-                setPosts(prev => prev.map(p =>
-                    p.id === postId
-                        ? { ...p, liked_by_me: false, likes_count: Math.max(0, p.likes_count - 1) }
-                        : p
-                ))
-            } else {
-                await supabase
-                    .from('post_likes')
-                    .insert({ post_id: postId, user_id: user.id })
-
-                setPosts(prev => prev.map(p =>
-                    p.id === postId
-                        ? { ...p, liked_by_me: true, likes_count: p.likes_count + 1 }
-                        : p
-                ))
-            }
-        } catch (error) {
-            console.error('Erro ao curtir:', error)
-        } finally {
-            setLikingPost(null)
-        }
-    }
-
-    function getProfileUrl(user: { slug?: string | null; rota_number?: string | null; id: string }) {
-        if (user.slug && user.rota_number) {
-            return `/${user.slug}/${user.rota_number}`
-        }
-        return `/professional/${user.id}`
+    const handleDelete = async (postId: string) => {
+        if (!confirm('Tem certeza que deseja excluir esta publicação?')) return
+        await deletePost(postId)
     }
 
     // ============================================
     // Render
     // ============================================
     return (
-        <div className="min-h-screen bg-adventure pt-24 pb-16">
+        <div className="min-h-screen bg-gray-50 pt-20 pb-16">
             <div className="container mx-auto px-4">
-                {/* Hero Header */}
-                <div className="text-center mb-12">
-                    <div className="flex items-center justify-center gap-3 mb-3">
-                        <Flame className="w-10 h-10 text-secondary animate-pulse" />
-                        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-                            Na Rota
-                        </h1>
-                        <Flame className="w-10 h-10 text-secondary animate-pulse" />
+
+                {/* Header - Estilo Dashboard */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-4 mb-2">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center shadow-lg">
+                            <MapPin className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                                Na Rota
+                            </h1>
+                            <p className="text-gray-600 text-sm">
+                                Feed da comunidade Rota Business Club
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                        O centro de atividades da comunidade Rota Business Club.
-                        Veja o ranking, conquistas recentes, agenda e muito mais!
-                    </p>
                 </div>
 
-                {/* Stats Bar - Gradientes Verde/Laranja */}
+                {/* Stats Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                    <Card className="bg-white border-gray-200 shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-primary/20 rounded-full">
-                                <Users className="w-6 h-6 text-primary" />
+                            <div className="p-3 bg-emerald-100 rounded-xl">
+                                <Users className="w-5 h-5 text-emerald-700" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{ranking.length > 0 ? '50+' : '-'}</p>
-                                <p className="text-xs text-muted-foreground">Membros Ativos</p>
+                                <p className="text-xl font-bold text-gray-900">
+                                    {sidebarData?.ranking.length ? '50+' : '-'}
+                                </p>
+                                <p className="text-xs text-gray-500">Membros Ativos</p>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                    <Card className="bg-white border-gray-200 shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-primary/20 rounded-full">
-                                <CheckCircle2 className="w-6 h-6 text-primary" />
+                            <div className="p-3 bg-amber-100 rounded-xl">
+                                <Trophy className="w-5 h-5 text-amber-700" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{posts.length}</p>
-                                <p className="text-xs text-muted-foreground">Confrarias Realizadas</p>
+                                <p className="text-xl font-bold text-gray-900">{posts.length}</p>
+                                <p className="text-xs text-gray-500">Publicações</p>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20">
+                    <Card className="bg-white border-gray-200 shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-secondary/20 rounded-full">
-                                <Medal className="w-6 h-6 text-secondary" />
+                            <div className="p-3 bg-blue-100 rounded-xl">
+                                <Medal className="w-5 h-5 text-blue-700" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{recentMedals.length > 0 ? '120+' : '-'}</p>
-                                <p className="text-xs text-muted-foreground">Medalhas Conquistadas</p>
+                                <p className="text-xl font-bold text-gray-900">
+                                    {sidebarData?.recentMedals.length ? '120+' : '-'}
+                                </p>
+                                <p className="text-xs text-gray-500">Medalhas</p>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                    <Card className="bg-white border-gray-200 shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <div className="p-3 bg-primary/20 rounded-full">
-                                <Calendar className="w-6 h-6 text-primary" />
+                            <div className="p-3 bg-purple-100 rounded-xl">
+                                <Calendar className="w-5 h-5 text-purple-700" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{upcomingConfs.length}</p>
-                                <p className="text-xs text-muted-foreground">Confrarias Agendadas</p>
+                                <p className="text-xl font-bold text-gray-900">
+                                    {sidebarData?.upcomingConfrarias.length || 0}
+                                </p>
+                                <p className="text-xs text-gray-500">Confrarias Agendadas</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -406,19 +154,19 @@ export default function NaRotaPage() {
                 {/* Main Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                    {/* Left Column - Ranking & Conquistas */}
+                    {/* Left Sidebar */}
                     <div className="lg:col-span-1 space-y-6">
 
-                        {/* Card Ranking */}
-                        <Card className="overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-secondary/20 to-secondary/10 border-b border-secondary/20">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Trophy className="w-5 h-5 text-secondary" />
+                        {/* Ranking */}
+                        <Card className="bg-white border-gray-200 shadow-sm overflow-hidden">
+                            <CardHeader className="bg-gray-50 border-b border-gray-100 py-3">
+                                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                                    <Trophy className="w-4 h-4 text-amber-600" />
                                     Ranking do Mês
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-0">
-                                {loading ? (
+                                {loadingSidebar ? (
                                     <div className="p-4 space-y-3">
                                         {[1, 2, 3].map(i => (
                                             <div key={i} className="flex items-center gap-3">
@@ -427,61 +175,69 @@ export default function NaRotaPage() {
                                             </div>
                                         ))}
                                     </div>
-                                ) : ranking.length === 0 ? (
-                                    <div className="p-6 text-center text-muted-foreground">
+                                ) : !sidebarData?.ranking.length ? (
+                                    <div className="p-6 text-center text-gray-500">
                                         <Trophy className="w-10 h-10 mx-auto mb-2 opacity-30" />
                                         <p className="text-sm">Ranking em breve!</p>
                                     </div>
                                 ) : (
-                                    <div className="divide-y divide-white/5">
-                                        {ranking.map((user, index) => (
+                                    <div className="divide-y divide-gray-100">
+                                        {sidebarData.ranking.map((rankUser, index) => (
                                             <Link
-                                                key={user.id}
-                                                href={getProfileUrl(user)}
-                                                className="flex items-center gap-3 p-4 hover:bg-white/5 transition-colors"
+                                                key={rankUser.id}
+                                                href={getProfileUrl(rankUser)}
+                                                className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors"
                                             >
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-secondary text-secondary-foreground' :
-                                                    index === 1 ? 'bg-slate-400 text-slate-950' :
-                                                        index === 2 ? 'bg-amber-700 text-amber-100' :
-                                                            'bg-primary/20 text-primary'
+                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${index === 0 ? 'bg-amber-500 text-white' :
+                                                        index === 1 ? 'bg-gray-400 text-white' :
+                                                            index === 2 ? 'bg-amber-700 text-white' :
+                                                                'bg-gray-100 text-gray-600'
                                                     }`}>
-                                                    {index === 0 ? <Crown className="w-4 h-4" /> : index + 1}
+                                                    {index === 0 ? <Crown className="w-3.5 h-3.5" /> : index + 1}
                                                 </div>
-                                                <Avatar className="w-10 h-10 border-2 border-primary/20">
-                                                    <AvatarImage src={user.avatar_url || ''} />
-                                                    <AvatarFallback>{user.full_name?.charAt(0)}</AvatarFallback>
-                                                </Avatar>
+                                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 relative">
+                                                    {rankUser.avatar_url ? (
+                                                        <Image
+                                                            src={rankUser.avatar_url}
+                                                            alt={rankUser.full_name}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">
+                                                            {rankUser.full_name?.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-medium truncate">{user.full_name}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {user.vigor.toLocaleString()} Vigor
-                                                    </p>
+                                                    <p className="font-medium text-sm text-gray-900 truncate">{rankUser.full_name}</p>
+                                                    <p className="text-xs text-gray-500">{rankUser.vigor.toLocaleString()} Vigor</p>
                                                 </div>
-                                                {user.rank_id && (
-                                                    <RankInsignia rankId={user.rank_id} size="sm" />
+                                                {rankUser.rank_id && (
+                                                    <RankInsignia rankId={rankUser.rank_id} size="xs" />
                                                 )}
                                             </Link>
                                         ))}
                                     </div>
                                 )}
                                 <Link href="/professionals?sort=vigor">
-                                    <Button variant="ghost" className="w-full rounded-t-none border-t">
+                                    <Button variant="ghost" className="w-full rounded-none border-t border-gray-100 text-gray-600 hover:text-gray-900">
                                         Ver Ranking Completo
                                     </Button>
                                 </Link>
                             </CardContent>
                         </Card>
 
-                        {/* Card Últimas Conquistas */}
-                        <Card className="overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-primary/20 to-primary/10 border-b border-primary/20">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Sparkles className="w-5 h-5 text-primary" />
+                        {/* Últimas Conquistas */}
+                        <Card className="bg-white border-gray-200 shadow-sm overflow-hidden">
+                            <CardHeader className="bg-gray-50 border-b border-gray-100 py-3">
+                                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                                    <Medal className="w-4 h-4 text-blue-600" />
                                     Últimas Conquistas
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-0">
-                                {loading ? (
+                                {loadingSidebar ? (
                                     <div className="p-4 space-y-3">
                                         {[1, 2, 3].map(i => (
                                             <div key={i} className="flex items-center gap-3">
@@ -490,25 +246,25 @@ export default function NaRotaPage() {
                                             </div>
                                         ))}
                                     </div>
-                                ) : recentMedals.length === 0 ? (
-                                    <div className="p-6 text-center text-muted-foreground">
+                                ) : !sidebarData?.recentMedals.length ? (
+                                    <div className="p-6 text-center text-gray-500">
                                         <Medal className="w-10 h-10 mx-auto mb-2 opacity-30" />
                                         <p className="text-sm">Nenhuma medalha ainda</p>
                                     </div>
                                 ) : (
-                                    <div className="divide-y divide-white/5">
-                                        {recentMedals.map((item, index) => (
-                                            <div key={index} className="flex items-center gap-3 p-4">
+                                    <div className="divide-y divide-gray-100">
+                                        {sidebarData.recentMedals.map((item, index) => (
+                                            <div key={index} className="flex items-center gap-3 p-3">
                                                 <MedalBadge medalId={item.medal_id} size="sm" />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium truncate">
+                                                    <p className="text-sm font-medium text-gray-900 truncate">
                                                         {item.user?.full_name}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground">
+                                                    <p className="text-xs text-gray-500">
                                                         {item.medal?.name}
                                                     </p>
                                                 </div>
-                                                <span className="text-xs text-muted-foreground">
+                                                <span className="text-xs text-gray-400">
                                                     {formatDistanceToNow(new Date(item.earned_at), {
                                                         addSuffix: true,
                                                         locale: ptBR
@@ -521,51 +277,57 @@ export default function NaRotaPage() {
                             </CardContent>
                         </Card>
 
-                        {/* Card Agenda de Confrarias */}
-                        <Card className="overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-primary/20 to-secondary/10 border-b border-primary/20">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-primary" />
+                        {/* Agenda de Confrarias */}
+                        <Card className="bg-white border-gray-200 shadow-sm overflow-hidden">
+                            <CardHeader className="bg-gray-50 border-b border-gray-100 py-3">
+                                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                                    <Calendar className="w-4 h-4 text-purple-600" />
                                     Agenda de Confrarias
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-0">
-                                {loading ? (
+                                {loadingSidebar ? (
                                     <div className="p-4 space-y-3">
                                         {[1, 2].map(i => (
                                             <Skeleton key={i} className="h-16 w-full" />
                                         ))}
                                     </div>
-                                ) : upcomingConfs.length === 0 ? (
-                                    <div className="p-6 text-center text-muted-foreground">
+                                ) : !sidebarData?.upcomingConfrarias.length ? (
+                                    <div className="p-6 text-center text-gray-500">
                                         <Calendar className="w-10 h-10 mx-auto mb-2 opacity-30" />
                                         <p className="text-sm">Nenhuma confraria agendada</p>
                                     </div>
                                 ) : (
-                                    <div className="divide-y divide-white/5">
-                                        {upcomingConfs.map((conf) => (
-                                            <div key={conf.id} className="p-4">
+                                    <div className="divide-y divide-gray-100">
+                                        {sidebarData.upcomingConfrarias.map((conf) => (
+                                            <div key={conf.id} className="p-3">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <Avatar className="w-6 h-6">
-                                                        <AvatarImage src={conf.sender?.avatar_url || ''} />
-                                                        <AvatarFallback className="text-xs">
-                                                            {conf.sender?.full_name?.charAt(0)}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <Zap className="w-3 h-3 text-secondary" />
-                                                    <Avatar className="w-6 h-6">
-                                                        <AvatarImage src={conf.receiver?.avatar_url || ''} />
-                                                        <AvatarFallback className="text-xs">
-                                                            {conf.receiver?.full_name?.charAt(0)}
-                                                        </AvatarFallback>
-                                                    </Avatar>
+                                                    <div className="w-6 h-6 rounded bg-gray-100 overflow-hidden">
+                                                        {conf.sender?.avatar_url ? (
+                                                            <Image src={conf.sender.avatar_url} alt="" width={24} height={24} className="object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                                                                {conf.sender?.full_name?.charAt(0)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <Zap className="w-3 h-3 text-amber-500" />
+                                                    <div className="w-6 h-6 rounded bg-gray-100 overflow-hidden">
+                                                        {conf.receiver?.avatar_url ? (
+                                                            <Image src={conf.receiver.avatar_url} alt="" width={24} height={24} className="object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                                                                {conf.receiver?.full_name?.charAt(0)}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <p className="text-sm font-medium">
+                                                <p className="text-sm font-medium text-gray-900">
                                                     {conf.sender?.full_name} × {conf.receiver?.full_name}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    📅 {format(new Date(conf.proposed_date), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                                                    {conf.location && ` • 📍 ${conf.location}`}
+                                                <p className="text-xs text-gray-500">
+                                                    {format(new Date(conf.proposed_date), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                                                    {conf.location && ` • ${conf.location}`}
                                                 </p>
                                             </div>
                                         ))}
@@ -573,7 +335,7 @@ export default function NaRotaPage() {
                                 )}
                                 {user && (
                                     <Link href="/elo-da-rota">
-                                        <Button variant="ghost" className="w-full rounded-t-none border-t">
+                                        <Button variant="ghost" className="w-full rounded-none border-t border-gray-100 text-gray-600 hover:text-gray-900">
                                             Ir para Elo da Rota
                                         </Button>
                                     </Link>
@@ -582,42 +344,66 @@ export default function NaRotaPage() {
                         </Card>
                     </div>
 
-                    {/* Right Column - Feed */}
+                    {/* Main Feed */}
                     <div className="lg:col-span-2">
-                        <Card className="overflow-hidden h-fit">
-                            <CardHeader className="bg-gradient-to-r from-secondary/20 via-primary/10 to-secondary/20 border-b border-secondary/20">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Flame className="w-5 h-5 text-secondary" />
-                                    Feed da Comunidade
-                                </CardTitle>
+                        <Card className="bg-white border-gray-200 shadow-sm overflow-hidden">
+                            <CardHeader className="bg-gray-50 border-b border-gray-100 py-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                                        <MapPin className="w-4 h-4 text-[#D2691E]" />
+                                        Feed da Comunidade
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => refresh()}
+                                            disabled={loadingPosts}
+                                            className="text-gray-500"
+                                        >
+                                            <RefreshCw className={`w-4 h-4 ${loadingPosts ? 'animate-spin' : ''}`} />
+                                        </Button>
+                                        {user && (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => setCreateModalOpen(true)}
+                                                className="gap-2 bg-gray-900 hover:bg-gray-800 text-white"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                Publicar
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
                             </CardHeader>
+
                             <CardContent className="p-4">
                                 {/* Tabs */}
-                                <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                                    <TabsList className="grid w-full grid-cols-3 bg-card/50">
-                                        <TabsTrigger value="global" className="flex gap-2">
-                                            <Users className="w-4 h-4" />
+                                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-4">
+                                    <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+                                        <TabsTrigger value="global" className="flex gap-2 text-xs">
+                                            <Users className="w-3.5 h-3.5" />
                                             Global
                                         </TabsTrigger>
-                                        <TabsTrigger value="elos" className="flex gap-2" disabled={!user}>
-                                            <Heart className="w-4 h-4" />
+                                        <TabsTrigger value="connections" className="flex gap-2 text-xs" disabled={!user}>
+                                            <Zap className="w-3.5 h-3.5" />
                                             Elos
                                         </TabsTrigger>
-                                        <TabsTrigger value="meus" className="flex gap-2" disabled={!user}>
-                                            <ImageIcon className="w-4 h-4" />
+                                        <TabsTrigger value="user" className="flex gap-2 text-xs" disabled={!user}>
+                                            <MapPin className="w-3.5 h-3.5" />
                                             Meus
                                         </TabsTrigger>
                                     </TabsList>
                                 </Tabs>
 
-                                {/* Feed Posts */}
+                                {/* Posts */}
                                 <div className="space-y-4">
-                                    {loading ? (
-                                        Array.from({ length: 2 }).map((_, i) => (
-                                            <Card key={i} className="overflow-hidden">
+                                    {loadingPosts ? (
+                                        Array.from({ length: 3 }).map((_, i) => (
+                                            <Card key={i} className="overflow-hidden border-gray-200">
                                                 <CardContent className="p-4">
                                                     <div className="flex items-center gap-3 mb-4">
-                                                        <Skeleton className="w-10 h-10 rounded-full" />
+                                                        <Skeleton className="w-10 h-10 rounded-lg" />
                                                         <div className="space-y-2">
                                                             <Skeleton className="h-4 w-32" />
                                                             <Skeleton className="h-3 w-20" />
@@ -629,127 +415,58 @@ export default function NaRotaPage() {
                                         ))
                                     ) : posts.length === 0 ? (
                                         <div className="text-center py-12">
-                                            <ImageIcon className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                                            <h3 className="text-lg font-semibold mb-2">Nenhum post ainda</h3>
-                                            <p className="text-muted-foreground text-sm mb-4">
-                                                Realize uma confraria para fazer sua primeira postagem!
+                                            <MapPin className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum post ainda</h3>
+                                            <p className="text-gray-500 text-sm mb-4">
+                                                {activeTab === 'user'
+                                                    ? 'Compartilhe suas experiências!'
+                                                    : 'Nenhuma publicação para exibir'}
                                             </p>
-                                            {user && (
-                                                <Link href="/elo-da-rota">
-                                                    <Button>
-                                                        <Zap className="w-4 h-4 mr-2" />
-                                                        Ir para Elo da Rota
-                                                    </Button>
-                                                </Link>
+                                            {user && activeTab === 'user' && (
+                                                <Button onClick={() => setCreateModalOpen(true)}>
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Criar Publicação
+                                                </Button>
                                             )}
                                         </div>
                                     ) : (
-                                        posts.map(post => (
-                                            <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                                                <CardContent className="p-0">
-                                                    {/* Header do Post */}
-                                                    <div className="p-4 flex items-center gap-3">
-                                                        <Link href={getProfileUrl(post.author)}>
-                                                            <div className="relative">
-                                                                <Avatar className="w-10 h-10 border-2 border-primary/20">
-                                                                    <AvatarImage src={post.author.avatar_url || ''} />
-                                                                    <AvatarFallback className="bg-primary/10 text-primary">
-                                                                        {post.author.full_name?.charAt(0) || '?'}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                {post.user_gamification?.current_rank_id && (
-                                                                    <div className="absolute -bottom-1 -right-1">
-                                                                        <RankInsignia
-                                                                            rankId={post.user_gamification.current_rank_id}
-                                                                            size="xs"
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </Link>
-                                                        <div className="flex-1">
-                                                            <Link href={getProfileUrl(post.author)}>
-                                                                <h4 className="font-semibold text-sm hover:text-primary transition-colors">
-                                                                    {post.author.full_name}
-                                                                </h4>
-                                                            </Link>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {formatDistanceToNow(new Date(post.created_at), {
-                                                                    addSuffix: true,
-                                                                    locale: ptBR
-                                                                })}
-                                                            </p>
-                                                        </div>
-                                                        {post.confraternity_id && post.ai_validation?.approved && (
-                                                            <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
-                                                                <CheckCircle2 className="w-3 h-3" />
-                                                                Verificada
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                        <>
+                                            {posts.map(post => (
+                                                <PostCard
+                                                    key={post.id}
+                                                    post={post as any}
+                                                    currentUserId={user?.id}
+                                                    onLike={() => toggleLike(post.id)}
+                                                    onUnlike={() => toggleLike(post.id)}
+                                                    onDelete={() => handleDelete(post.id)}
+                                                />
+                                            ))}
 
-                                                    {/* Conteúdo/Legenda */}
-                                                    {post.content && (
-                                                        <div className="px-4 pb-3">
-                                                            <p className="text-sm whitespace-pre-wrap line-clamp-3">{post.content}</p>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Mídia */}
-                                                    {post.media_urls && post.media_urls.length > 0 && (
-                                                        <div className="relative aspect-video bg-black/5">
-                                                            <Image
-                                                                src={post.media_urls[0]}
-                                                                alt="Foto da confraria"
-                                                                fill
-                                                                className="object-cover"
-                                                            />
-                                                            {post.media_urls.length > 1 && (
-                                                                <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                                                                    +{post.media_urls.length - 1}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Ações */}
-                                                    <div className="p-3 flex items-center gap-4 border-t border-white/5">
-                                                        <button
-                                                            onClick={() => toggleLike(post.id)}
-                                                            disabled={!user || likingPost === post.id}
-                                                            className={`flex items-center gap-1.5 transition-colors ${post.liked_by_me
-                                                                ? 'text-secondary'
-                                                                : 'text-muted-foreground hover:text-secondary'
-                                                                } ${!user ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        >
-                                                            {likingPost === post.id ? (
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                            ) : (
-                                                                <Heart className={`w-4 h-4 ${post.liked_by_me ? 'fill-current' : ''}`} />
-                                                            )}
-                                                            <span className="text-sm">{post.likes_count}</span>
-                                                        </button>
-
-                                                        <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
-                                                            <MessageCircle className="w-4 h-4" />
-                                                            <span className="text-sm">{post.comments_count}</span>
-                                                        </button>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))
+                                            {/* Load More */}
+                                            {hasMore && (
+                                                <div className="text-center pt-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={loadMore}
+                                                        className="text-gray-600"
+                                                    >
+                                                        Carregar mais
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 
-                                {/* Info para não logados */}
+                                {/* CTA para não logados */}
                                 {!user && (
-                                    <Card className="mt-6 p-6 text-center bg-primary/5 border-primary/20">
-                                        <h3 className="font-semibold mb-2">Faça parte da comunidade!</h3>
-                                        <p className="text-sm text-muted-foreground mb-4">
+                                    <Card className="mt-6 p-6 text-center bg-gray-50 border-gray-200">
+                                        <h3 className="font-semibold text-gray-900 mb-2">Faça parte da comunidade!</h3>
+                                        <p className="text-sm text-gray-600 mb-4">
                                             Entre para curtir, comentar e compartilhar suas confrarias.
                                         </p>
                                         <Link href="/auth/login">
-                                            <Button className="bg-primary hover:bg-primary/90">
+                                            <Button className="bg-gray-900 hover:bg-gray-800 text-white">
                                                 Entrar
                                             </Button>
                                         </Link>
@@ -760,6 +477,16 @@ export default function NaRotaPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Criação V2 */}
+            {user && (
+                <CreatePostModalV2
+                    open={createModalOpen}
+                    onOpenChange={setCreateModalOpen}
+                    userId={user.id}
+                    onPostCreated={handlePostCreated}
+                />
+            )}
         </div>
     )
 }

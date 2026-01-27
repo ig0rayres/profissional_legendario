@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect, useCallback } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MapPin, Plus, Loader2 } from 'lucide-react'
+import { MapPin, Plus, Loader2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { PostCard } from '@/components/social/post-card'
-import { CreatePostModal } from '@/components/social/create-post-modal'
+import { CreatePostModalV2 } from '@/components/social/create-post-modal-v2'
+import { PostsService, Post as ServicePost } from '@/lib/services/posts-service'
 
 interface NaRotaFeedV13Props {
     userId: string
@@ -23,90 +24,45 @@ export function NaRotaFeedV13({
     showCreateButton = true,
     feedType = 'user'
 }: NaRotaFeedV13Props) {
-    const [posts, setPosts] = useState<any[]>([])
+    const [posts, setPosts] = useState<ServicePost[]>([])
     const [loading, setLoading] = useState(true)
     const [createModalOpen, setCreateModalOpen] = useState(false)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
     const supabase = createClient()
+    const postsService = new PostsService(supabase)
 
     useEffect(() => {
         loadCurrentUser()
-        loadPosts()
-    }, [userId, feedType])
+    }, [])
+
+    useEffect(() => {
+        if (currentUserId !== null) {
+            loadPosts()
+        }
+    }, [userId, feedType, currentUserId])
 
     async function loadCurrentUser() {
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUserId(user?.id || null)
     }
 
-    async function loadPosts() {
+    const loadPosts = useCallback(async () => {
+        setLoading(true)
         try {
-            let query = supabase
-                .from('posts')
-                .select(`
-                    *,
-                    user:profiles!posts_user_id_fkey(
-                        id,
-                        full_name,
-                        avatar_url
-                    ),
-                    user_has_liked:post_likes!post_likes_post_id_fkey(user_id),
-                    confraternity:confraternities!posts_confraternity_id_fkey(
-                        id,
-                        date_occurred,
-                        member1:profiles!confraternities_member1_id_fkey(id, full_name, avatar_url),
-                        member2:profiles!confraternities_member2_id_fkey(id, full_name, avatar_url)
-                    )
-                `)
-                .order('created_at', { ascending: false })
-                .limit(20)
-
-            // Filter based on feed type
-            if (feedType === 'user') {
-                // Para feed do usuário: posts que ele criou OU confrarias que ele participou
-                const { data: confraternityIds } = await supabase
-                    .from('confraternities')
-                    .select('id')
-                    .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
-
-                const confIds = confraternityIds?.map(c => c.id) || []
-
-                if (confIds.length > 0) {
-                    query = query.or(`user_id.eq.${userId},confraternity_id.in.(${confIds.join(',')})`)
-                } else {
-                    query = query.eq('user_id', userId)
-                }
-            } else if (feedType === 'global') {
-                query = query.eq('visibility', 'public')
-            } else if (feedType === 'connections') {
-                query = query.in('visibility', ['public', 'connections'])
-            }
-
-            const { data, error } = await query
-
-            if (error) throw error
-
-            // Transform data to include user_has_liked boolean
-            // Also dedupe posts (in case same confraternity post appears twice)
-            const seenIds = new Set<string>()
-            const transformedPosts = (data || [])
-                .filter(post => {
-                    if (seenIds.has(post.id)) return false
-                    seenIds.add(post.id)
-                    return true
-                })
-                .map(post => ({
-                    ...post,
-                    user_has_liked: post.user_has_liked?.some((like: any) => like.user_id === currentUserId)
-                }))
-
-            setPosts(transformedPosts)
+            const loadedPosts = await postsService.loadPosts({
+                feedType,
+                userId,
+                currentUserId: currentUserId || undefined,
+                limit: 20
+            })
+            setPosts(loadedPosts)
         } catch (error) {
             console.error('Error loading posts:', error)
         } finally {
             setLoading(false)
         }
-    }
+    }, [feedType, userId, currentUserId])
 
     const handlePostCreated = () => {
         loadPosts()
@@ -115,18 +71,47 @@ export function NaRotaFeedV13({
     const handlePostDeleted = async (postId: string) => {
         if (!confirm('Tem certeza que deseja excluir esta publicação?')) return
 
-        try {
-            const { error } = await supabase
-                .from('posts')
-                .delete()
-                .eq('id', postId)
+        if (!currentUserId) return
 
-            if (error) throw error
-
+        const success = await postsService.deletePost(postId, currentUserId)
+        if (success) {
             setPosts(posts.filter(p => p.id !== postId))
-        } catch (error) {
-            console.error('Error deleting post:', error)
+        } else {
             alert('Erro ao excluir publicação')
+        }
+    }
+
+    const handleLike = async (postId: string) => {
+        if (!currentUserId) return
+
+        // Optimistic update
+        setPosts(prev => prev.map(p => {
+            if (p.id === postId) {
+                const newLiked = !p.user_has_liked
+                return {
+                    ...p,
+                    user_has_liked: newLiked,
+                    likes_count: newLiked ? p.likes_count + 1 : Math.max(0, p.likes_count - 1)
+                }
+            }
+            return p
+        }))
+
+        try {
+            await postsService.toggleLike(postId, currentUserId)
+        } catch (e) {
+            // Reverter
+            setPosts(prev => prev.map(p => {
+                if (p.id === postId) {
+                    const revert = !p.user_has_liked
+                    return {
+                        ...p,
+                        user_has_liked: revert,
+                        likes_count: revert ? p.likes_count + 1 : Math.max(0, p.likes_count - 1)
+                    }
+                }
+                return p
+            }))
         }
     }
 
@@ -155,17 +140,30 @@ export function NaRotaFeedV13({
                             </div>
                         </div>
 
-                        {/* Create button */}
-                        {showCreateButton && currentUserId === userId && (
+                        <div className="flex items-center gap-2">
+                            {/* Refresh button */}
                             <Button
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => setCreateModalOpen(true)}
-                                className="gap-2 bg-[#D2691E] hover:bg-[#B85715] text-white"
+                                onClick={loadPosts}
+                                disabled={loading}
+                                className="text-gray-500"
                             >
-                                <Plus className="w-4 h-4" />
-                                Publicar
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                             </Button>
-                        )}
+
+                            {/* Create button */}
+                            {showCreateButton && currentUserId === userId && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => setCreateModalOpen(true)}
+                                    className="gap-2 bg-gray-900 hover:bg-gray-800 text-white"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Publicar
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Content */}
@@ -190,9 +188,11 @@ export function NaRotaFeedV13({
                             posts.map((post) => (
                                 <PostCard
                                     key={post.id}
-                                    post={post}
+                                    post={post as any}
                                     currentUserId={currentUserId || undefined}
-                                    onDelete={handlePostDeleted}
+                                    onLike={() => handleLike(post.id)}
+                                    onUnlike={() => handleLike(post.id)}
+                                    onDelete={() => handlePostDeleted(post.id)}
                                 />
                             ))
                         )}
@@ -200,8 +200,8 @@ export function NaRotaFeedV13({
                 </CardContent>
             </Card>
 
-            {/* Create Post Modal */}
-            <CreatePostModal
+            {/* Create Post Modal V2 - Sóbrio */}
+            <CreatePostModalV2
                 open={createModalOpen}
                 onOpenChange={setCreateModalOpen}
                 userId={userId}
