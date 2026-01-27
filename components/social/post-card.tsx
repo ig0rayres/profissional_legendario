@@ -112,16 +112,20 @@ export function PostCard({
         const diffHours = Math.floor(diffMins / 60)
         const diffDays = Math.floor(diffHours / 24)
 
+        // Formata a hora sempre
+        const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+
         if (diffMins < 1) return 'agora mesmo'
         if (diffMins < 60) return `há ${diffMins}min`
         if (diffHours < 24) return `há ${diffHours}h`
-        if (diffDays < 7) return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`
 
-        return date.toLocaleDateString('pt-BR')
+        // Para posts com mais de 24h, mostra data e hora
+        return `${dateStr} • ${timeStr}`
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+        <Card className="bg-white border-2 border-gray-200 shadow-lg hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 overflow-hidden group">
             <CardContent className="p-0">
                 {/* Header */}
                 <div className="p-4 flex items-center justify-between">

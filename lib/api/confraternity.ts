@@ -428,23 +428,17 @@ export async function completeConfraternity(
         const partnerTestimonialField = userId === invite.sender_id ? 'testimonial_member2' : 'testimonial_member1'
         const partnerHasConfirmed = confCheck?.[partnerTestimonialField] ? true : false
 
-        if (partnerHasConfirmed) {
-            // Both have confirmed, mark as completed
-            await supabase
-                .from('confraternity_invites')
-                .update({
-                    status: 'completed',
-                    completed_at: new Date().toISOString()
-                })
-                .eq('id', inviteId)
-        } else {
-            // Partner still needs to confirm
-            await supabase
-                .from('confraternity_invites')
-                .update({
-                    status: 'pending_partner'
-                })
-                .eq('id', inviteId)
+        // Sempre marcar como completed quando alguém completa
+        // O parceiro pode adicionar seu depoimento depois, mas a confraria já aconteceu
+        await supabase
+            .from('confraternity_invites')
+            .update({
+                status: 'completed',
+                completed_at: new Date().toISOString()
+            })
+            .eq('id', inviteId)
+
+        if (!partnerHasConfirmed) {
 
             // 6. Notify partner to confirm
             const { data: userProfile } = await supabase
