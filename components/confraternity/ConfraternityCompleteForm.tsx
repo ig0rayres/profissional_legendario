@@ -656,7 +656,7 @@ export function ConfraternityCompleteForm({
                         ) : (
                             <>
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Confirmar +{calculateRewards()} Vigor
+                                Confirmar +{calculateRewards().xp} Vigor
                             </>
                         )}
                     </Button>
