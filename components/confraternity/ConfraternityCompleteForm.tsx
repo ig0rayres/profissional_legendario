@@ -195,10 +195,23 @@ export function ConfraternityCompleteForm({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        // Filtrar fotos vazias (URLs inválidas)
+        const validPhotos = formData.photos.filter(url => url && url.trim() !== '' && !url.startsWith('blob:'))
+
         // Validações
-        if (formData.photos.length === 0) {
+        if (validPhotos.length === 0) {
             toast.error('Foto obrigatória!', {
-                description: 'Adicione pelo menos uma foto da confraria'
+                description: 'Adicione pelo menos uma foto da confraria (upload pode ter falhado)'
+            })
+            return
+        }
+
+        // Validar data - não pode ser futura
+        const selectedDate = new Date(`${formData.date}T${formData.time}:00`)
+        const now = new Date()
+        if (selectedDate > now) {
+            toast.error('Data inválida!', {
+                description: 'A data da confraria não pode ser no futuro. A confraria já aconteceu?'
             })
             return
         }
@@ -221,7 +234,7 @@ export function ConfraternityCompleteForm({
             const supabase = createClient()
             const dateTime = `${formData.date}T${formData.time}:00`
 
-            // 1. Completar a confraria
+            // 1. Completar a confraria (usando apenas fotos válidas)
             const result = await completeConfraternity(
                 inviteId,
                 currentUserId,
@@ -229,7 +242,7 @@ export function ConfraternityCompleteForm({
                     dateOccurred: new Date(dateTime).toISOString(),
                     location: formData.location,
                     description: formData.description || undefined,
-                    photos: formData.photos,
+                    photos: validPhotos, // Usar apenas fotos com URLs válidas
                     testimonial: formData.testimonial,
                     visibility: formData.visibility
                 }

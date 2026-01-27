@@ -334,6 +334,10 @@ export async function completeConfraternity(
     try {
         const supabase = createClient()
 
+        // Filtrar fotos vazias ou inválidas ANTES de salvar
+        const validPhotos = (data.photos || []).filter(url => url && url.trim() !== '' && !url.startsWith('blob:'))
+        console.log('[Confraternity] Fotos válidas:', validPhotos.length, validPhotos)
+
         // 1. Buscar convite para pegar IDs dos membros
         const { data: invite, error: inviteError } = await supabase
             .from('confraternity_invites')
@@ -396,7 +400,7 @@ export async function completeConfraternity(
                     date_occurred: data.dateOccurred,
                     location: data.location,
                     description: data.description,
-                    photos: data.photos || [],
+                    photos: validPhotos,
                     [testimonialField]: data.testimonial,
                     visibility: data.visibility
                 })
@@ -479,13 +483,13 @@ export async function completeConfraternity(
                 'Confraternização realizada'
             )
 
-            // +20 XP por foto (se enviou)
-            if (data.photos && data.photos.length > 0) {
+            // +20 XP por foto (se enviou fotos válidas)
+            if (validPhotos.length > 0) {
                 await awardPoints(
                     userId,
-                    20 * data.photos.length,
+                    20 * validPhotos.length,
                     'confraternity_photos',
-                    `Adicionou ${data.photos.length} fotos`
+                    `Adicionou ${validPhotos.length} fotos`
                 )
 
                 // 🎖️ MEDALHA: Cronista - Primeiro upload de foto em confraria
