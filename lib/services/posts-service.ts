@@ -94,7 +94,7 @@ export class PostsService {
         this.supabase = supabase
     }
 
-    // Query SELECT padronizada - usando apenas colunas que existem no banco
+    // Query SELECT simplificada - apenas campos do post, joins feitos separadamente
     private get basePostSelect() {
         return `
             id,
@@ -106,24 +106,7 @@ export class PostsService {
             likes_count,
             comments_count,
             created_at,
-            updated_at,
-            user:profiles!posts_user_id_fkey(
-                id,
-                full_name,
-                avatar_url,
-                slug,
-                rota_number
-            ),
-            confraternity:confraternities!posts_confraternity_id_fkey(
-                id,
-                date_occurred,
-                member1:profiles!confraternities_member1_id_fkey(
-                    id, full_name, avatar_url, slug, rota_number
-                ),
-                member2:profiles!confraternities_member2_id_fkey(
-                    id, full_name, avatar_url, slug, rota_number
-                )
-            )
+            updated_at
         `
     }
 
@@ -166,10 +149,57 @@ export class PostsService {
             const { data, error } = await query
 
             if (error) throw error
-            if (!data) return []
+            if (!data || data.length === 0) return []
 
-            // Type assertion para array de posts
             const postsData = data as any[]
+
+            // Buscar perfis dos autores
+            const userIds = Array.from(new Set(postsData.map(p => p.user_id)))
+            const { data: profiles } = await this.supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url, slug, rota_number')
+                .in('id', userIds)
+
+            const profileMap = new Map<string, any>()
+            profiles?.forEach(p => profileMap.set(p.id, p))
+
+            // Buscar confrarias (se houver)
+            const confraternityIds = postsData
+                .filter(p => p.confraternity_id)
+                .map(p => p.confraternity_id)
+
+            let confraternityMap = new Map<string, any>()
+            if (confraternityIds.length > 0) {
+                const { data: confs } = await this.supabase
+                    .from('confraternities')
+                    .select('id, date_occurred, member1_id, member2_id')
+                    .in('id', confraternityIds)
+
+                // Buscar membros das confrarias
+                const memberIds = Array.from(new Set([
+                    ...(confs?.map(c => c.member1_id) || []),
+                    ...(confs?.map(c => c.member2_id) || [])
+                ].filter(Boolean)))
+
+                let memberMap = new Map<string, any>()
+                if (memberIds.length > 0) {
+                    const { data: members } = await this.supabase
+                        .from('profiles')
+                        .select('id, full_name, avatar_url, slug, rota_number')
+                        .in('id', memberIds)
+
+                    members?.forEach(m => memberMap.set(m.id, m))
+                }
+
+                confs?.forEach(c => {
+                    confraternityMap.set(c.id, {
+                        id: c.id,
+                        date_occurred: c.date_occurred,
+                        member1: memberMap.get(c.member1_id) || null,
+                        member2: memberMap.get(c.member2_id) || null
+                    })
+                })
+            }
 
             // Buscar likes do usuário atual
             let likedPostIds = new Set<string>()
@@ -184,21 +214,32 @@ export class PostsService {
             }
 
             // Transformar dados
-            const posts: Post[] = postsData.map(post => ({
-                id: post.id,
-                user_id: post.user_id,
-                content: post.content,
-                media_urls: post.media_urls || [],
-                visibility: post.visibility,
-                confraternity_id: post.confraternity_id,
-                likes_count: post.likes_count || 0,
-                comments_count: post.comments_count || 0,
-                created_at: post.created_at,
-                updated_at: post.updated_at,
-                user: post.user as PostUser,
-                confraternity: post.confraternity as PostConfraternity | null,
-                user_has_liked: likedPostIds.has(post.id)
-            }))
+            const posts: Post[] = postsData.map(post => {
+                const profile = profileMap.get(post.user_id)
+                const confraternity = confraternityMap.get(post.confraternity_id) || null
+
+                return {
+                    id: post.id,
+                    user_id: post.user_id,
+                    content: post.content,
+                    media_urls: post.media_urls || [],
+                    visibility: post.visibility,
+                    confraternity_id: post.confraternity_id,
+                    likes_count: post.likes_count || 0,
+                    comments_count: post.comments_count || 0,
+                    created_at: post.created_at,
+                    updated_at: post.updated_at,
+                    user: {
+                        id: profile?.id || post.user_id,
+                        full_name: profile?.full_name || 'Usuário',
+                        avatar_url: profile?.avatar_url || null,
+                        slug: profile?.slug || null,
+                        rota_number: profile?.rota_number || null
+                    },
+                    confraternity,
+                    user_has_liked: likedPostIds.has(post.id)
+                }
+            })
 
             return posts
         } catch (error) {
