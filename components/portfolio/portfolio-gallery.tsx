@@ -102,4 +102,3 @@ export function PortfolioGallery({ items, columns = 3 }: PortfolioGalleryProps) 
         </>
     )
 }
-to mesma coisa

@@ -27,6 +27,7 @@ interface Professional {
     bio: string | null
     pista: string | null
     rank_id: string | null
+    vigor?: number
 }
 
 export default function HomePage() {
@@ -38,25 +39,36 @@ export default function HomePage() {
 
     const supabase = createClient()
 
-    // Carregar profissionais reais do banco
+    // Carregar TOP 3 profissionais por Vigor
     useEffect(() => {
-        async function loadProfessionals() {
-            console.log('Carregando profissionais...')
+        async function loadTopProfessionals() {
+            // Buscar os 3 com mais vigor
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, full_name, slug, rota_number, avatar_url, bio, pista')
+                .select('id, full_name, slug, rota_number, avatar_url, bio, pista, vigor, rank_id')
                 .not('rota_number', 'is', null)
-                .limit(6)
-                .order('created_at', { ascending: false })
+                .gt('vigor', 0)
+                .order('vigor', { ascending: false })
+                .limit(3)
 
-            console.log('Profiles data:', data, 'error:', error)
+            if (data && !error && data.length > 0) {
+                setProfessionals(data)
+            } else {
+                // Fallback: qualquer 3 profissionais
+                const { data: fallback } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, slug, rota_number, avatar_url, bio, pista')
+                    .not('rota_number', 'is', null)
+                    .limit(3)
+                    .order('created_at', { ascending: false })
 
-            if (data && !error) {
-                setProfessionals(data.map(p => ({ ...p, rank_id: null })))
+                if (fallback) {
+                    setProfessionals(fallback.map(p => ({ ...p, rank_id: null, vigor: 0 })))
+                }
             }
             setLoadingProfessionals(false)
         }
-        loadProfessionals()
+        loadTopProfessionals()
     }, [supabase])
 
     // Carousel Effect
@@ -129,8 +141,8 @@ export default function HomePage() {
                                 alt={`Background ${index + 1}`}
                                 className="w-full h-full object-cover"
                             />
-                            {/* Overlay Gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+                            {/* Overlay mais forte para melhor contraste */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/65 to-black/90" />
                         </div>
                     ))}
                 </div>
@@ -138,13 +150,13 @@ export default function HomePage() {
                 {/* Content */}
                 <div className="container mx-auto px-4 relative z-10 pt-20">
                     <div className="max-w-5xl mx-auto text-center">
-                        <h1 className="text-5xl md:text-7xl font-bold text-impact text-primary mb-6 animate-transform drop-shadow-lg leading-tight">
+                        <h1 className="text-5xl md:text-7xl font-bold text-impact text-white mb-6 animate-transform leading-tight" style={{ textShadow: '2px 4px 8px rgba(0,0,0,0.9), 0 0 60px rgba(210,105,30,0.4)' }}>
                             O ACAMPAMENTO BASE<br />DO HOMEM DE NEGÓCIOS
                         </h1>
-                        <p className="text-xl md:text-2xl text-white/90 mb-8 drop-shadow-md font-medium max-w-3xl mx-auto">
+                        <p className="text-xl md:text-2xl text-white mb-8 font-semibold max-w-3xl mx-auto" style={{ textShadow: '1px 2px 6px rgba(0,0,0,0.95)' }}>
                             Infraestrutura de apoio, estratégia e alianças para sua escalada.
                         </p>
-                        <p className="text-lg text-gray-200 mb-12 max-w-2xl mx-auto drop-shadow-sm">
+                        <p className="text-lg text-gray-100 mb-12 max-w-2xl mx-auto" style={{ textShadow: '1px 2px 4px rgba(0,0,0,0.9)' }}>
                             O Rota Business Club não é apenas um diretório. É o ponto de convergência onde a disciplina da montanha encontra a ética corporativa.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -193,10 +205,10 @@ export default function HomePage() {
                 <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto">
                         <h2 className="text-4xl md:text-5xl font-bold text-impact text-primary text-center mb-4">
-                            Alianças Estratégicas
+                            🏆 Top 3 do Ranking
                         </h2>
                         <p className="text-center text-muted-foreground mb-12">
-                            Conecte-se com homens que compartilham o mesmo código de honra e vigor profissional.
+                            Os profissionais mais ativos e engajados da comunidade
                         </p>
 
                         {/* Search Bar */}
@@ -221,17 +233,16 @@ export default function HomePage() {
                             </CardContent>
                         </Card>
 
-                        {/* Featured Professionals */}
+                        {/* Top 3 Professionals */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {loadingProfessionals ? (
                                 // Loading skeleton
                                 [...Array(3)].map((_, index) => (
                                     <Card key={index} className="glass-strong border-primary/20 animate-pulse">
                                         <CardContent className="p-6">
-                                            <div className="w-16 h-16 rounded-full bg-primary/20 mb-4" />
-                                            <div className="h-6 bg-primary/20 rounded mb-2 w-3/4" />
-                                            <div className="h-4 bg-primary/10 rounded mb-3 w-1/2" />
-                                            <div className="h-12 bg-primary/10 rounded mb-4" />
+                                            <div className="w-20 h-20 rounded-full bg-primary/20 mx-auto mb-4" />
+                                            <div className="h-6 bg-primary/20 rounded mb-2 w-3/4 mx-auto" />
+                                            <div className="h-4 bg-primary/10 rounded mb-3 w-1/2 mx-auto" />
                                         </CardContent>
                                     </Card>
                                 ))
@@ -240,56 +251,90 @@ export default function HomePage() {
                                     Nenhum profissional encontrado
                                 </div>
                             ) : (
-                                professionals.slice(0, 3).map((prof, index) => (
-                                    <Card
-                                        key={prof.id}
-                                        className="glass-strong border-primary/20 hover:border-primary/40 transition-all hover:glow-orange group animate-transform"
-                                        style={{ animationDelay: `${index * 0.1}s` }}
-                                    >
-                                        <CardContent className="p-6">
-                                            <div className="relative w-16 h-16 mb-4">
-                                                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors overflow-hidden">
-                                                    {prof.avatar_url ? (
-                                                        <img
-                                                            src={prof.avatar_url}
-                                                            alt={prof.full_name}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <Users className="w-8 h-8 text-primary" />
-                                                    )}
-                                                </div>
-                                                {/* Patente */}
-                                                <div className="absolute -bottom-1 -right-1">
-                                                    <RankInsignia rankId={prof.rank_id} size="xs" />
-                                                </div>
+                                professionals.slice(0, 3).map((prof, index) => {
+                                    const positionColors = [
+                                        'from-amber-400 to-amber-600', // Ouro
+                                        'from-gray-300 to-gray-500',   // Prata  
+                                        'from-amber-600 to-amber-800'  // Bronze
+                                    ]
+                                    const positionBg = [
+                                        'border-amber-400/50 bg-gradient-to-br from-amber-500/10 to-amber-600/5',
+                                        'border-gray-400/50 bg-gradient-to-br from-gray-400/10 to-gray-500/5',
+                                        'border-amber-700/50 bg-gradient-to-br from-amber-700/10 to-amber-800/5'
+                                    ]
+                                    const positionEmoji = ['🥇', '🥈', '🥉']
+
+                                    return (
+                                        <Card
+                                            key={prof.id}
+                                            className={`relative overflow-hidden border-2 transition-all duration-300 hover:scale-105 hover:shadow-2xl group animate-transform ${positionBg[index]}`}
+                                            style={{ animationDelay: `${index * 0.15}s` }}
+                                        >
+                                            {/* Position Badge */}
+                                            <div className={`absolute top-3 left-3 w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-br ${positionColors[index]} shadow-lg z-10`}>
+                                                <span className="text-xl">{positionEmoji[index]}</span>
                                             </div>
-                                            <h3 className="text-xl font-bold text-impact text-primary mb-2">
-                                                {prof.full_name}
-                                            </h3>
-                                            {prof.pista && (
-                                                <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
-                                                    <MapPin className="w-3 h-3" />
-                                                    {prof.pista}
+
+                                            <CardContent className="p-6 pt-4">
+                                                {/* Avatar com borda colorida */}
+                                                <div className="relative w-24 h-24 mx-auto mb-4 mt-2">
+                                                    <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${positionColors[index]} p-1 shadow-xl`}>
+                                                        <div className="w-full h-full rounded-full overflow-hidden bg-card flex items-center justify-center">
+                                                            {prof.avatar_url ? (
+                                                                <img
+                                                                    src={prof.avatar_url}
+                                                                    alt={prof.full_name}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <Users className="w-12 h-12 text-primary" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {/* Patente */}
+                                                    <div className="absolute -bottom-1 -right-1">
+                                                        <RankInsignia rankId={prof.rank_id} size="sm" />
+                                                    </div>
+                                                </div>
+
+                                                <h3 className="text-xl font-bold text-impact text-primary mb-1 text-center">
+                                                    {prof.full_name}
+                                                </h3>
+
+                                                {/* Vigor Destaque */}
+                                                <div className="flex items-center justify-center gap-2 mb-3">
+                                                    <Flame className="w-5 h-5 text-orange-500" />
+                                                    <span className="text-lg font-bold text-orange-500">
+                                                        {(prof.vigor || 0).toLocaleString()} Vigor
+                                                    </span>
+                                                </div>
+
+                                                {prof.pista && (
+                                                    <p className="text-sm text-muted-foreground mb-3 flex items-center justify-center gap-1">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {prof.pista}
+                                                    </p>
+                                                )}
+
+                                                <p className="text-sm text-foreground mb-4 line-clamp-2 text-center">
+                                                    {prof.bio || 'Membro do Rota Business Club'}
                                                 </p>
-                                            )}
-                                            <p className="text-sm text-foreground mb-4 line-clamp-2">
-                                                {prof.bio || 'Membro do Rota Business Club'}
-                                            </p>
-                                            <div className="mt-4 flex gap-2">
-                                                <Link href={getProfileUrl({ full_name: prof.full_name, slug: prof.slug, rota_number: prof.rota_number })} className="flex-1">
-                                                    <Button className="w-full glow-orange" size="sm">
-                                                        Ver Perfil
-                                                    </Button>
-                                                </Link>
-                                                <RatingDialog
-                                                    professionalId={prof.id}
-                                                    professionalName={prof.full_name}
-                                                />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))
+
+                                                <div className="flex gap-2">
+                                                    <Link href={getProfileUrl({ full_name: prof.full_name, slug: prof.slug, rota_number: prof.rota_number })} className="flex-1">
+                                                        <Button className="w-full glow-orange" size="sm">
+                                                            Ver Perfil
+                                                        </Button>
+                                                    </Link>
+                                                    <RatingDialog
+                                                        professionalId={prof.id}
+                                                        professionalName={prof.full_name}
+                                                    />
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )
+                                })
                             )}
                         </div>
 
