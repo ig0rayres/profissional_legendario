@@ -231,9 +231,11 @@ export function ChatWidget() {
                     const alreadyAwarded = await checkEloPointsAlreadyAwarded(user.id, request.requester_id, 'elo_accepted')
 
                     if (!alreadyAwarded) {
+                        const { getActionPoints } = await import('@/lib/services/point-actions-service')
+                        const points = await getActionPoints('elo_accepted')
                         await awardPoints(
                             user.id,
-                            5,
+                            points,
                             'elo_accepted',
                             `Aceitou elo com ${request.requester_name}`,
                             { target_user_id: request.requester_id } // Para verificação de duplicação

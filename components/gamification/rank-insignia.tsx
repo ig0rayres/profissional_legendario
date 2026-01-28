@@ -2,16 +2,16 @@
 
 import * as LucideIcons from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getRankIconName } from '@/lib/utils/ranks'
 
 // ============================================
-// FALLBACK REMOVIDO - ÍCONES VEM 100% DO BANCO
+// FONTE ÚNICA DE VERDADE: lib/utils/ranks.ts
 // ============================================
-// O iconName deve sempre ser passado pelo componente pai
-// Se não vier, usa Shield como fallback genérico
+// O iconName deve vir do banco, mas usamos getRankIconName como fallback
 
 interface RankInsigniaProps {
     rankId: string
-    rankName?: string // Novo prop para fallback por nome
+    rankName?: string
     iconName?: string
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
     showLabel?: boolean
@@ -28,11 +28,14 @@ export function RankInsignia({
     className,
     variant = 'badge'
 }: RankInsigniaProps) {
-    let IconComponent = LucideIcons.Shield; // Fallback genérico
+    // Fallback usando utilitário centralizado se iconName não fornecido
+    const resolvedIconName = iconName || getRankIconName(rankId)
 
-    // Usar iconName do banco (fonte única de verdade)
-    if (iconName) {
-        const lucideKey = Object.keys(LucideIcons).find(key => key.toLowerCase() === iconName.toLowerCase());
+    let IconComponent = LucideIcons.Shield; // Fallback final
+
+    // Usar iconName do banco ou fallback centralizado
+    if (resolvedIconName) {
+        const lucideKey = Object.keys(LucideIcons).find(key => key.toLowerCase() === resolvedIconName.toLowerCase());
         if (lucideKey) {
             IconComponent = LucideIcons[lucideKey as keyof typeof LucideIcons] as any;
         }

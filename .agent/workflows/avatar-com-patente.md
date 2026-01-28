@@ -2,104 +2,93 @@
 description: Padrão para exibir avatares de usuários com ícone de patente
 ---
 
-# Avatar com Patente - Padrão de Implementação
+# Avatar com Patente - Padrão Centralizado
 
-Sempre que exibir um avatar de usuário na plataforma, siga este padrão:
+## Componente Único
 
-## Componentes Necessários
+**Arquivo:** `/components/ui/avatar-with-rank.tsx`
 
+**Uso:**
 ```tsx
-import { RankInsignia } from '@/components/gamification/rank-insignia'
-import Image from 'next/image'
+import { AvatarWithRank } from '@/components/ui/avatar-with-rank'
+
+<AvatarWithRank
+    user={{
+        id: "user-id",
+        full_name: "Nome Completo",
+        avatar_url: "https://...",
+        rank_id: "guardiao",        // novato, especialista, guardiao, comandante, general, lenda
+        rank_name: "Guardião",      // Opcional
+        rank_icon: "ShieldCheck",   // Opcional - usa getRankIconName() como fallback
+        slug: "nome-usuario",       // Opcional - para URL do perfil
+        rota_number: "123456"       // Opcional - para URL do perfil
+    }}
+    size="md"                       // xs, sm, md, lg, xl
+    showName={false}                // Mostrar nome abaixo do avatar
+    linkToProfile={true}            // Avatar clicável -> perfil
+    variant="rounded"               // square, rounded, circle
+/>
 ```
 
-## Estrutura do Avatar (FRAME QUADRADA + PATENTE)
+## Tamanhos Disponíveis
 
-**Padrão obrigatório em toda a plataforma:**
-- Frame **quadrada** (rounded-lg), não circular
-- Miniatura da patente no canto inferior direito
-- Border sutil da cor primária
+| Size | Dimensões | Badge | Uso Recomendado |
+|------|-----------|-------|-----------------|
+| xs   | 32x32     | xs    | Comentários inline |
+| sm   | 40x40     | xs    | Listas, cards pequenos |
+| md   | 48x48     | sm    | Feed, elos, confrarias |
+| lg   | 64x64     | sm    | Cards destacados |
+| xl   | 96x96     | md    | Headers, perfis |
 
-```tsx
-<div className="relative">
-    {/* Avatar - FRAME QUADRADA */}
-    {user.avatar_url ? (
-        <Image
-            src={user.avatar_url}
-            alt={user.full_name}
-            width={56}
-            height={56}
-            className="rounded-lg border-2 border-primary/20 object-cover"
-        />
-    ) : (
-        <div className="w-14 h-14 rounded-lg border-2 border-primary/20 bg-primary/10 flex items-center justify-center">
-            <span className="text-lg font-bold text-primary">
-                {user.full_name.charAt(0).toUpperCase()}
-            </span>
-        </div>
-    )}
-    
-    {/* Ícone da Patente - SEMPRE presente no canto inferior direito */}
-    <div className="absolute -bottom-1 -right-1" title={user.rank_name}>
-        <RankInsignia 
-            rankId={user.rank_id} 
-            size="sm" 
-            variant="avatar"
-        />
-    </div>
-</div>
-```
+## Variantes
 
-## Buscar Patente do Usuário
+- `square`: Bordas quadradas (rounded-lg)
+- `rounded`: Bordas arredondadas (rounded-xl) - **Padrão**
+- `circle`: Circular (rounded-full)
+
+## Locais de Uso
+
+// turbo-all
+1. **Feed (Na Rota):** `components/social/post-card.tsx`
+2. **Elos da Rota:** `components/profile/elos-da-rota.tsx`
+3. **Confrarias:** `components/profile/confraternity-stats.tsx`
+4. **Comentários:** Use com `size="xs"` ou `size="sm"`
+5. **Cards de profissionais:** `components/professionals/professional-card.tsx`
+
+## Utilitário de Patentes
+
+**Arquivo:** `/lib/utils/ranks.ts`
 
 ```tsx
-// Query para buscar patente
-const { data: gamificationData } = await supabase
-    .from('user_gamification')
-    .select('user_id, rank_id, ranks(name)')
-    .eq('user_id', userId)
-    .single()
+import { getRankIcon, getRankIconName, getRankColor, getRankName } from '@/lib/utils/ranks'
 
-const rankId = gamificationData?.rank_id || 'novato'
-const rankName = gamificationData?.ranks?.name || 'Novato'
+// Retorna componente Lucide
+const IconComponent = getRankIcon('guardiao') // ShieldCheck
+
+// Retorna nome do ícone como string
+const iconName = getRankIconName('guardiao') // "ShieldCheck"
+
+// Retorna cor hex
+const color = getRankColor('guardiao') // "#3B82F6"
+
+// Retorna nome formatado
+const name = getRankName('guardiao') // "Guardião"
 ```
 
-## Ícones de Patente (tabela `ranks`)
+## Patentes e Ícones
 
-| rank_id      | Nome          | Ícone Lucide |
-|--------------|---------------|--------------|
-| novato       | Novato        | Shield       |
-| especialista | Especialista  | Target       |
-| guardiao     | Guardião      | Sword        |
-| comandante   | Comandante    | Medal        |
-| general      | General       | Flame        |
-| lenda        | Lenda         | Crown        |
+| Rank ID | Nome | Ícone | Cor |
+|---------|------|-------|-----|
+| novato | Novato | Shield | #9CA3AF |
+| especialista | Especialista | Target | #22C55E |
+| guardiao | Guardião | ShieldCheck | #3B82F6 |
+| comandante | Comandante | Medal | #F97316 |
+| general | General | Flame | #EF4444 |
+| lenda | Lenda | Crown | #EAB308 |
 
-## Componente RankInsignia
+## ⚠️ REGRAS IMPORTANTES
 
-**Arquivo:** `/components/gamification/rank-insignia.tsx`
-
-**Props:**
-- `rankId`: ID da patente (ex: 'novato', 'especialista')
-- `size`: 'sm' | 'md' | 'lg' | 'xl'
-- `variant`: 'badge' | 'icon-only' | 'avatar'
-- `showLabel`: boolean (mostrar nome da patente)
-
-**Exemplos:**
-```tsx
-// Ícone pequeno para avatar
-<RankInsignia rankId="novato" size="sm" variant="icon-only" />
-
-// Badge com nome
-<RankInsignia rankId="especialista" size="md" variant="badge" showLabel />
-
-// Ícone grande
-<RankInsignia rankId="general" size="lg" variant="avatar" />
-```
-
-## IMPORTANTE
-
-1. **NUNCA** use emojis ou texto para mostrar patentes
-2. **SEMPRE** use o componente `RankInsignia`
-3. Os ícones são gerenciados no **Admin > Gamificação > Patentes**
-4. O `rank_id` deve corresponder ao ID na tabela `ranks`
+1. **NUNCA** crie avatares com patente manualmente em componentes
+2. **SEMPRE** use `AvatarWithRank` de `/components/ui/avatar-with-rank.tsx`
+3. **SEMPRE** passe `rank_id` para exibir o ícone correto
+4. Se precisa do ícone como componente, use `getRankIcon()` de `/lib/utils/ranks.ts`

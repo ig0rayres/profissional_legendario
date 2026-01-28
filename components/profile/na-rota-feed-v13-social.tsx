@@ -193,6 +193,7 @@ export function NaRotaFeedV13({
                                     onLike={() => handleLike(post.id)}
                                     onUnlike={() => handleLike(post.id)}
                                     onDelete={() => handlePostDeleted(post.id)}
+                                    onRefresh={() => loadPosts()}
                                 />
                             ))
                         )}

@@ -169,6 +169,53 @@ Ações que podem ser **reconquistadas todo mês**. Reset mensal.
 
 ---
 
+## ⚡ AÇÕES DE PONTOS (Diretas)
+
+Pontos creditados imediatamente por ações específicas. Todos passam pelo **multiplicador do plano**.
+
+### Conexões (Elos)
+| ID | Ação | Pts Base | Limite/Dia |
+|----|------|----------|------------|
+| `elo_sent` | Enviar solicitação de elo | 20 | 10 |
+| `elo_accepted` | Aceitar solicitação de elo | 30 | 10 |
+
+### Confrarias
+| ID | Ação | Pts Base | Limite/Dia |
+|----|------|----------|------------|
+| `confraternity_invite` | Enviar convite de confraria | 5 | 20 |
+| `confraternity_accepted` | Aceitar convite de confraria | 15 | 5 |
+| `confraternity_host` | Participar como anfitrião | 80 | 3 |
+| `confraternity_guest` | Participar como convidado | 50 | 5 |
+| `confraternity_photo` | Upload de foto na confraria | 25 | 5 |
+
+### Feed & Engajamento
+| ID | Ação | Pts Base | Limite/Dia |
+|----|------|----------|------------|
+| `daily_login` | Primeiro login do dia | 5 | 1 |
+| `feed_post` | Publicar post no feed | 15 | 5 |
+| `post_like_received` | Receber curtida em post | 2 | 50 |
+| `post_comment_sent` | Comentar em post | 5 | **1** |
+
+> ⚠️ **REGRA ATUALIZADA (28/01/2026):**
+> - `post_comment_sent`: Limite alterado para **1/dia** (primeiro comentário do dia)
+> - `post_comment_received`: **REMOVIDO** (comentários recebidos não geram mais pontos)
+
+### Portfólio & Negócios
+| ID | Ação | Pts Base | Limite/Dia |
+|----|------|----------|------------|
+| `portfolio_upload` | Upload no portfólio | 20 | 5 |
+| `project_requested` | Solicitar orçamento | 100 | 3 |
+| `project_closed` | Fechar contrato | 200 | ∞ |
+| `rating_given` | Avaliar profissional | 10 | 5 |
+
+### Gerenciamento:
+- **Tabela:** `point_actions`
+- **Admin:** `/admin/rota-valente` > aba "Ações"
+- **API:** `POST /api/rota-valente/award`
+- **Função:** `awardPointsForAction()` em `/lib/api/rota-valente`
+
+---
+
 ## 📊 Fluxo de Pontuação
 
 ```
@@ -176,7 +223,9 @@ Ação do usuário (ex: completar perfil)
     ↓
 Sistema identifica proeza/medalha aplicável
     ↓
-Busca points_base no banco (tabela proezas/medals)
+Busca points_base no banco (tabela proezas/medals/point_actions)
+    ↓
+Verifica limite diário (max_per_day)
     ↓
 Aplica multiplicador do plano (1x, 1.5x ou 3x)
     ↓
@@ -275,4 +324,4 @@ Envia mensagem no chat (tabela messages)
 
 ---
 
-*Última atualização: Janeiro 2026*
+*Última atualização: 28/01/2026*

@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link2, Users, Bell } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import Image from 'next/image'
 import Link from 'next/link'
-import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { AvatarWithRank } from '@/components/ui/avatar-with-rank'
 import { getProfileUrl } from '@/lib/profile/utils'
 
 interface Connection {
@@ -203,43 +202,26 @@ export function ElosDaRota({ userId }: ElosDaRotaProps) {
                         {/* GRID 3 COLUNAS */}
                         <div className="grid grid-cols-3 gap-4 mb-4">
                             {connections.slice(0, 6).map((connection) => (
-                                <Link
+                                <div
                                     key={connection.id}
-                                    href={getProfileUrl({ full_name: connection.full_name, slug: connection.slug, rota_number: connection.rota_number })}
                                     className="group flex flex-col items-center text-center"
                                 >
-                                    <div className="relative mb-2">
-                                        {connection.avatar_url ? (
-                                            <Image
-                                                src={connection.avatar_url}
-                                                alt={connection.full_name}
-                                                width={48}
-                                                height={48}
-                                                className="rounded-full border-2 border-[#1E4D40]/20 group-hover:border-[#1E4D40] transition-all shadow-md group-hover:shadow-lg"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-full border-2 border-[#1E4D40]/20 bg-gradient-to-br from-[#1E4D40]/10 to-[#2A6B5A]/10 flex items-center justify-center group-hover:border-[#1E4D40] transition-all shadow-md group-hover:shadow-lg">
-                                                <span className="text-base font-bold text-[#1E4D40]">
-                                                    {connection.full_name.charAt(0).toUpperCase()}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {/* Ícone da Patente */}
-                                        <div
-                                            className="absolute -bottom-1 -right-1"
-                                            title={connection.rank_name}
-                                        >
-                                            <RankInsignia
-                                                rankId={connection.rank_id}
-                                                size="sm"
-                                                variant="avatar"
-                                            />
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] font-medium text-[#2D3142] truncate w-full group-hover:text-[#1E4D40] transition-colors leading-tight">
-                                        {getDisplayName(connection.full_name)}
-                                    </p>
-                                </Link>
+                                    <AvatarWithRank
+                                        user={{
+                                            id: connection.id,
+                                            full_name: connection.full_name,
+                                            avatar_url: connection.avatar_url,
+                                            rank_id: connection.rank_id,
+                                            rank_name: connection.rank_name,
+                                            slug: connection.slug || undefined,
+                                            rota_number: connection.rota_number || undefined
+                                        }}
+                                        size="md"
+                                        showName={true}
+                                        linkToProfile={true}
+                                        variant="rounded"
+                                    />
+                                </div>
                             ))}
                         </div>
 

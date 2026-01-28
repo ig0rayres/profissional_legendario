@@ -131,6 +131,7 @@ export default function RotaValenteAdminPage() {
     const [isCreatingMission, setIsCreatingMission] = useState(false)
 
     const [processing, setProcessing] = useState(false)
+    const [activeTab, setActiveTab] = useState('patentes')
 
     const supabase = createClient()
 
@@ -224,7 +225,9 @@ export default function RotaValenteAdminPage() {
         if (!confirm('Excluir patente?')) return
         setProcessing(true)
         try {
-            await supabase.from('ranks').delete().eq('id', id)
+            const res = await fetch(`/api/admin/rota-valente?table=ranks&id=${id}`, { method: 'DELETE' })
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error)
             await loadData()
         } catch (error: any) {
             alert('Erro: ' + error.message)
@@ -259,7 +262,9 @@ export default function RotaValenteAdminPage() {
         if (!confirm('Excluir medalha?')) return
         setProcessing(true)
         try {
-            await supabase.from('medals').delete().eq('id', id)
+            const res = await fetch(`/api/admin/rota-valente?table=medals&id=${id}`, { method: 'DELETE' })
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error)
             await loadData()
         } catch (error: any) {
             alert('Erro: ' + error.message)
@@ -275,11 +280,17 @@ export default function RotaValenteAdminPage() {
     async function handleSaveProeza(proeza: Partial<Proeza>) {
         setProcessing(true)
         try {
-            if (editingProeza) {
-                await supabase.from('proezas').update(proeza).eq('id', editingProeza.id)
-            } else {
-                await supabase.from('proezas').insert([proeza])
-            }
+            const res = await fetch('/api/admin/rota-valente', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'proezas',
+                    data: proeza,
+                    id: editingProeza?.id
+                })
+            })
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error)
             await loadData()
             setEditingProeza(null)
             setIsCreatingProeza(false)
@@ -294,7 +305,11 @@ export default function RotaValenteAdminPage() {
         if (!confirm('Excluir proeza?')) return
         setProcessing(true)
         try {
-            await supabase.from('proezas').delete().eq('id', id)
+            const res = await fetch(`/api/admin/rota-valente?table=proezas&id=${id}`, {
+                method: 'DELETE'
+            })
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error)
             await loadData()
         } catch (error: any) {
             alert('Erro: ' + error.message)
@@ -304,7 +319,11 @@ export default function RotaValenteAdminPage() {
     }
 
     async function handleToggleProeza(id: string, isActive: boolean) {
-        await supabase.from('proezas').update({ is_active: isActive }).eq('id', id)
+        await fetch('/api/admin/rota-valente', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ table: 'proezas', id, is_active: isActive })
+        })
         await loadData()
     }
 
@@ -334,7 +353,9 @@ export default function RotaValenteAdminPage() {
         if (!confirm('Excluir ação?')) return
         setProcessing(true)
         try {
-            await supabase.from('point_actions').delete().eq('id', id)
+            const res = await fetch(`/api/admin/rota-valente?table=actions&id=${id}`, { method: 'DELETE' })
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error)
             await loadData()
         } catch (error: any) {
             alert('Erro: ' + error.message)
@@ -374,7 +395,9 @@ export default function RotaValenteAdminPage() {
         if (!confirm('Excluir missão?')) return
         setProcessing(true)
         try {
-            await supabase.from('daily_missions').delete().eq('id', id)
+            const res = await fetch(`/api/admin/rota-valente?table=missions&id=${id}`, { method: 'DELETE' })
+            const result = await res.json()
+            if (!res.ok) throw new Error(result.error)
             await loadData()
         } catch (error: any) {
             alert('Erro: ' + error.message)
@@ -409,7 +432,7 @@ export default function RotaValenteAdminPage() {
                 </p>
             </div>
 
-            <Tabs defaultValue="patentes" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="flex flex-wrap">
                     <TabsTrigger value="patentes">
                         <Trophy className="w-4 h-4 mr-2" />

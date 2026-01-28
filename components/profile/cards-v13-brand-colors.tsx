@@ -17,7 +17,9 @@ import { createClient } from '@/lib/supabase/client'
 import { getProfileUrl } from '@/lib/profile/utils'
 import { useRouter } from 'next/navigation'
 import { CreatePostModal } from '@/components/social/create-post-modal'
+import { CreatePostModalV2 } from '@/components/social/create-post-modal-v2'
 import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
+import { RankInsignia } from '@/components/gamification/rank-insignia'
 
 
 /**
@@ -300,6 +302,9 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
     const [connections, setConnections] = useState(propConnections || [])
     const [pendingCount, setPendingCount] = useState(propPendingCount || 0)
     const [loading, setLoading] = useState(!propConnections)
+    const [showPendingPopup, setShowPendingPopup] = useState(false)
+    const [pendingRequests, setPendingRequests] = useState<any[]>([])
+    const [loadingPending, setLoadingPending] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
@@ -334,10 +339,32 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
 
             console.log('[Connections] Raw data:', acceptedData)
 
+            // Coletar IDs dos parceiros para buscar ranks
+            const partnerIds = (acceptedData || []).map((conn: any) => {
+                const isAddressee = conn.addressee_id === userId
+                return isAddressee ? conn.requester_id : conn.addressee_id
+            }).filter(Boolean)
+
+            // Buscar ranks dos parceiros
+            let rankMap: Record<string, string> = {}
+            if (partnerIds.length > 0) {
+                const { data: gamifData } = await supabase
+                    .from('user_gamification')
+                    .select('user_id, current_rank_id')
+                    .in('user_id', partnerIds)
+
+                if (gamifData) {
+                    rankMap = Object.fromEntries(
+                        gamifData.map((g: any) => [g.user_id, g.current_rank_id || 'novato'])
+                    )
+                }
+            }
+
             // Formatar conexões
             const formatted = (acceptedData || [])
                 .map((connection: any) => {
                     const isAddressee = connection.addressee_id === userId
+                    const partnerId = isAddressee ? connection.requester_id : connection.addressee_id
                     const partner = isAddressee ? connection.requester : connection.addressee
 
                     // Verificar se partner existe e tem dados válidos
@@ -352,7 +379,8 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                         rota_number: partner.rota_number,
                         full_name: partner.full_name || 'Usuário',
                         avatar_url: partner.avatar_url,
-                        rank_name: 'Veterano' // Placeholder
+                        rank_id: rankMap[partnerId] || 'novato',
+                        rank_name: rankMap[partnerId] || 'novato'
                     }
                 })
                 .filter(Boolean) // Remove conexões inválidas
@@ -371,6 +399,90 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
             console.error('Error loading connections:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    async function loadPendingRequests() {
+        if (loadingPending) return
+        setLoadingPending(true)
+
+        try {
+            const { data, error } = await supabase
+                .from('user_connections')
+                .select(`
+                    id,
+                    requester_id,
+                    created_at,
+                    requester:profiles!user_connections_requester_id_fkey(id, full_name, avatar_url, slug, rota_number)
+                `)
+                .eq('addressee_id', userId)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false })
+
+            if (error) throw error
+
+            setPendingRequests(data || [])
+        } catch (error) {
+            console.error('Error loading pending requests:', error)
+        } finally {
+            setLoadingPending(false)
+        }
+    }
+
+    async function handleAcceptConnection(connectionId: string) {
+        console.log('[ELO] Aceitando conexão:', connectionId)
+        try {
+            const { data, error } = await supabase
+                .from('user_connections')
+                .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+                .eq('id', connectionId)
+                .select()
+
+            console.log('[ELO] Resultado:', { data, error })
+
+            if (error) {
+                console.error('[ELO] Erro:', error)
+                alert('Erro ao aceitar: ' + error.message)
+                return
+            }
+
+            // Remover da lista e atualizar contagem
+            setPendingRequests(prev => prev.filter(r => r.id !== connectionId))
+            setPendingCount(prev => Math.max(0, prev - 1))
+
+            // Fechar popup se não houver mais pendentes
+            if (pendingRequests.length <= 1) {
+                setShowPendingPopup(false)
+            }
+
+            // Recarregar conexões
+            loadConnections()
+        } catch (error: any) {
+            console.error('[ELO] Exception:', error)
+            alert('Erro: ' + error.message)
+        }
+    }
+
+    async function handleRejectConnection(connectionId: string) {
+        try {
+            const { error } = await supabase
+                .from('user_connections')
+                .update({ status: 'rejected' })
+                .eq('id', connectionId)
+
+            if (error) throw error
+
+            setPendingRequests(prev => prev.filter(r => r.id !== connectionId))
+            setPendingCount(prev => Math.max(0, prev - 1))
+        } catch (error) {
+            console.error('Error rejecting connection:', error)
+        }
+    }
+
+    function handleBellClick() {
+        setShowPendingPopup(!showPendingPopup)
+        if (!showPendingPopup && pendingRequests.length === 0) {
+            loadPendingRequests()
         }
     }
 
@@ -415,12 +527,86 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                     </div>
 
                     {pendingCount > 0 && (
-                        <button className="relative p-2 rounded-xl bg-[#D2691E]/10 border border-[#D2691E]/20 hover:bg-[#D2691E]/20 transition-all transform hover:scale-110 duration-300 group/bell">
-                            <Bell className="w-5 h-5 text-[#D2691E] group-hover/bell:animate-bounce" />
-                            <span className="absolute top-0 right-0 w-5 h-5 bg-[#D2691E] rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-lg animate-pulse">
-                                {pendingCount}
-                            </span>
-                        </button>
+                        <div className="relative">
+                            <button
+                                onClick={handleBellClick}
+                                className="relative p-2 rounded-xl bg-[#1E4D40]/10 border border-[#1E4D40]/20 hover:bg-[#1E4D40]/20 transition-all transform hover:scale-110 duration-300 group/bell"
+                            >
+                                <Bell className="w-5 h-5 text-[#1E4D40] group-hover/bell:animate-bounce" />
+                                <span className="absolute top-0 right-0 w-5 h-5 bg-[#1E4D40] rounded-full text-[10px] font-bold text-white flex items-center justify-center shadow-lg animate-pulse">
+                                    {pendingCount}
+                                </span>
+                            </button>
+
+                            {/* Popup de solicitações pendentes */}
+                            {showPendingPopup && (
+                                <div className="absolute right-0 top-12 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-[#1E4D40] to-[#2A6B5A] p-3">
+                                        <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                                            <UserPlus className="w-4 h-4" />
+                                            Solicitações de Elo
+                                        </h4>
+                                    </div>
+
+                                    <div className="max-h-64 overflow-y-auto">
+                                        {loadingPending ? (
+                                            <div className="p-4 text-center">
+                                                <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#1E4D40] border-t-transparent mx-auto" />
+                                            </div>
+                                        ) : pendingRequests.length === 0 ? (
+                                            <div className="p-4 text-center text-gray-500 text-sm">
+                                                Nenhuma solicitação pendente
+                                            </div>
+                                        ) : (
+                                            pendingRequests.map((request: any) => (
+                                                <div key={request.id} className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                                                            {request.requester?.avatar_url ? (
+                                                                <img src={request.requester.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-600 font-bold">
+                                                                    {request.requester?.full_name?.charAt(0) || '?'}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium text-sm text-gray-900 truncate">
+                                                                {request.requester?.full_name || 'Usuário'}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                Quer conectar com você
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button
+                                                            onClick={() => handleAcceptConnection(request.id)}
+                                                            className="flex-1 py-1.5 bg-[#1E4D40] text-white text-xs font-medium rounded-lg hover:bg-[#2A6B5A] transition-colors"
+                                                        >
+                                                            Aceitar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRejectConnection(request.id)}
+                                                            className="flex-1 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                                                        >
+                                                            Recusar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setShowPendingPopup(false)}
+                                        className="w-full p-2 text-center text-xs text-gray-500 hover:bg-gray-50 border-t border-gray-100"
+                                    >
+                                        Fechar
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
 
@@ -451,13 +637,14 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                                             size="sm"
                                             className="w-12 h-12"
                                         />
-                                        {/* Badge de patente no canto */}
-                                        {conn.rank_name && (
-                                            <div
-                                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-[#1E4D40] to-[#2A6B5A] border-2 border-white flex items-center justify-center shadow-md"
-                                                title={conn.rank_name}
-                                            >
-                                                <Shield className="w-2.5 h-2.5 text-white" />
+                                        {/* Badge de patente no canto - usa RankInsignia */}
+                                        {conn.rank_id && (
+                                            <div className="absolute -bottom-1 -right-1">
+                                                <RankInsignia
+                                                    rankId={conn.rank_id}
+                                                    size="xs"
+                                                    variant="badge"
+                                                />
                                             </div>
                                         )}
                                     </div>
@@ -521,6 +708,10 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
             loadPendingInvites()
         }
     }, [userId, propConfraternities])
+
+    // Estado para controlar o modal de nova publicação
+    const [showCreatePostModal, setShowCreatePostModal] = useState(false)
+    const [selectedConfForPost, setSelectedConfForPost] = useState<string | undefined>(undefined)
 
     const [showInvitesPopup, setShowInvitesPopup] = useState(false)
     const [pendingInvites, setPendingInvites] = useState<Array<{
@@ -699,7 +890,7 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group relative">
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group relative z-50">
             {/* Glass animation container - isolated with overflow-hidden */}
             <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -750,7 +941,7 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
 
                                 {/* Popup de Convites Pendentes */}
                                 {showInvitesPopup && (
-                                    <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                                    <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-[100] overflow-hidden">
                                         <div className="bg-gradient-to-r from-[#D2691E] to-[#B85715] px-4 py-3">
                                             <h4 className="text-white font-bold text-sm">Convites Pendentes</h4>
                                             <p className="text-white/80 text-xs">{pendingInvitesCount} convite(s) aguardando</p>
@@ -843,7 +1034,11 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                             return (
                                 <div
                                     key={conf.id}
-                                    onClick={() => window.location.href = `/elo-da-rota/confraria/completar/${conf.id}`}
+                                    onClick={() => {
+                                        // Abrir modal de nova publicação com confraria pré-selecionada
+                                        setSelectedConfForPost(conf.id)
+                                        setShowCreatePostModal(true)
+                                    }}
                                     className={cn(
                                         "relative flex items-center gap-3 p-3 rounded-xl border transition-all transform hover:scale-102 duration-300 cursor-pointer group/conf",
                                         new Date(conf.proposed_date) < new Date()
@@ -906,6 +1101,24 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                     </div>
                 )}
             </CardContent>
+
+            {/* Modal de Nova Publicação para Confraria */}
+            {userId && (
+                <CreatePostModalV2
+                    open={showCreatePostModal}
+                    onOpenChange={(open) => {
+                        setShowCreatePostModal(open)
+                        if (!open) setSelectedConfForPost(undefined)
+                    }}
+                    userId={userId}
+                    preselectedConfraternityId={selectedConfForPost}
+                    onPostCreated={() => {
+                        // Recarregar dados
+                        loadConfraternities()
+                        loadCounters()
+                    }}
+                />
+            )}
         </Card>
     )
 }

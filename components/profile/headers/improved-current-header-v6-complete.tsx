@@ -44,7 +44,7 @@ export default function ImprovedCurrentHeaderV6Complete({
     const rating = ratingStats?.average_rating || 5.0
 
     return (
-        <div className="relative w-full h-[320px] overflow-hidden">
+        <div className="relative w-full h-[256px] landscape:h-[320px] md:h-[320px] overflow-hidden">
             {/* Background with Cover Photo */}
             <div className="absolute inset-0">
                 {profile.cover_url && !profile.cover_url.startsWith('preset:') ? (
@@ -77,7 +77,7 @@ export default function ImprovedCurrentHeaderV6Complete({
 
             {/* Botão de Ajustar Capa - Só para owner */}
             {isOwner && (
-                <div className="absolute top-4 right-4 z-10">
+                <div className="hidden md:block absolute top-4 right-4 z-10">
                     <CoverUpload
                         userId={profile.id}
                         currentCoverUrl={profile.cover_url}
@@ -89,30 +89,30 @@ export default function ImprovedCurrentHeaderV6Complete({
             <div className="relative h-full flex flex-col">
 
                 {/* Top Row */}
-                <div className="flex items-start gap-4 p-6">
+                <div className="flex items-start gap-2 md:gap-4 p-3 md:p-6">
 
                     {/* Avatar with Depth Effect */}
                     {/* Avatar Diamond Frame Experiment */}
                     {/* Avatar with Logo Frame */}
-                    <div className="relative flex-shrink-0 ml-4 mr-6">
+                    <div className="relative flex-shrink-0 ml-1 md:ml-4 mr-1 md:mr-6">
                         <div className="relative group">
                             <LogoFrameAvatar
                                 src={profile.avatar_url}
                                 alt={profile.full_name}
                                 size="lg"
-                                className=""
+                                className="w-[115px] h-[115px] md:w-[120px] md:h-[120px]"
                             />
                         </div>
 
-                        {/* Rank Badge - Adjusted Position */}
+                        {/* Rank Badge - Bottom right corner of avatar */}
                         <div
-                            className="absolute bottom-6 right-6 z-30"
+                            className="absolute bottom-4 right-2 md:bottom-6 md:right-6 z-30"
                         >
                             <RankInsignia
                                 rankId={gamification?.current_rank_id || 'novato'}
-                                size="lg"
+                                size="sm"
                                 variant="icon-only"
-                                className="border-4 border-[#1A2421]"
+                                className="w-6 h-6 md:w-12 md:h-12 border-2 md:border-4 border-[#1A2421]"
                             />
                         </div>
                     </div>
@@ -121,15 +121,15 @@ export default function ImprovedCurrentHeaderV6Complete({
                     <div className="flex-1 min-w-0 pt-1">
                         <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
-                                <h1 className="text-3xl font-bold text-[#F2F4F3] mb-1">
+                                <h1 className="text-lg md:text-3xl font-bold text-[#F2F4F3] mb-0.5 md:mb-1 truncate">
                                     {profile.full_name}
                                 </h1>
-                                <div className="flex items-center gap-3 text-sm text-[#D1D5DB] mb-1">
+                                <div className="hidden md:flex items-center gap-3 text-sm text-[#D1D5DB] mb-1">
                                     {profile.professional_title && (
                                         <span className="max-w-[400px] truncate">{profile.professional_title}</span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-3 text-xs text-[#D1D5DB]">
+                                <div className="flex items-center gap-1.5 md:gap-3 text-[9px] md:text-xs text-[#D1D5DB]">
                                     {profile.pista && (
                                         <div className="flex items-center gap-1">
                                             <MapPin className="w-3 h-3" />
@@ -145,8 +145,8 @@ export default function ImprovedCurrentHeaderV6Complete({
                                 </div>
                             </div>
 
-                            {/* PATENTE - Badge tipo medalha (estilo V4 com gradiente laranja) - Absoluto */}
-                            <div className="absolute top-12 right-6 z-20">
+                            {/* PATENTE - Badge tipo medalha - Hidden on mobile */}
+                            <div className="hidden md:block absolute top-12 right-6 z-20">
                                 <div className="bg-gradient-to-br from-[#D2691E]/60 to-[#A0522D]/60 border-2 border-[#D2691E]/15 rounded-xl px-5 py-3 shadow-xl backdrop-blur-sm">
                                     <div className="flex flex-col items-center gap-1">
                                         <Shield className="w-8 h-8 text-white" />
@@ -159,7 +159,7 @@ export default function ImprovedCurrentHeaderV6Complete({
                         </div>
 
                         {/* Gamification Stats with HIGH POLISH & GLOW */}
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-1 md:gap-3 mb-2 md:mb-3 flex-nowrap">
                             {[
                                 {
                                     label: 'Vigor',
@@ -186,7 +186,7 @@ export default function ImprovedCurrentHeaderV6Complete({
                                 <div
                                     key={idx}
                                     className={cn(
-                                        "relative group flex items-center gap-3 px-5 py-2.5 rounded-xl border border-white/5 transition-all duration-300 cursor-default overflow-hidden",
+                                        "relative group flex items-center gap-1.5 md:gap-3 px-2 md:px-5 py-1 md:py-2.5 rounded-lg md:rounded-xl border border-white/5 transition-all duration-300 cursor-default overflow-hidden",
                                         "bg-black/20 backdrop-blur-md hover:bg-black/30 hover:border-white/20 hover:-translate-y-1 hover:scale-105",
                                         stat.glow,
                                         "shadow-lg animate-in fade-in zoom-in duration-700 fill-mode-backwards"
@@ -200,22 +200,22 @@ export default function ImprovedCurrentHeaderV6Complete({
 
                                     <div className="relative">
                                         {stat.icon ? (
-                                            <div className="p-1.5 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                                            <div className="p-0.5 md:p-1.5 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
                                                 <stat.icon
-                                                    className="w-4 h-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                                                    className="w-3 h-3 md:w-4 md:h-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
                                                     style={{ color: stat.color }}
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="text-[10px] font-black text-white/30">#</div>
+                                            <div className="text-[8px] md:text-[10px] font-black text-white/30">#</div>
                                         )}
                                     </div>
 
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider leading-none mb-1 group-hover:text-white/70 transition-colors">
+                                        <span className="text-[7px] md:text-[10px] font-bold text-white/50 uppercase tracking-wider leading-none mb-0.5 md:mb-1 group-hover:text-white/70 transition-colors">
                                             {stat.label}
                                         </span>
-                                        <span className="text-lg font-black text-white leading-none tracking-tight drop-shadow-md group-hover:text-white transition-colors">
+                                        <span className="text-xs md:text-lg font-black text-white leading-none tracking-tight drop-shadow-md group-hover:text-white transition-colors">
                                             {stat.value}
                                         </span>
                                     </div>

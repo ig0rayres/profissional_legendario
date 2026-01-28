@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Link2, Loader2, Check, X, UserPlus, Clock, CheckCircle2, XCircle, Unlink, Trophy } from 'lucide-react'
 import { useAuth } from '@/lib/auth/context'
 import { awardPoints, awardBadge, checkEloPointsAlreadyAwarded } from '@/lib/api/gamification'
+import { getActionPoints } from '@/lib/services/point-actions-service'
 
 interface ConnectionButtonProps {
     targetUserId: string
@@ -155,9 +156,10 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
                     const alreadyAwarded = await checkEloPointsAlreadyAwarded(user.id, targetUserId, 'elo_sent')
 
                     if (!alreadyAwarded) {
+                        const points = await getActionPoints('elo_sent')
                         const result = await awardPoints(
                             user.id,
-                            10,
+                            points,
                             'elo_sent',
                             `Enviou convite de elo para ${targetUserName}`,
                             { target_user_id: targetUserId } // Para verificação de duplicação
@@ -206,9 +208,10 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
 
                     if (!alreadyAwarded) {
                         // Adicionar pontos ao usuário que aceitou
+                        const points = await getActionPoints('elo_accepted')
                         const result = await awardPoints(
                             user.id,
-                            5,
+                            points,
                             'elo_accepted',
                             `Aceitou elo com ${targetUserName}`,
                             { target_user_id: targetUserId } // Para verificação de duplicação

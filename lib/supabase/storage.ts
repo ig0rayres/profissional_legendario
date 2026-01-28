@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import { awardPoints, awardBadge, getUserBadges } from '@/lib/api/gamification'
+import { getActionPoints } from '@/lib/services/point-actions-service'
 
 export interface UploadResult {
     url: string
@@ -124,7 +125,8 @@ export async function uploadPortfolioImage(
                 console.log('✅ Awarded Cinegrafista de Campo badge to user:', userId)
             } else {
                 // Award points for additional uploads (within daily limit)
-                await awardPoints(userId, 30, 'portfolio_upload', 'Portfolio image uploaded')
+                const points = await getActionPoints('portfolio_upload')
+                await awardPoints(userId, points, 'portfolio_upload', 'Portfolio image uploaded')
             }
         } catch (gamifError) {
             // Don't fail the upload if gamification fails

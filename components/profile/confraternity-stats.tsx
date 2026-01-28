@@ -7,8 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
-import Image from 'next/image'
-import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { AvatarWithRank } from '@/components/ui/avatar-with-rank'
 
 interface UpcomingConfraternity {
     id: string
@@ -229,21 +228,17 @@ export function ConfraternityStats({ userId, isOwnProfile = false }: Confraterni
                                         <span className="text-[10px] uppercase text-gray-600 font-medium">{date.month}</span>
                                     </div>
 
-                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#B85715] flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md transform group-hover/conf:rotate-6 transition-transform">
-                                        {conf.partner?.avatar_url ? (
-                                            <Image
-                                                src={conf.partner.avatar_url}
-                                                alt={conf.partner.full_name}
-                                                width={48}
-                                                height={48}
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <span className="text-lg font-bold text-white">
-                                                {conf.partner?.full_name?.charAt(0) || '?'}
-                                            </span>
-                                        )}
-                                    </div>
+                                    <AvatarWithRank
+                                        user={{
+                                            id: conf.partner.id,
+                                            full_name: conf.partner.full_name,
+                                            avatar_url: conf.partner.avatar_url || null,
+                                            rank_id: conf.partner.rank_id
+                                        }}
+                                        size="md"
+                                        showName={false}
+                                        variant="rounded"
+                                    />
 
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-[#2D3142] truncate">

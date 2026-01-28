@@ -62,9 +62,16 @@ export async function POST(request: NextRequest) {
         })
 
         // Usar generateLink para criar um magic link
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : 'https://rotabusinessclub.com.br'
+        // Determinar URL base corretamente
+        let baseUrl = 'http://localhost:3000'
+
+        if (process.env.NEXT_PUBLIC_APP_URL) {
+            baseUrl = process.env.NEXT_PUBLIC_APP_URL
+        } else if (process.env.VERCEL_URL) {
+            baseUrl = `https://${process.env.VERCEL_URL}`
+        } else if (process.env.NODE_ENV === 'production') {
+            baseUrl = 'https://rotabusinessclub.com.br'
+        }
 
         console.log('🔗 Gerando magic link para:', email, 'redirectTo:', `${baseUrl}/dashboard`)
 

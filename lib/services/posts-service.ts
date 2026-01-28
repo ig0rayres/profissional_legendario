@@ -106,6 +106,7 @@ export class PostsService {
             media_urls,
             visibility,
             confraternity_id,
+            tagged_user_ids,
             likes_count,
             comments_count,
             created_at,
@@ -136,14 +137,20 @@ export class PostsService {
             if (feedType === 'global') {
                 query = query.eq('visibility', 'public')
             } else if (feedType === 'user' && userId) {
-                // Posts do usuário + posts de confrarias que ele participou
+                // Posts do usuário + posts de confrarias que ele participou + posts onde foi marcado
                 const confIds = await this.getUserConfraternityIds(userId)
 
+                // Filtros: autor OU confraria OU marcado
+                const filters: string[] = [`user_id.eq.${userId}`]
+
                 if (confIds.length > 0) {
-                    query = query.or(`user_id.eq.${userId},confraternity_id.in.(${confIds.join(',')})`)
-                } else {
-                    query = query.eq('user_id', userId)
+                    filters.push(`confraternity_id.in.(${confIds.join(',')})`)
                 }
+
+                // Posts onde o usuário foi marcado (tagged_user_ids contém o userId)
+                filters.push(`tagged_user_ids.cs.{${userId}}`)
+
+                query = query.or(filters.join(','))
             } else if (feedType === 'connections' && userId) {
                 // Posts públicos ou de conexões
                 query = query.in('visibility', ['public', 'connections'])
@@ -174,14 +181,14 @@ export class PostsService {
             let confraternityMap = new Map<string, any>()
             if (confraternityIds.length > 0) {
                 const { data: confs } = await this.supabase
-                    .from('confraternities')
-                    .select('id, date_occurred, member1_id, member2_id')
+                    .from('confraternity_invites')
+                    .select('id, proposed_date, sender_id, receiver_id')
                     .in('id', confraternityIds)
 
                 // Buscar membros das confrarias
                 const memberIds = Array.from(new Set([
-                    ...(confs?.map(c => c.member1_id) || []),
-                    ...(confs?.map(c => c.member2_id) || [])
+                    ...(confs?.map(c => c.sender_id) || []),
+                    ...(confs?.map(c => c.receiver_id) || [])
                 ].filter(Boolean)))
 
                 let memberMap = new Map<string, any>()
@@ -197,9 +204,9 @@ export class PostsService {
                 confs?.forEach(c => {
                     confraternityMap.set(c.id, {
                         id: c.id,
-                        date_occurred: c.date_occurred,
-                        member1: memberMap.get(c.member1_id) || null,
-                        member2: memberMap.get(c.member2_id) || null
+                        date_occurred: c.proposed_date,
+                        member1: memberMap.get(c.sender_id) || null,
+                        member2: memberMap.get(c.receiver_id) || null
                     })
                 })
             }

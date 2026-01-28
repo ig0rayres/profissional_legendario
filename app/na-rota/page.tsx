@@ -448,6 +448,7 @@ export default function NaRotaPage() {
                                                     onLike={() => toggleLike(post.id)}
                                                     onUnlike={() => toggleLike(post.id)}
                                                     onDelete={() => handleDelete(post.id)}
+                                                    onRefresh={() => refresh()}
                                                 />
                                             ))}
 

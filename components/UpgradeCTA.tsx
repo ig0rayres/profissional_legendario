@@ -28,15 +28,22 @@ export function UpgradeCTA({ variant = 'card', className = '' }: UpgradeCTAProps
 
             const { data: sub } = await supabase
                 .from('subscriptions')
-                .select('plan_id, plans:plan_config(tier)')
+                .select('plan_id')
                 .eq('user_id', user.id)
                 .eq('status', 'active')
                 .maybeSingle()
 
-            if (sub?.plans) {
-                setCurrentTier((sub.plans as any).tier)
+            if (sub?.plan_id) {
+                // Buscar slug do plano
+                const { data: plan } = await supabase
+                    .from('plans')
+                    .select('slug')
+                    .eq('id', sub.plan_id)
+                    .single()
+
+                setCurrentTier(plan?.slug || 'free')
             } else {
-                setCurrentTier('recruta')
+                setCurrentTier('free')
             }
         } catch (error) {
             console.error('Error loading subscription:', error)

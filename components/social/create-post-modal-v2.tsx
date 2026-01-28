@@ -64,6 +64,15 @@ export function CreatePostModalV2({
     const [confraternities, setConfraternities] = useState<any[]>([])
     const [projects, setProjects] = useState<any[]>([])
 
+    // Estado de validação de foto (para confrarias)
+    const [isValidatingPhoto, setIsValidatingPhoto] = useState(false)
+    const [validationResult, setValidationResult] = useState<{
+        approved: boolean
+        people_count?: number
+        confidence: string
+        reason: string
+    } | null>(null)
+
     const fileInputRef = useRef<HTMLInputElement>(null)
     const userSearchRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
@@ -72,8 +81,19 @@ export function CreatePostModalV2({
     useEffect(() => {
         if (open) {
             loadUserData()
+
+            // Se tem confraria pré-selecionada, definir tipo como confraria
+            if (preselectedConfraternityId) {
+                setPostType('confraria')
+                setSelectedConfraternityId(preselectedConfraternityId)
+            }
+            // Se tem projeto pré-selecionado, definir tipo como projeto_entregue
+            if (preselectedProjectId) {
+                setPostType('projeto_entregue')
+                setSelectedProjectId(preselectedProjectId)
+            }
         }
-    }, [open, userId])
+    }, [open, userId, preselectedConfraternityId, preselectedProjectId])
 
     // Busca de usuários com debounce
     useEffect(() => {
@@ -147,7 +167,7 @@ export function CreatePostModalV2({
         }
     }
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
         if (files.length === 0) return
 
@@ -173,6 +193,115 @@ export function CreatePostModalV2({
 
         if (validFiles.length === 0) return
 
+        // ============================================================
+        // 🔒 VALIDAÇÃO DE IA - DESABILITADA TEMPORARIAMENTE
+        // Para reativar: descomente o bloco abaixo
+        // ============================================================
+        /*
+        // VALIDAÇÃO PARA CONFRARIAS - Duplicados + IA para CADA foto
+        if (postType === 'confraria' && validFiles.length > 0) {
+            // Verificar limite de 10 fotos
+            if (mediaFiles.length + validFiles.length > 10) {
+                alert(`Limite de 10 fotos. Você já tem ${mediaFiles.length} foto(s).`)
+                validFiles.splice(10 - mediaFiles.length)
+                if (validFiles.length === 0) return
+            }
+
+            setIsValidatingPhoto(true)
+            const approvedFiles: File[] = []
+
+            // Mostrar preview temporário de todas enquanto valida
+            const tempPreviews = [...mediaPreviews, ...validFiles.map(f => URL.createObjectURL(f))]
+            setMediaPreviews(tempPreviews)
+
+            try {
+                for (const file of validFiles) {
+                    console.log('[CreatePost] 🔍 Validando foto:', file.name)
+
+                    // 1. VERIFICAR DUPLICADOS
+                    const duplicateFormData = new FormData()
+                    duplicateFormData.append('image', file)
+                    duplicateFormData.append('userId', userId)
+
+                    const duplicateResponse = await fetch('/api/confraternity/check-duplicate', {
+                        method: 'POST',
+                        body: duplicateFormData
+                    })
+
+                    const duplicateResult = await duplicateResponse.json()
+
+                    if (duplicateResult.isDuplicate) {
+                        alert(`🚫 Foto "${file.name}" já foi usada em outra confraria. Pulando...`)
+                        continue
+                    }
+
+                    // 2. VALIDAR COM IA
+                    const formDataToSend = new FormData()
+                    formDataToSend.append('image', file)
+
+                    const validateResponse = await fetch('/api/validate-confraternity', {
+                        method: 'POST',
+                        body: formDataToSend
+                    })
+
+                    const result = await validateResponse.json()
+                    console.log('[CreatePost] Resultado:', result)
+
+                    if (!result.approved) {
+                        alert(`❌ Foto "${file.name}" não aprovada: ${result.reason}`)
+                        continue
+                    }
+
+                    // Foto aprovada
+                    approvedFiles.push(file)
+
+                    // Salvar hash da primeira foto aprovada
+                    if (approvedFiles.length === 1) {
+                        setValidationResult({ ...result, imageHash: duplicateResult.hash, imageName: file.name })
+                    }
+                }
+
+                // Atualizar estado com fotos aprovadas
+                if (approvedFiles.length > 0) {
+                    const updatedFiles = [...mediaFiles, ...approvedFiles].slice(0, 10)
+                    setMediaFiles(updatedFiles)
+                    setMediaPreviews(updatedFiles.map(f => URL.createObjectURL(f)))
+                } else {
+                    // Nenhuma aprovada - restaurar previews anteriores
+                    setMediaPreviews(mediaFiles.map(f => URL.createObjectURL(f)))
+                }
+
+            } catch (error) {
+                console.error('[CreatePost] Erro na validação:', error)
+                // Em caso de erro, adicionar todas
+                const updatedFiles = [...mediaFiles, ...validFiles].slice(0, 10)
+                setMediaFiles(updatedFiles)
+                setMediaPreviews(updatedFiles.map(f => URL.createObjectURL(f)))
+            } finally {
+                setIsValidatingPhoto(false)
+            }
+
+            return
+        }
+        */
+
+        // UPLOAD LIVRE - Confrarias agora aceitam qualquer foto
+        if (postType === 'confraria' && validFiles.length > 0) {
+            if (mediaFiles.length + validFiles.length > 10) {
+                alert(`Limite de 10 fotos. Você já tem ${mediaFiles.length} foto(s).`)
+                validFiles.splice(10 - mediaFiles.length)
+                if (validFiles.length === 0) return
+            }
+
+            const updatedFiles = [...mediaFiles, ...validFiles].slice(0, 10)
+            setMediaFiles(updatedFiles)
+            setMediaPreviews(updatedFiles.map(f => URL.createObjectURL(f)))
+            // Marcar como aprovado automaticamente para permitir publicação
+            setValidationResult({ approved: true, people_count: 2, confidence: 'manual', reason: 'Validação manual' })
+            return
+        }
+
+        // Para outros tipos de post, adicionar normalmente
         const newFiles = [...mediaFiles, ...validFiles].slice(0, 10)
         setMediaFiles(newFiles)
         setMediaPreviews(newFiles.map(file => URL.createObjectURL(file)))
@@ -218,6 +347,18 @@ export function CreatePostModalV2({
             return
         }
 
+        // VALIDAÇÃO OBRIGATÓRIA: Confraria requer foto
+        if (postType === 'confraria' && mediaFiles.length === 0) {
+            alert('📷 Para registrar uma confraria, é obrigatório adicionar uma foto comprovando o encontro.')
+            return
+        }
+
+        // VALIDAÇÃO OBRIGATÓRIA: Confraria requer selecionar uma
+        if (postType === 'confraria' && !selectedConfraternityId) {
+            alert('Selecione uma confraria antes de publicar.')
+            return
+        }
+
         setIsUploading(true)
 
         try {
@@ -230,9 +371,25 @@ export function CreatePostModalV2({
 
             if (count && count >= 5) {
                 alert('Limite de 5 publicações por hora atingido.')
+                setIsUploading(false)
                 return
             }
 
+            // Para confrarias, verificar se a foto já foi validada (validação ocorre no upload)
+            if (postType === 'confraria' && mediaFiles.length > 0) {
+                console.log('[CreatePost] Validando confraria...', { validationResult, mediaFiles: mediaFiles.length })
+                if (!validationResult?.approved) {
+                    console.log('[CreatePost] Validação falhou ou não existe:', validationResult)
+                    const { toast } = await import('sonner')
+                    toast.error('Foto não validada', {
+                        description: '📷 Adicione uma foto que mostre você e seu parceiro juntos.'
+                    })
+                    setIsUploading(false)
+                    return
+                }
+            }
+
+            // Upload das mídias (após validação aprovada)
             const mediaUrls: string[] = []
             for (let i = 0; i < mediaFiles.length; i++) {
                 setUploadProgress(Math.round(((i + 0.5) / mediaFiles.length) * 100))
@@ -257,11 +414,40 @@ export function CreatePostModalV2({
                     project_id: postType === 'projeto_entregue' ? selectedProjectId : null,
                     post_type: dbPostType,
                     tagged_user_ids: taggedUsers.map(u => u.id),
+                    // Se for confraria e passou na validação, marcar como aprovado
+                    validation_status: postType === 'confraria' ? 'approved' : null,
+                    // Metadata para detecção de duplicados (confraria)
+                    metadata: postType === 'confraria' && validationResult ? {
+                        image_hash: (validationResult as any).imageHash,
+                        image_name: (validationResult as any).imageName,
+                        people_count: validationResult.people_count,
+                        ai_confidence: validationResult.confidence
+                    } : null
                 })
                 .select()
                 .single()
 
             if (error) throw error
+
+            // Se for confraria, vincular post como prova (pontos são gerenciados em lib/api/confraternity.ts)
+            if (postType === 'confraria' && selectedConfraternityId && newPost) {
+                try {
+                    // Vincular post à confraria e marcar como completed
+                    await supabase
+                        .from('confraternity_invites')
+                        .update({
+                            proof_post_id: newPost.id,
+                            status: 'completed',
+                            proof_validated: true,
+                            proof_validated_at: new Date().toISOString()
+                        })
+                        .eq('id', selectedConfraternityId)
+
+                    console.log('[CreatePost] ✅ Post vinculado à confraria:', selectedConfraternityId)
+                } catch (confError) {
+                    console.error('[CreatePost] Erro ao vincular confraria:', confError)
+                }
+            }
 
             if (taggedUsers.length > 0 && newPost) {
                 const notifications = taggedUsers.map(user => ({
@@ -287,9 +473,21 @@ export function CreatePostModalV2({
             onOpenChange(false)
             onPostCreated?.()
 
-        } catch (error) {
+            // Toast de sucesso
+            if (postType === 'confraria') {
+                const { toast } = await import('sonner')
+                toast.success('🎉 Confraria registrada!', {
+                    description: 'Você e seu parceiro ganharam +15 Vigor cada!'
+                })
+            }
+
+        } catch (error: any) {
             console.error('Error creating post:', error)
-            alert('Erro ao criar publicação. Tente novamente.')
+            console.error('Error details:', JSON.stringify(error, null, 2))
+            const { toast } = await import('sonner')
+            toast.error('Erro ao criar publicação', {
+                description: error?.message || 'Tente novamente'
+            })
         } finally {
             setIsUploading(false)
         }
@@ -311,7 +509,7 @@ export function CreatePostModalV2({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-xl p-0 overflow-hidden bg-white border border-gray-200 shadow-2xl">
+            <DialogContent className="max-w-xl max-h-[85vh] p-0 overflow-hidden bg-white border border-gray-200 shadow-2xl flex flex-col">
                 {/* Header - Sóbrio, sem gradiente vibrante */}
                 <div className="bg-gray-900 px-6 py-4">
                     <div className="flex items-center justify-between">
@@ -328,7 +526,7 @@ export function CreatePostModalV2({
                     </div>
                 </div>
 
-                <div className="p-5 space-y-5">
+                <div className="p-5 space-y-5 overflow-y-auto flex-1">
                     {/* Post Type Selector - Estilo militar/sóbrio */}
                     <div className="flex flex-wrap gap-2">
                         {(Object.keys(postTypeConfig) as Array<keyof typeof postTypeConfig>).map(type => {
@@ -374,7 +572,20 @@ export function CreatePostModalV2({
                                     return (
                                         <button
                                             key={conf.id}
-                                            onClick={() => setSelectedConfraternityId(conf.id)}
+                                            onClick={() => {
+                                                setSelectedConfraternityId(conf.id)
+                                                // Auto-marcar parceiro da confraria
+                                                const partnerId = conf.sender_id === userId ? conf.receiver_id : conf.sender_id
+                                                const partnerData = conf.sender_id === userId ? conf.receiver : conf.sender
+                                                if (partnerData && partnerId && !taggedUsers.find(u => u.id === partnerId)) {
+                                                    addTaggedUser({
+                                                        id: partnerId,
+                                                        full_name: partnerData.full_name || 'Parceiro',
+                                                        avatar_url: partnerData.avatar_url || null,
+                                                        rota_number: null
+                                                    })
+                                                }
+                                            }}
                                             className={cn(
                                                 "w-full flex items-center gap-3 p-3 rounded-lg transition-all",
                                                 isSelected
@@ -457,28 +668,40 @@ export function CreatePostModalV2({
                         )}
                     </div>
 
-                    {/* Media Preview Grid */}
+                    {/* Media Preview Grid - Tamanho reduzido */}
                     {mediaPreviews.length > 0 && (
-                        <div className={cn(
-                            "grid gap-2 rounded-lg overflow-hidden",
-                            mediaPreviews.length === 1 && "grid-cols-1",
-                            mediaPreviews.length === 2 && "grid-cols-2",
-                            mediaPreviews.length >= 3 && "grid-cols-3"
-                        )}>
+                        <div className="flex flex-wrap gap-2 items-start">
                             {mediaPreviews.map((preview, index) => (
-                                <div key={index} className="relative aspect-square bg-gray-100 group">
+                                <div key={index} className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden group">
                                     <Image
                                         src={preview}
                                         alt={`Preview ${index + 1}`}
                                         fill
                                         className="object-cover"
                                     />
+
+                                    {/* Overlay de validação para confraria */}
+                                    {postType === 'confraria' && index === 0 && (
+                                        <>
+                                            {isValidatingPhoto && (
+                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" />
+                                                </div>
+                                            )}
+                                            {validationResult?.approved && !isValidatingPhoto && (
+                                                <div className="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-[10px] text-center py-0.5 font-medium">
+                                                    ✓ Aprovada
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
                                     <button
                                         onClick={() => removeMedia(index)}
-                                        className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                        disabled={isUploading}
+                                        className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 hover:bg-red-600 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                        disabled={isUploading || isValidatingPhoto}
                                     >
-                                        <X className="w-4 h-4 text-white" />
+                                        <X className="w-3 h-3 text-white" />
                                     </button>
                                 </div>
                             ))}
@@ -594,31 +817,36 @@ export function CreatePostModalV2({
                         )}
                     </div>
 
-                    {/* Bottom Actions Bar */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div className="flex items-center gap-2">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*,video/*"
-                                multiple
-                                onChange={handleFileSelect}
-                                className="hidden"
-                                disabled={isUploading || mediaFiles.length >= 10}
-                            />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isUploading || mediaFiles.length >= 10}
-                                className="gap-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                            >
-                                <ImagePlus className="w-5 h-5" />
-                                <span className="hidden sm:inline text-sm">
-                                    {mediaFiles.length > 0 ? `${mediaFiles.length}/10` : 'Mídia'}
-                                </span>
-                            </Button>
+                    {/* Botão de Mídia - agora dentro do conteúdo */}
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*,video/*"
+                            multiple
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            disabled={isUploading || mediaFiles.length >= 10}
+                        />
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading || mediaFiles.length >= 10}
+                            className="gap-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 w-full justify-center"
+                        >
+                            <ImagePlus className="w-5 h-5" />
+                            <span className="text-sm">
+                                {mediaFiles.length > 0 ? `Adicionar mais fotos (${mediaFiles.length}/10)` : 'Adicionar Fotos/Vídeos'}
+                            </span>
+                        </Button>
+                    </div>
+                </div>
 
+                {/* Footer fixo - sempre visível */}
+                <div className="border-t border-gray-200 bg-gray-50 px-5 py-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
                             {/* Visibility Toggle */}
                             <div className="flex items-center bg-gray-100 rounded p-0.5">
                                 {visibilityOptions.map(opt => (
@@ -660,6 +888,6 @@ export function CreatePostModalV2({
                     </div>
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

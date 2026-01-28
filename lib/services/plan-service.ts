@@ -149,12 +149,29 @@ export function clearPlanCache(): void {
 
 /**
  * Hook-friendly: Busca multiplicador de forma síncrona do cache
- * ATENÇÃO: Só funciona se getAllPlans já foi chamado antes
+ * ATENÇÃO: Usa fallback hardcoded se cache não disponível (API server-side)
  */
 export function getMultiplierSync(tier: string | null | undefined): number {
-    if (!tier || !cachedPlans) return 1
-    const plan = cachedPlans.find(p => p.tier.toLowerCase() === tier.toLowerCase())
-    return plan?.xp_multiplier || 1
+    if (!tier) return 1
+
+    const tierLower = tier.toLowerCase()
+
+    // Se tem cache, usar
+    if (cachedPlans) {
+        const plan = cachedPlans.find(p => p.tier.toLowerCase() === tierLower)
+        if (plan) return plan.xp_multiplier
+    }
+
+    // Fallback hardcoded para garantir multiplicador mesmo sem cache
+    // CRÍTICO: Isso garante que APIs server-side funcionem
+    const FALLBACK_MULTIPLIERS: Record<string, number> = {
+        'recruta': 1,
+        'veterano': 1.5,
+        'elite': 3,
+        'lendario': 5
+    }
+
+    return FALLBACK_MULTIPLIERS[tierLower] || 1
 }
 
 /**

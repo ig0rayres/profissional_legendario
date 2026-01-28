@@ -85,7 +85,8 @@ b5dc9f93 - feat: Admin Temporadas completo
 | `.agent/context/CONTEXTO_PROJETO.md` | Este arquivo (ponto de retomada) |
 | `.agent/context/AGENTS.md` | Personas dos agentes (Carlos, Marina, Lucas, Rafael) |
 | `.agent/context/IA_DOS_PREMIOS.md` | Prompts de IA para prêmios |
-| `.agent/context/COMISSIONAMENTO_E_PREMIOS.md` | **NOVO** - Documentação completa |
+| `.agent/context/COMISSIONAMENTO_E_PREMIOS.md` | Documentação completa |
+| `.agent/EXECUTAR_SQL_SUPABASE.md` | **⚠️ COMO EXECUTAR SQL DIRETO NO BANCO** |
 
 ---
 

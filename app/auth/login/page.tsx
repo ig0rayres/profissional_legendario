@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
@@ -14,9 +14,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function LoginPage() {
     const router = useRouter()
-    const { signIn } = useAuth()
+    const { signIn, user, loading } = useAuth()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    // Redirecionar se já estiver logado
+    useEffect(() => {
+        if (!loading && user) {
+            console.log('[LoginPage] Usuário já logado, redirecionando...', user.role)
+            const redirectUrl = user.role === 'admin' ? '/admin' : '/dashboard'
+            window.location.href = redirectUrl
+        }
+    }, [user, loading])
 
     const {
         register,

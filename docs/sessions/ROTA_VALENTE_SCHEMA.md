@@ -185,9 +185,13 @@ ON CONFLICT (id) DO UPDATE SET
     points_base = EXCLUDED.points_base;
 ```
 
-## 10. DADOS INICIAIS - AÇÕES (17)
+## 10. DADOS INICIAIS - AÇÕES (16)
 
 ```sql
+-- ATUALIZADO EM 28/01/2026:
+-- - post_comment_sent: Limite reduzido para 1/dia (primeiro comentário do dia)
+-- - post_comment_received: REMOVIDO (comentários recebidos não geram mais pontos)
+
 INSERT INTO point_actions (id, name, description, points_base, category, max_per_day) VALUES
 ('elo_sent', 'Enviar elo', 'Enviar solicitação de conexão', 20, 'connections', 10),
 ('elo_accepted', 'Aceitar elo', 'Aceitar solicitação de conexão', 30, 'connections', 10),
@@ -200,8 +204,7 @@ INSERT INTO point_actions (id, name, description, points_base, category, max_per
 ('daily_login', 'Login diário', 'Primeiro login do dia', 5, 'engagement', 1),
 ('feed_post', 'Publicar post', 'Publicar no feed', 15, 'feed', 5),
 ('post_like_received', 'Receber like', 'Receber curtida', 2, 'feed', 50),
-('post_comment_received', 'Receber comentário', 'Receber comentário', 5, 'feed', 20),
-('post_comment_sent', 'Comentar', 'Comentar em post', 5, 'feed', 10),
+('post_comment_sent', 'Comentar', 'Primeiro comentário do dia', 5, 'feed', 1), -- LIMITE 1/DIA
 ('portfolio_upload', 'Upload portfolio', 'Upload no portfolio', 20, 'portfolio', 5),
 ('project_requested', 'Lançar projeto', 'Solicitar orçamento', 100, 'business', 3),
 ('project_closed', 'Fechar contrato', 'Fechar negócio', 200, 'business', NULL),

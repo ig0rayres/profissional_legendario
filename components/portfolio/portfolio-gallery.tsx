@@ -81,6 +81,8 @@ export function PortfolioGallery({ items, columns = 3 }: PortfolioGalleryProps) 
                         <img
                             src={selectedImage.image_url}
                             alt={selectedImage.title}
+
+
                             className="w-full h-auto rounded-lg"
                         />
 
@@ -100,3 +102,4 @@ export function PortfolioGallery({ items, columns = 3 }: PortfolioGalleryProps) 
         </>
     )
 }
+to mesma coisa

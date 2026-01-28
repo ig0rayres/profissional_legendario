@@ -469,6 +469,18 @@ Feed social da plataforma onde aparecem:
 - Todos os usuários podem ver o feed geral
 - Filtros: Todas | Minhas Confrarias
 
+### Pontuação do Feed
+
+| Ação | Pts Base | Limite/Dia |
+|------|----------|------------|
+| Publicar post | 15 | 5 |
+| Receber curtida | 2 | 50 |
+| Comentar | 5 | **1** |
+
+> ⚠️ **REGRA ATUALIZADA (28/01/2026):**
+> - Comentário gera pontos apenas **1x por dia** (primeiro do dia)
+> - Receber comentário **não gera mais pontos**
+
 ---
 
 ## 9. SISTEMA DE CHAT

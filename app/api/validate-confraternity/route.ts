@@ -26,6 +26,19 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Verificar se é uma imagem (não vídeo)
+        const mimeType = imageFile.type || 'image/jpeg'
+        if (!mimeType.startsWith('image/')) {
+            // Vídeos são automaticamente aprovados (não podemos validar via IA)
+            console.log('[Validate Confraternity] Arquivo de vídeo detectado, aprovando automaticamente')
+            return NextResponse.json({
+                approved: true,
+                people_count: 2,
+                confidence: 'medium',
+                reason: 'Vídeo aprovado automaticamente'
+            })
+        }
+
         // Verificar se tem API key configurada
         const apiKey = process.env.OPENAI_API_KEY
         if (!apiKey) {
@@ -38,7 +51,6 @@ export async function POST(request: NextRequest) {
         // Converter imagem para base64
         const bytes = await imageFile.arrayBuffer()
         const base64Image = Buffer.from(bytes).toString('base64')
-        const mimeType = imageFile.type || 'image/jpeg'
 
         console.log('[Validate Confraternity] Iniciando validação por IA...')
 
@@ -57,47 +69,50 @@ export async function POST(request: NextRequest) {
                         content: [
                             {
                                 type: 'text',
-                                text: `Você é um validador de fotos de encontros profissionais.
+                                text: `Você é um validador de fotos de confraternização. Seu objetivo é APROVAR fotos que mostram pessoas juntas.
 
-TAREFA: Verificar se a imagem mostra um encontro/reunião entre DUAS OU MAIS pessoas.
+OBJETIVO: Verificar se há 2 ou mais pessoas humanas na foto.
 
-✅ APROVAR SE:
-- Há 2+ pessoas na foto (mesmo que parcialmente visíveis)
-- Parece ser um encontro, reunião, confraternização, almoço, café, etc.
-- Selfies com 2+ pessoas são VÁLIDAS
-- Fotos de grupo são VÁLIDAS
-- Pessoas em uniformes/jaquetas iguais indicam evento = VÁLIDO
-- Pessoas sentadas à mesa, em pé conversando, em ambiente externo = VÁLIDO
-- Videochamadas mostrando 2+ pessoas na tela = VÁLIDO
-- Se der para ver partes de 2 corpos (braços, mãos, ombros) mesmo sem rostos completos = VÁLIDO
+REGRA PRINCIPAL:
+- Se conseguir identificar 2 OU MAIS pessoas → APROVE (approved: true)
+- Se houver apenas 1 pessoa sozinha → REJEITE
+- Se não houver pessoas → REJEITE
 
-❌ REJEITAR APENAS SE:
-- Foto claramente de apenas 1 pessoa sozinha
-- Foto sem nenhuma pessoa visível (só paisagem/objetos)
-- Imagem completamente desfocada/escura
+O QUE CONTA COMO PESSOA:
+- Rostos (mesmo parcialmente visíveis ou com óculos/chapéu/boné)
+- Corpos humanos (mesmo de costas ou parcialmente cobertos)
+- Silhuetas humanas
+- Pessoas usando jaquetas, uniformes, roupas coloridas
+- Pessoas em fotos de eventos, encontros, expedições
+- Pessoas lado a lado, abraçadas ou próximas
 
-IMPORTANTE: Na dúvida, APROVE. É melhor aprovar uma foto limítrofe do que rejeitar um encontro legítimo.
+IMPORTANTE - SEJA PERMISSIVO:
+- Ignore logos, textos, marcas d'água ou overlays na foto
+- Foque APENAS em identificar seres humanos
+- Se a foto mostrar claramente 2 pessoas lado a lado → APROVE
+- Na DÚVIDA, APROVE com confidence "medium"
+- Fotos de eventos/encontros geralmente têm múltiplas pessoas
 
-Responda APENAS com JSON:
+Responda APENAS com JSON válido:
 {
-  "approved": true/false,
-  "people_count": número (mínimo 2 para aprovação),
-  "confidence": "high"/"medium"/"low",
-  "reason": "explicação em português, 1 frase"
+  "approved": true,
+  "people_count": 2,
+  "confidence": "high",
+  "reason": "2 pessoas detectadas na foto"
 }`
                             },
                             {
                                 type: 'image_url',
                                 image_url: {
                                     url: `data:${mimeType};base64,${base64Image}`,
-                                    detail: 'high'
+                                    detail: 'low'
                                 }
                             }
                         ]
                     }
                 ],
-                max_tokens: 200,
-                temperature: 0.1
+                max_tokens: 150,
+                temperature: 0.3
             })
         })
 

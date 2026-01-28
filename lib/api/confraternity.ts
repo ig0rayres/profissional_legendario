@@ -6,6 +6,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { awardPoints, awardBadge, awardAchievement } from '@/lib/api/gamification'
 import { getConfraternityLimit, isUnlimited } from '@/lib/services/plan-service'
+import { getActionPoints } from '@/lib/services/point-actions-service'
 
 // Types
 export interface ConfraternityInvite {
@@ -86,7 +87,8 @@ export async function canSendInvite(userId: string): Promise<{
             }
         }
 
-        // Contar convites ACEITOS este mês (não enviados)
+        // Contar convites ACEITOS ou COMPLETADOS este mês
+        // BUG FIX: Antes contava apenas 'accepted', mas 'completed' também conta!
         const startOfMonth = new Date()
         startOfMonth.setDate(1)
         startOfMonth.setHours(0, 0, 0, 0)
@@ -95,7 +97,7 @@ export async function canSendInvite(userId: string): Promise<{
             .from('confraternity_invites')
             .select('*', { count: 'exact', head: true })
             .eq('sender_id', userId)
-            .eq('status', 'accepted') // Apenas aceitos contam
+            .in('status', ['accepted', 'completed']) // Aceitos E completados contam!
             .gte('accepted_at', startOfMonth.toISOString())
 
         const invitesAccepted = count || 0
@@ -202,13 +204,14 @@ export async function sendConfraternityInvite(
             console.error('[Confraternity] Exception creating notification:', notifErr)
         }
 
-        // 5. Gamificação: +10 Vigor (XP) por enviar convite
+        // 5. Gamificação: pontos por enviar convite (via banco)
         try {
-            console.log('[Confraternity] Awarding points to sender...')
+            const points = await getActionPoints('confraternity_invite')
+            console.log('[Confraternity] Awarding', points, 'points to sender...')
             const result = await awardPoints(
                 senderId,
-                10,
-                'confraternity_invite_sent',
+                points,
+                'confraternity_invite',
                 'Enviou convite de confraternização'
             )
             console.log('[Confraternity] Points awarded result:', result)
@@ -254,14 +257,15 @@ export async function acceptConfraternityInvite(
             return { success: false, error: updateError.message }
         }
 
-        // 2. Gamificação: +10 XP por aceitar
+        // 2. Gamificação: pontos por aceitar (via banco)
         console.log('[Confraternity] Convite aceito! Iniciando gamificação para userId:', userId)
         try {
-            console.log('[Confraternity] Chamando awardPoints...')
+            const points = await getActionPoints('confraternity_accepted')
+            console.log('[Confraternity] Chamando awardPoints com', points, 'pontos...')
             const pointsResult = await awardPoints(
                 userId,
-                10,
-                'confraternity_invite_accepted',
+                points,
+                'confraternity_accepted',
                 'Aceitou convite de confraternização'
             )
             console.log('[Confraternity] awardPoints resultado:', pointsResult)
@@ -471,22 +475,43 @@ export async function completeConfraternity(
                 })
         }
 
-        // 5. Gamificação
+        // 5. Gamificação - PONTOS VIA BANCO + AMBOS PARTICIPANTES
         try {
-            // +50 XP por realizar
+            // Buscar pontos do banco
+            const hostPoints = await getActionPoints('confraternity_host')
+            const guestPoints = await getActionPoints('confraternity_guest')
+            const photoPoints = await getActionPoints('confraternity_photo')
+
+            // Determinar quem é host e guest
+            const isHost = userId === invite.sender_id
+            const myPoints = isHost ? hostPoints : guestPoints
+            const partnerPoints = isHost ? guestPoints : hostPoints
+
+            // Pontos para quem postou
             await awardPoints(
                 userId,
-                50,
-                'confraternity_completed',
-                'Confraternização realizada'
+                myPoints,
+                isHost ? 'confraternity_host' : 'confraternity_guest',
+                'Confraria concluída'
             )
 
-            // +20 XP por foto (se enviou fotos válidas)
+            // Pontos para o parceiro (automático)
+            await awardPoints(
+                partnerId,
+                partnerPoints,
+                isHost ? 'confraternity_guest' : 'confraternity_host',
+                'Confraria concluída'
+            )
+
+            console.log(`[Confraternity] ✅ Pontos: ${myPoints} (você) + ${partnerPoints} (parceiro)`)
+
+            // Pontos por fotos (para quem postou)
             if (validPhotos.length > 0) {
+                const totalPhotoPoints = photoPoints * validPhotos.length
                 await awardPoints(
                     userId,
-                    20 * validPhotos.length,
-                    'confraternity_photos',
+                    totalPhotoPoints,
+                    'confraternity_photo',
                     `Adicionou ${validPhotos.length} fotos`
                 )
 
@@ -497,22 +522,11 @@ export async function completeConfraternity(
                     .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
                     .not('photos', 'eq', '{}')
 
-                // Se este é o primeiro registro com fotos, conceder medalha
                 const totalWithPhotos = previousPhotos?.filter(c => c.photos && c.photos.length > 0).length || 0
                 if (totalWithPhotos <= 1) {
                     console.log('[Confraternity] 🎖️ Concedendo medalha Cronista...')
                     await awardBadge(userId, 'cronista')
                 }
-            }
-
-            // +15 XP por depoimento
-            if (data.testimonial) {
-                await awardPoints(
-                    userId,
-                    15,
-                    'confraternity_testimonial',
-                    'Adicionou depoimento'
-                )
             }
 
             // Verificar badges baseadas em quantidade de confrarias
@@ -723,151 +737,20 @@ export async function getPublicConfraternities(
 
 /**
  * Parceiro confirma participação na confraria e adiciona depoimento
- * Esta função é chamada quando o segundo membro confirma a confraria registrada pelo primeiro
+ * 
+ * @deprecated FUNÇÃO DEPRECADA - A confirmação agora é automática
+ * Quando a prova é postada, ambos os participantes recebem pontos automaticamente
+ * Esta função não deve mais ser usada.
  */
 export async function confirmConfraternityPartner(
-    confraternityId: string,
-    userId: string,
-    data: {
+    _confraternityId: string,
+    _userId: string,
+    _data: {
         testimonial: string
         approvePublication: boolean
     }
 ): Promise<{ success: boolean; error?: string }> {
-    try {
-        const supabase = createClient()
-
-        // 1. Buscar a confraria
-        const { data: confraternity, error: confError } = await supabase
-            .from('confraternities')
-            .select('*, invite:confraternity_invites!invite_id(*)')
-            .eq('id', confraternityId)
-            .single()
-
-        if (confError || !confraternity) {
-            return { success: false, error: 'Confraria não encontrada' }
-        }
-
-        // 2. Verificar se usuário é parte da confraria
-        if (confraternity.member1_id !== userId && confraternity.member2_id !== userId) {
-            return { success: false, error: 'Você não faz parte desta confraria' }
-        }
-
-        // 3. Determinar qual campo de depoimento usar
-        const testimonialField = confraternity.member1_id === userId
-            ? 'testimonial_member1'
-            : 'testimonial_member2'
-
-        // 4. Atualizar a confraria com o depoimento do parceiro
-        const updateData: any = {
-            [testimonialField]: data.testimonial
-        }
-
-        // Se parceiro não aprovou publicação, mudar visibilidade para privado
-        if (!data.approvePublication && confraternity.visibility === 'public') {
-            updateData.visibility = 'connections' // Ou 'private'
-        }
-
-        const { error: updateError } = await supabase
-            .from('confraternities')
-            .update(updateData)
-            .eq('id', confraternityId)
-
-        if (updateError) {
-            return { success: false, error: updateError.message }
-        }
-
-        // 5. Marcar convite como completed (ambos confirmaram)
-        if (confraternity.invite_id) {
-            await supabase
-                .from('confraternity_invites')
-                .update({
-                    status: 'completed',
-                    completed_at: new Date().toISOString()
-                })
-                .eq('id', confraternity.invite_id)
-        }
-
-        // 6. Gamificação para o parceiro
-        try {
-            // +50 XP por confirmar participação
-            await awardPoints(
-                userId,
-                50,
-                'confraternity_confirmed',
-                'Confirmou participação na confraria'
-            )
-
-            // +15 XP por adicionar depoimento
-            if (data.testimonial) {
-                await awardPoints(
-                    userId,
-                    15,
-                    'confraternity_testimonial',
-                    'Adicionou depoimento na confraria'
-                )
-            }
-
-            // Verificar badges
-            const { data: allUserConfs } = await supabase
-                .from('confraternities')
-                .select('id')
-                .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
-
-            const totalConfs = allUserConfs?.length || 0
-
-            if (totalConfs === 1) {
-                await awardBadge(userId, 'primeira_confraria')
-            }
-
-            // Proezas mensais
-            const startOfMonth = new Date()
-            startOfMonth.setDate(1)
-            startOfMonth.setHours(0, 0, 0, 0)
-
-            const { data: monthlyConfs } = await supabase
-                .from('confraternities')
-                .select('id')
-                .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
-                .gte('date_occurred', startOfMonth.toISOString())
-
-            const monthlyCount = monthlyConfs?.length || 0
-
-            if (monthlyCount >= 5) {
-                await awardAchievement(userId, '5_confrarias_mes')
-            }
-        } catch (gamifError) {
-            console.error('[ConfirmPartner] Gamification error:', gamifError)
-        }
-
-        // 7. Notificar o primeiro membro que o parceiro confirmou
-        const partnerId = confraternity.member1_id === userId
-            ? confraternity.member2_id
-            : confraternity.member1_id
-
-        const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', userId)
-            .single()
-
-        await supabase
-            .from('notifications')
-            .insert({
-                user_id: partnerId,
-                type: 'confraternity_partner_confirmed',
-                title: '🎉 Confraria Confirmada!',
-                body: `${userProfile?.full_name || 'Seu parceiro'} confirmou a participação na confraria!`,
-                priority: 'normal',
-                action_url: `/elo-da-rota/confraria/galeria`,
-                metadata: {
-                    confraternity_id: confraternityId,
-                    from_user_id: userId
-                }
-            })
-
-        return { success: true }
-    } catch (error: any) {
-        console.error('[ConfirmPartner] Exception:', error)
-        return { success: false, error: error.message }
-    }
+    console.warn('[Confraternity] confirmConfraternityPartner está DEPRECADA. Confirmação é automática.')
+    return { success: true }
 }
+

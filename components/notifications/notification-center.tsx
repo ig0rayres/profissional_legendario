@@ -16,6 +16,7 @@ import { ptBR } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth/context'
 import { useRouter } from 'next/navigation'
+import { getActionPoints } from '@/lib/services/point-actions-service'
 
 interface Notification {
     id: string
@@ -231,9 +232,10 @@ export function NotificationCenter() {
 
                     if (!alreadyAwarded) {
                         // Dar pontos ao usuário que aceitou
+                        const points = await getActionPoints('elo_accepted')
                         const result = await awardPoints(
                             user.id,
-                            5,
+                            points,
                             'elo_accepted',
                             `Aceitou elo com ${senderName}`,
                             { target_user_id: fromUserId } // Para verificação de duplicação
@@ -355,7 +357,8 @@ export function NotificationCenter() {
                 try {
                     const { awardPoints } = await import('@/lib/api/gamification')
                     console.log('[Confraternity] awardPoints importado, chamando...')
-                    const result = await awardPoints(user.id, 10, 'confraternity_accepted', 'Aceitou convite de confraria')
+                    const points = await getActionPoints('confraternity_accepted')
+                    const result = await awardPoints(user.id, points, 'confraternity_accepted', 'Aceitou convite de confraria')
                     console.log('[Confraternity] Points result:', JSON.stringify(result))
 
                     if (!result.success) {

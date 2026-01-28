@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy init para evitar erro de build
+let resend: Resend | null = null
+function getResend() {
+    if (!resend && process.env.RESEND_API_KEY) {
+        resend = new Resend(process.env.RESEND_API_KEY)
+    }
+    return resend
+}
 
 function getSupabaseAdmin() {
     return createClient(
@@ -53,13 +60,18 @@ export async function POST(request: NextRequest) {
         let emailsSent = 0
         let errors: string[] = []
 
+        const emailClient = getResend()
+        if (!emailClient) {
+            return NextResponse.json({ error: 'Email service not configured' }, { status: 500 })
+        }
+
         if (type === 'new_season') {
             // Email de nova temporada
             for (const user of users) {
                 if (!user.email) continue
 
                 try {
-                    await resend.emails.send({
+                    await emailClient.emails.send({
                         from: 'Rota Business Club <noreply@rotabusinessclub.com.br>',
                         to: user.email,
                         subject: `🏆 Nova Temporada: ${season.name} - Veja os Prêmios!`,
@@ -82,7 +94,7 @@ export async function POST(request: NextRequest) {
                 if (!user.email) continue
 
                 try {
-                    await resend.emails.send({
+                    await emailClient.emails.send({
                         from: 'Rota Business Club <noreply@rotabusinessclub.com.br>',
                         to: user.email,
                         subject: `🎉 Conheça os Campeões de ${season.name}!`,

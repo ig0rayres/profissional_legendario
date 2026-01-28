@@ -9,6 +9,7 @@ import {
     TrendingUp, Eye, Camera, Settings, Edit
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getRankIcon } from '@/lib/utils/ranks'
 
 interface ImprovedCurrentHeaderProps {
     profileData: {
@@ -109,15 +110,20 @@ export function ImprovedCurrentHeader({
                             )}
                         </div>
 
-                        {/* Rank Badge with Glow */}
-                        <div
-                            className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#C85A17] flex items-center justify-center shadow-lg"
-                            style={{
-                                boxShadow: '0 4px 16px rgba(210, 105, 30, 0.5)',
-                            }}
-                        >
-                            <Shield className="w-6 h-6 text-white" />
-                        </div>
+                        {/* Rank Badge with Glow - Ícone dinâmico */}
+                        {(() => {
+                            const RankIcon = getRankIcon(gamification.current_rank_id)
+                            return (
+                                <div
+                                    className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-gradient-to-br from-[#D2691E] to-[#C85A17] flex items-center justify-center shadow-lg"
+                                    style={{
+                                        boxShadow: '0 4px 16px rgba(210, 105, 30, 0.5)',
+                                    }}
+                                >
+                                    <RankIcon className="w-6 h-6 text-white" />
+                                </div>
+                            )
+                        })()}
                     </div>
 
                     {/* Info Section */}
@@ -150,21 +156,26 @@ export function ImprovedCurrentHeader({
 
                             {/* PATENTE - Badge tipo medalha */}
                             <div className="flex-shrink-0 ml-4">
-                                <div
-                                    className="relative px-5 py-4 rounded-2xl border-2 border-[#D2691E]/50"
-                                    style={{
-                                        background: 'linear-gradient(135deg, rgba(210, 105, 30, 0.18) 0%, rgba(45, 59, 45, 0.4) 100%)',
-                                        backdropFilter: 'blur(12px)',
-                                        boxShadow: '0 4px 16px rgba(210, 105, 30, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                                    }}
-                                >
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Shield className="w-8 h-8 text-[#D2691E]" />
-                                        <div className="text-base font-bold text-[#F2F4F3] capitalize leading-none text-center">
-                                            {gamification.current_rank_id}
+                                {(() => {
+                                    const RankIcon = getRankIcon(gamification.current_rank_id)
+                                    return (
+                                        <div
+                                            className="relative px-5 py-4 rounded-2xl border-2 border-[#D2691E]/50"
+                                            style={{
+                                                background: 'linear-gradient(135deg, rgba(210, 105, 30, 0.18) 0%, rgba(45, 59, 45, 0.4) 100%)',
+                                                backdropFilter: 'blur(12px)',
+                                                boxShadow: '0 4px 16px rgba(210, 105, 30, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                                            }}
+                                        >
+                                            <div className="flex flex-col items-center gap-2">
+                                                <RankIcon className="w-8 h-8 text-[#D2691E]" />
+                                                <div className="text-base font-bold text-[#F2F4F3] capitalize leading-none text-center">
+                                                    {gamification.current_rank_id}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    )
+                                })()}
                             </div>
                         </div>
 
