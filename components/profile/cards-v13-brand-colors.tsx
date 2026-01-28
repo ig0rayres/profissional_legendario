@@ -293,6 +293,7 @@ interface ElosDaRotaV13Props {
         slug?: string
         rota_number?: string | null
         rank_name?: string
+        rank_id?: string
     }>
     pendingCount?: number
     userId: string
