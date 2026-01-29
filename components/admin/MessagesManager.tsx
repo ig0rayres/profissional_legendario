@@ -169,13 +169,15 @@ export default function MessagesManager() {
 
             if (categoriesData) setCategories(categoriesData)
 
-            // Carregar planos do banco
+            // Carregar planos do banco (plan_config tem os 4 planos corretos)
             const { data: plansData } = await supabase
-                .from('plan_tiers')
-                .select('id, name')
-                .order('monthly_price')
+                .from('plan_config')
+                .select('id, tier, name')
+                .eq('is_active', true)
+                .order('display_order')
 
-            if (plansData) setPlans(plansData)
+            // Mapear tier como id para filtros
+            if (plansData) setPlans(plansData.map(p => ({ id: p.tier, name: p.name })))
 
             // Carregar todos os usuários para busca
             const { data: usersData } = await supabase
