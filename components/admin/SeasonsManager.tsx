@@ -1265,53 +1265,47 @@ export function SeasonsManager() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">
-                                {/* Preview do Email */}
-                                <div className="bg-[#0a0a0a] text-white">
-                                    {/* Banner ou Header */}
-                                    {activeSeason?.banner_url ? (
-                                        <img src={activeSeason?.banner_url} alt="" className="w-full h-auto" />
-                                    ) : (
-                                        <div className="bg-gradient-to-br from-green-800 via-green-600 to-green-800 p-8 text-center">
-                                            <div className="text-5xl mb-3">🚀</div>
-                                            <h3 className="text-2xl font-black tracking-wider">NOVA TEMPORADA</h3>
-                                            <p className="text-white/80 mt-2 text-lg">{activeSeason?.name || 'Prêmios do Mês'}</p>
-                                        </div>
-                                    )}
+                                {/* Preview do Email - FUNDO BRANCO */}
+                                <div className="bg-white text-gray-800">
+                                    {/* Header Verde */}
+                                    <div className="bg-green-800 p-6 text-center text-white">
+                                        <div className="text-4xl mb-2">🏆</div>
+                                        <h3 className="text-xl font-bold">Nova Temporada</h3>
+                                        <p className="text-white/90 mt-1">{activeSeason?.name || 'Prêmios do Mês'}</p>
+                                    </div>
 
                                     {/* Corpo */}
                                     <div className="p-5 space-y-4">
-                                        <p className="text-gray-300">
-                                            E aí, <span className="text-green-400 font-bold">[Seu Nome]</span>! 🔥
+                                        <p className="text-gray-700">
+                                            Olá, <span className="text-green-700 font-bold">[Seu Nome]</span>!
                                         </p>
-                                        <p className="text-gray-400 text-sm">
-                                            A <span className="text-white font-medium">maior competição do mês</span> acaba de começar! Complete missões, conquiste medalhas e <span className="text-yellow-400 font-medium">leve prêmios incríveis pra casa</span>.
+                                        <p className="text-gray-600 text-sm">
+                                            A nova temporada do <span className="text-gray-900 font-medium">Rota Business Club</span> começou!
+                                            Participe, acumule pontos e concorra a prêmios incríveis.
                                         </p>
 
-                                        {/* Prêmios */}
-                                        <div className="bg-gradient-to-b from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-4 mt-4">
-                                            <h4 className="text-yellow-400 font-black text-center text-sm tracking-widest mb-4">🎁 PRÊMIOS EM JOGO</h4>
-                                            <div className="space-y-3">
+                                        {/* Período */}
+                                        <div className="bg-gray-100 rounded-lg p-3 text-center text-sm text-gray-600">
+                                            📅 <span className="font-medium text-gray-700">Período:</span> {activeSeason ? `${new Date(activeSeason.start_date).toLocaleDateString('pt-BR')} até ${new Date(activeSeason.end_date).toLocaleDateString('pt-BR')}` : 'A definir'}
+                                        </div>
+
+                                        {/* Tabela de Prêmios */}
+                                        <div>
+                                            <h4 className="text-gray-900 font-semibold text-base mb-3">🎁 Prêmios desta Temporada</h4>
+                                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                                <div className="bg-green-800 text-white text-xs font-semibold grid grid-cols-3">
+                                                    <div className="p-2 text-center"></div>
+                                                    <div className="p-2">Posição</div>
+                                                    <div className="p-2">Prêmio</div>
+                                                </div>
                                                 {prizes.map((prize) => {
-                                                    const colors = {
-                                                        1: { bg: 'from-yellow-900/50 to-amber-950/50', border: 'border-yellow-500', text: 'text-yellow-400' },
-                                                        2: { bg: 'from-gray-700/50 to-gray-800/50', border: 'border-gray-400', text: 'text-gray-300' },
-                                                        3: { bg: 'from-amber-900/50 to-orange-950/50', border: 'border-amber-600', text: 'text-amber-400' }
-                                                    }
-                                                    const c = colors[prize.position as 1 | 2 | 3] || colors[3]
+                                                    const bgColor = prize.position === 1 ? 'bg-amber-50' : prize.position === 2 ? 'bg-gray-50' : 'bg-orange-50'
+                                                    const emoji = prize.position === 1 ? '🥇' : prize.position === 2 ? '🥈' : '🥉'
                                                     return (
-                                                        <div key={prize.id} className={`flex items-center gap-3 bg-gradient-to-r ${c.bg} rounded-xl p-3 border ${c.border}`}>
-                                                            <div className="text-3xl">
-                                                                {prize.position === 1 ? '👑' : prize.position === 2 ? '🥈' : '🥉'}
-                                                            </div>
-                                                            {prize.image_url && (
-                                                                <img src={prize.image_url} alt="" className="w-12 h-12 rounded-lg object-contain bg-black/30" />
-                                                            )}
-                                                            <div className="flex-1">
-                                                                <p className={`text-[10px] font-bold tracking-widest ${c.text}`}>
-                                                                    {prize.position === 1 ? 'CAMPEÃO' : prize.position === 2 ? 'VICE' : 'BRONZE'}
-                                                                </p>
-                                                                <p className="font-bold text-white">{prize.title}</p>
-                                                            </div>
+                                                        <div key={prize.id} className={`grid grid-cols-3 ${bgColor} border-t border-gray-200`}>
+                                                            <div className="p-3 text-center text-xl">{emoji}</div>
+                                                            <div className="p-3 text-sm font-medium text-gray-700">{prize.position}º Lugar</div>
+                                                            <div className="p-3 text-sm text-gray-900">{prize.title}</div>
                                                         </div>
                                                     )
                                                 })}
@@ -1319,11 +1313,16 @@ export function SeasonsManager() {
                                         </div>
 
                                         {/* CTA */}
-                                        <div className="text-center pt-4">
-                                            <span className="inline-block bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30">
-                                                ⚡ QUERO COMPETIR
+                                        <div className="text-center pt-2">
+                                            <span className="inline-block bg-green-800 text-white px-6 py-3 rounded-lg font-semibold text-sm">
+                                                Ver Ranking e Participar
                                             </span>
                                         </div>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="bg-gray-50 p-4 text-center text-xs text-gray-400 border-t border-gray-200">
+                                        Rota Business Club © {new Date().getFullYear()}
                                     </div>
                                 </div>
 
@@ -1376,71 +1375,46 @@ export function SeasonsManager() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">
-                                {/* Preview do Email */}
-                                <div className="bg-[#0a0a0a] text-white">
-                                    {/* Banner ou Header */}
-                                    {activeSeason?.banner_url ? (
-                                        <>
-                                            <img src={activeSeason?.banner_url} alt="" className="w-full h-auto" />
-                                            <div className="bg-gradient-to-r from-amber-800 via-amber-600 to-amber-800 p-4 text-center">
-                                                <h3 className="text-xl font-black tracking-wider">🏆 E OS CAMPEÕES SÃO...</h3>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="bg-gradient-to-br from-amber-900 via-yellow-600 to-amber-900 p-8 text-center">
-                                            <div className="text-6xl mb-3">🏆</div>
-                                            <h3 className="text-2xl font-black tracking-wider">E OS CAMPEÕES SÃO...</h3>
-                                            <div className="w-16 h-1 bg-white/50 mx-auto my-3 rounded"></div>
-                                            <p className="text-white/90 text-lg">{activeSeason?.name || 'Prêmios do Mês'}</p>
-                                        </div>
-                                    )}
+                                {/* Preview do Email - FUNDO BRANCO */}
+                                <div className="bg-white text-gray-800">
+                                    {/* Header Dourado */}
+                                    <div className="bg-amber-700 p-6 text-center text-white">
+                                        <div className="text-4xl mb-2">🏆</div>
+                                        <h3 className="text-xl font-bold">Resultados da Temporada</h3>
+                                        <p className="text-white/90 mt-1">{activeSeason?.name || 'Prêmios do Mês'}</p>
+                                    </div>
 
                                     {/* Corpo */}
                                     <div className="p-5 space-y-4">
-                                        <p className="text-gray-300">
-                                            Olá, <span className="text-yellow-400 font-bold">[Seu Nome]</span>! 👋
+                                        <p className="text-gray-700">
+                                            Olá, <span className="text-amber-700 font-bold">[Seu Nome]</span>!
                                         </p>
-                                        <p className="text-gray-400 text-sm">
-                                            A temporada chegou ao fim e foi <span className="text-green-400 font-bold">ÉPICA</span>! 💚 Obrigado por fazer parte dessa jornada.
+                                        <p className="text-gray-600 text-sm">
+                                            A temporada <span className="font-medium text-gray-900">{activeSeason?.name || 'do mês'}</span> chegou ao fim!
+                                            Confira os vencedores e seus prêmios.
                                         </p>
 
-                                        {/* Pódio */}
-                                        <div className="bg-gradient-to-b from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 rounded-xl p-4 mt-4">
-                                            <h4 className="text-yellow-400 font-black text-center text-sm tracking-widest mb-4">🎖️ PÓDIO OFICIAL</h4>
-                                            <div className="space-y-3">
+                                        {/* Tabela de Vencedores */}
+                                        <div>
+                                            <h4 className="text-gray-900 font-semibold text-base mb-3">🎖️ Pódio Oficial</h4>
+                                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                                <div className="bg-amber-700 text-white text-xs font-semibold grid grid-cols-4">
+                                                    <div className="p-2 text-center"></div>
+                                                    <div className="p-2">Posição</div>
+                                                    <div className="p-2">Nome</div>
+                                                    <div className="p-2">Prêmio</div>
+                                                </div>
                                                 {[1, 2, 3].map((pos) => {
                                                     const prize = prizes.find(p => p.position === pos)
                                                     const winner = ranking[pos - 1]
-                                                    const configs = {
-                                                        1: { bg: 'from-yellow-900/60 to-amber-950/60', border: 'border-yellow-500', trophy: '🏆', label: 'CAMPEÃO', labelBg: 'bg-gradient-to-r from-yellow-500 to-amber-500' },
-                                                        2: { bg: 'from-gray-700/60 to-gray-800/60', border: 'border-gray-400', trophy: '🥈', label: 'VICE-CAMPEÃO', labelBg: 'bg-gradient-to-r from-gray-400 to-gray-500' },
-                                                        3: { bg: 'from-amber-900/60 to-orange-950/60', border: 'border-amber-600', trophy: '🥉', label: 'BRONZE', labelBg: 'bg-gradient-to-r from-amber-600 to-orange-600' }
-                                                    }
-                                                    const c = configs[pos as 1 | 2 | 3]
+                                                    const bgColor = pos === 1 ? 'bg-amber-50' : pos === 2 ? 'bg-gray-50' : 'bg-orange-50'
+                                                    const emoji = pos === 1 ? '🥇' : pos === 2 ? '🥈' : '🥉'
                                                     return (
-                                                        <div key={pos} className={`bg-gradient-to-r ${c.bg} rounded-xl p-4 border-2 ${c.border}`}>
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="text-4xl">{c.trophy}</div>
-                                                                <div className="flex-1">
-                                                                    <span className={`${c.labelBg} text-black text-[10px] font-black px-2 py-0.5 rounded-full`}>
-                                                                        {c.label}
-                                                                    </span>
-                                                                    <p className="font-bold text-white text-lg mt-1">
-                                                                        {winner?.full_name || '[Aguardando Vencedor]'}
-                                                                    </p>
-                                                                    <p className="text-green-400 text-sm font-medium">
-                                                                        ⚡ {winner?.xp_month || 0} VIGOR conquistado
-                                                                    </p>
-                                                                    {prize && (
-                                                                        <p className="text-gray-400 text-xs mt-1">
-                                                                            🎁 Prêmio: <span className="text-white">{prize.title}</span>
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                                {prize?.image_url && (
-                                                                    <img src={prize.image_url} alt="" className="w-16 h-16 rounded-lg object-contain bg-black/30" />
-                                                                )}
-                                                            </div>
+                                                        <div key={pos} className={`grid grid-cols-4 ${bgColor} border-t border-gray-200`}>
+                                                            <div className="p-3 text-center text-xl">{emoji}</div>
+                                                            <div className="p-3 text-sm font-medium text-gray-700">{pos}º Lugar</div>
+                                                            <div className="p-3 text-sm font-semibold text-gray-900">{winner?.full_name || '[Aguardando]'}</div>
+                                                            <div className="p-3 text-sm text-gray-600">{prize?.title || '-'}</div>
                                                         </div>
                                                     )
                                                 })}
@@ -1448,18 +1422,22 @@ export function SeasonsManager() {
                                         </div>
 
                                         {/* Celebração */}
-                                        <div className="bg-green-900/20 border-2 border-green-500/50 rounded-xl p-4 text-center">
-                                            <div className="text-4xl mb-2">🎉</div>
-                                            <p className="font-bold text-white text-lg">Parabéns aos Campeões!</p>
-                                            <p className="text-green-400 text-sm">Entraremos em contato para entrega dos prêmios.</p>
+                                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                                            <p className="font-semibold text-green-800">🎉 Parabéns aos vencedores!</p>
+                                            <p className="text-green-700 text-sm mt-1">Entraremos em contato para entrega dos prêmios.</p>
                                         </div>
 
                                         {/* CTA */}
                                         <div className="text-center pt-2">
-                                            <span className="inline-block bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-500/30">
-                                                ⚡ QUERO COMPETIR
+                                            <span className="inline-block bg-green-800 text-white px-6 py-3 rounded-lg font-semibold text-sm">
+                                                Ver Nova Temporada
                                             </span>
                                         </div>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="bg-gray-50 p-4 text-center text-xs text-gray-400 border-t border-gray-200">
+                                        Rota Business Club © {new Date().getFullYear()}
                                     </div>
                                 </div>
 
