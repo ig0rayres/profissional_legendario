@@ -165,35 +165,49 @@ export default function RotaValenteAdminPage() {
     async function loadRanking() {
         setLoadingRanking(true)
 
-        // Buscar gamification de todos os usuários com perfis
-        const { data: gamifData } = await supabase
-            .from('user_gamification')
-            .select(`
-                id,
-                user_id,
-                total_points,
-                monthly_vigor,
-                current_rank_id,
-                profiles!inner(full_name, avatar_url),
-                subscriptions(plan_id)
-            `)
-            .order('total_points', { ascending: false })
-            .limit(100)
+        try {
+            // Buscar gamification sem joins complexos
+            const { data: gamifData, error } = await supabase
+                .from('user_gamification')
+                .select('id, user_id, total_points, monthly_vigor, current_rank_id')
+                .order('total_points', { ascending: false })
+                .limit(100)
 
-        if (gamifData) {
-            const rankingData = gamifData.map((g: any) => ({
-                id: g.id,
-                user_id: g.user_id,
-                full_name: g.profiles?.full_name || 'Usuário',
-                avatar_url: g.profiles?.avatar_url,
-                total_points: g.total_points || 0,
-                monthly_vigor: g.monthly_vigor || 0,
-                current_rank_id: g.current_rank_id || 'novato',
-                plan_id: g.subscriptions?.[0]?.plan_id || 'recruta',
-                proezas_count: 0,
-                medals_count: 0
-            }))
-            setRanking(rankingData)
+            if (error) {
+                console.error('Erro ao buscar ranking:', error)
+                setLoadingRanking(false)
+                return
+            }
+
+            if (gamifData && gamifData.length > 0) {
+                // Buscar profiles separadamente
+                const userIds = gamifData.map(g => g.user_id)
+                const { data: profilesData } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, avatar_url')
+                    .in('id', userIds)
+
+                const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || [])
+
+                const rankingData = gamifData.map((g: any) => {
+                    const profile = profilesMap.get(g.user_id)
+                    return {
+                        id: g.id,
+                        user_id: g.user_id,
+                        full_name: profile?.full_name || 'Usuário',
+                        avatar_url: profile?.avatar_url || null,
+                        total_points: g.total_points || 0,
+                        monthly_vigor: g.monthly_vigor || 0,
+                        current_rank_id: g.current_rank_id || 'novato',
+                        plan_id: 'recruta', // Simplificado por enquanto
+                        proezas_count: 0,
+                        medals_count: 0
+                    }
+                })
+                setRanking(rankingData)
+            }
+        } catch (err) {
+            console.error('Erro ao carregar ranking:', err)
         }
 
         setLoadingRanking(false)
