@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Search, Plus, Edit2, Trash2, Loader2, Save, X, MapPin, Users } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Search, Plus, Edit2, Trash2, Loader2, Save, X, MapPin, Users, ImageIcon, Upload } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -33,6 +34,7 @@ interface Pista {
     country: string
     active: boolean
     member_count: number
+    brasao_url: string | null
     created_at: string
     updated_at: string
 }
@@ -76,11 +78,17 @@ export default function PistasPage() {
     const [selectedPista, setSelectedPista] = useState<Pista | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
+    // Upload brasão
+    const brasaoInputRef = useRef<HTMLInputElement>(null)
+    const [uploadingBrasao, setUploadingBrasao] = useState(false)
+    const [brasaoPreview, setBrasaoPreview] = useState<string | null>(null)
+
     // Form state
     const [formData, setFormData] = useState({
         city: '',
         state: '',
-        active: true
+        active: true,
+        brasao_url: '' as string | null
     })
 
     useEffect(() => {
@@ -121,8 +129,10 @@ export default function PistasPage() {
         setFormData({
             city: '',
             state: '',
-            active: true
+            active: true,
+            brasao_url: null
         })
+        setBrasaoPreview(null)
         setIsDialogOpen(true)
     }
 
@@ -131,9 +141,47 @@ export default function PistasPage() {
         setFormData({
             city: pista.city,
             state: pista.state,
-            active: pista.active
+            active: pista.active,
+            brasao_url: pista.brasao_url
         })
+        setBrasaoPreview(pista.brasao_url)
         setIsDialogOpen(true)
+    }
+
+    // Upload do brasão
+    const handleBrasaoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setUploadingBrasao(true)
+
+        try {
+            // Gerar nome único
+            const fileName = `brasao-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`
+            const filePath = `brasoes/${fileName}`
+
+            // Upload para o storage
+            const { error: uploadError } = await supabase.storage
+                .from('pistas')
+                .upload(filePath, file, { upsert: true })
+
+            if (uploadError) throw uploadError
+
+            // Obter URL pública
+            const { data: urlData } = supabase.storage
+                .from('pistas')
+                .getPublicUrl(filePath)
+
+            const publicUrl = urlData.publicUrl
+
+            setFormData(prev => ({ ...prev, brasao_url: publicUrl }))
+            setBrasaoPreview(publicUrl)
+        } catch (error: any) {
+            console.error('Erro no upload do brasão:', error)
+            alert('Erro ao fazer upload: ' + error.message)
+        } finally {
+            setUploadingBrasao(false)
+        }
     }
 
     const handleSavePista = async () => {
@@ -159,6 +207,7 @@ export default function PistasPage() {
                         state_name: stateInfo?.nome || null,
                         region: stateInfo?.regiao || null,
                         active: formData.active,
+                        brasao_url: formData.brasao_url,
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', selectedPista.id)
@@ -174,7 +223,8 @@ export default function PistasPage() {
                         state: formData.state,
                         state_name: stateInfo?.nome || null,
                         region: stateInfo?.regiao || null,
-                        active: formData.active
+                        active: formData.active,
+                        brasao_url: formData.brasao_url
                     })
 
                 if (error) throw error
@@ -291,6 +341,74 @@ export default function PistasPage() {
                                 checked={formData.active}
                                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
                             />
+                        </div>
+
+                        {/* Upload Brasão */}
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4" />
+                                Brasão da Pista
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                                Imagem representativa da cidade/pista (opcional)
+                            </p>
+
+                            <div className="flex items-center gap-4">
+                                {/* Preview do brasão */}
+                                <div className="w-20 h-20 rounded-lg border-2 border-dashed border-primary/30 flex items-center justify-center overflow-hidden bg-muted/30">
+                                    {brasaoPreview ? (
+                                        <Image
+                                            src={brasaoPreview}
+                                            alt="Brasão"
+                                            width={80}
+                                            height={80}
+                                            className="object-cover w-full h-full"
+                                        />
+                                    ) : (
+                                        <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                                    )}
+                                </div>
+
+                                {/* Botão de upload */}
+                                <div className="flex-1">
+                                    <input
+                                        ref={brasaoInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleBrasaoUpload}
+                                        className="hidden"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full"
+                                        onClick={() => brasaoInputRef.current?.click()}
+                                        disabled={uploadingBrasao}
+                                    >
+                                        {uploadingBrasao ? (
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <Upload className="w-4 h-4 mr-2" />
+                                        )}
+                                        {brasaoPreview ? 'Trocar Brasão' : 'Enviar Brasão'}
+                                    </Button>
+                                    {brasaoPreview && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="w-full mt-1 text-destructive hover:text-destructive"
+                                            onClick={() => {
+                                                setFormData(prev => ({ ...prev, brasao_url: null }))
+                                                setBrasaoPreview(null)
+                                            }}
+                                        >
+                                            <X className="w-3 h-3 mr-1" />
+                                            Remover
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Preview */}
