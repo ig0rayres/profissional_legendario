@@ -80,14 +80,17 @@ export async function POST(request: NextRequest) {
                 if (!user.email) continue
 
                 try {
-                    await emailClient.emails.send({
-                        from: 'Rota Business Club <noreply@rotabusinessclub.com.br>',
+                    console.log(`[EMAIL] Enviando para ${user.email}...`)
+                    const result = await emailClient.emails.send({
+                        from: 'Rota Business Club <contato@mail.rotabusinessclub.com.br>',
                         to: user.email,
                         subject: `🏆 Nova Temporada: ${season.name} - Veja os Prêmios!`,
                         html: generateNewSeasonEmail(season, prizes || [], user.full_name)
                     })
+                    console.log(`[EMAIL] Sucesso para ${user.email}:`, result)
                     emailsSent++
                 } catch (e: any) {
+                    console.error(`[EMAIL] Erro para ${user.email}:`, e)
                     errors.push(`${user.email}: ${e.message}`)
                 }
             }
@@ -103,14 +106,17 @@ export async function POST(request: NextRequest) {
                 if (!user.email) continue
 
                 try {
-                    await emailClient.emails.send({
-                        from: 'Profissionais Legendários <noreply@profissionaislegendarios.com.br>',
+                    console.log(`[EMAIL] Enviando para ${user.email}...`)
+                    const result = await emailClient.emails.send({
+                        from: 'Rota Business Club <contato@mail.rotabusinessclub.com.br>',
                         to: user.email,
                         subject: `🏆 E OS CAMPEÕES SÃO... | ${season.name}`,
                         html: generateChampionsEmail(season, winners || [], user.full_name, prizes)
                     })
+                    console.log(`[EMAIL] Sucesso para ${user.email}:`, result)
                     emailsSent++
                 } catch (e: any) {
+                    console.error(`[EMAIL] Erro para ${user.email}:`, e)
                     errors.push(`${user.email}: ${e.message}`)
                 }
             }
