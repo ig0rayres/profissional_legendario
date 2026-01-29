@@ -84,12 +84,7 @@ interface MessageHistory {
 // CONSTANTES
 // ============================================
 
-const PLANS: Plan[] = [
-    { id: 'recruta', name: 'Recruta (Grátis)' },
-    { id: 'veterano', name: 'Veterano' },
-    { id: 'elite', name: 'Elite' },
-    { id: 'legendario', name: 'Legendário' }
-]
+// Planos serão carregados do banco (plan_tiers)
 
 const MESSAGE_CHANNELS = [
     { id: 'notification', name: 'Sino (Notificação)', icon: Bell, description: 'Aparece no sino do topo' },
@@ -124,6 +119,7 @@ export default function MessagesManager() {
     // Dados para seleção
     const [pistas, setPistas] = useState<Pista[]>([])
     const [categories, setCategories] = useState<Category[]>([])
+    const [plans, setPlans] = useState<Plan[]>([])
     const [allUsers, setAllUsers] = useState<UserPreview[]>([])
     const [searchUser, setSearchUser] = useState('')
     const [loading, setLoading] = useState(true)
@@ -172,6 +168,14 @@ export default function MessagesManager() {
                 .order('name')
 
             if (categoriesData) setCategories(categoriesData)
+
+            // Carregar planos do banco
+            const { data: plansData } = await supabase
+                .from('plan_tiers')
+                .select('id, name')
+                .order('monthly_price')
+
+            if (plansData) setPlans(plansData)
 
             // Carregar todos os usuários para busca
             const { data: usersData } = await supabase
@@ -668,24 +672,26 @@ export default function MessagesManager() {
                             )}
 
                             {/* Filtro por Plano */}
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2 text-sm">
-                                    <CreditCard className="w-4 h-4" />
-                                    Planos
-                                </Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {PLANS.map((plan) => (
-                                        <Badge
-                                            key={plan.id}
-                                            variant={filters.plans.includes(plan.id) ? "default" : "outline"}
-                                            className="cursor-pointer"
-                                            onClick={() => togglePlan(plan.id)}
-                                        >
-                                            {plan.name}
-                                        </Badge>
-                                    ))}
+                            {plans.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2 text-sm">
+                                        <CreditCard className="w-4 h-4" />
+                                        Planos
+                                    </Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {plans.map((plan) => (
+                                            <Badge
+                                                key={plan.id}
+                                                variant={filters.plans.includes(plan.id) ? "default" : "outline"}
+                                                className="cursor-pointer"
+                                                onClick={() => togglePlan(plan.id)}
+                                            >
+                                                {plan.name}
+                                            </Badge>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Filtro por Categoria */}
                             {categories.length > 0 && (
