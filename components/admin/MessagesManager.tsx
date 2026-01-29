@@ -87,7 +87,8 @@ interface MessageHistory {
 const PLANS: Plan[] = [
     { id: 'recruta', name: 'Recruta (Grátis)' },
     { id: 'veterano', name: 'Veterano' },
-    { id: 'elite', name: 'Elite' }
+    { id: 'elite', name: 'Elite' },
+    { id: 'legendario', name: 'Legendário' }
 ]
 
 const MESSAGE_CHANNELS = [
@@ -155,11 +156,10 @@ export default function MessagesManager() {
         setLoading(true)
 
         try {
-            // Carregar pistas
+            // Carregar pistas (todas)
             const { data: pistasData } = await supabase
                 .from('pistas')
                 .select('id, name, slug')
-                .eq('is_active', true)
                 .order('name')
 
             if (pistasData) setPistas(pistasData)
@@ -513,8 +513,8 @@ export default function MessagesManager() {
                                             key={channel.id}
                                             onClick={() => setSelectedChannel(channel.id)}
                                             className={`p-4 rounded-lg border-2 transition-all text-left ${isSelected
-                                                    ? 'border-primary bg-primary/10'
-                                                    : 'border-primary/20 hover:border-primary/40'
+                                                ? 'border-primary bg-primary/10'
+                                                : 'border-primary/20 hover:border-primary/40'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
@@ -622,8 +622,8 @@ export default function MessagesManager() {
                             {/* Enviar para Todos */}
                             <div
                                 className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${filters.sendToAll
-                                        ? 'border-primary bg-primary/10'
-                                        : 'border-primary/20 hover:border-primary/40'
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-primary/20 hover:border-primary/40'
                                     }`}
                                 onClick={toggleSendToAll}
                             >
