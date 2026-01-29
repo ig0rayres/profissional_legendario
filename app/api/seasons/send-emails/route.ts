@@ -62,7 +62,16 @@ export async function POST(request: NextRequest) {
 
         const emailClient = getResend()
         if (!emailClient) {
-            return NextResponse.json({ error: 'Email service not configured' }, { status: 500 })
+            console.error('[API] RESEND_API_KEY não configurada')
+            return NextResponse.json({
+                error: 'Serviço de email não configurado',
+                message: 'Configure a variável RESEND_API_KEY no Vercel',
+                envCheck: {
+                    RESEND_API_KEY: !!process.env.RESEND_API_KEY,
+                    SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+                    SUPABASE_SERVICE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+                }
+            }, { status: 500 })
         }
 
         if (type === 'new_season') {
