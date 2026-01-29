@@ -1,19 +1,24 @@
 # 🔒 REGRAS DE NEGÓCIO - LIMITES POR PLANO
 **Sistema de Controle de Acesso e Limites**
 
+> ⚠️ **ATUALIZADO 2026-01-29:** Planos unificados na tabela `plan_config`.  
+> Ver também: [PLANOS_UNIFICADOS.md](./PLANOS_UNIFICADOS.md)
+
 ---
 
 ## 📊 MATRIZ DE PERMISSÕES POR PLANO:
 
-| Funcionalidade | RECRUTA | VETERANO | ELITE |
-|----------------|---------|----------|-------|
-| **Convites Confraria/mês** | ❌ 0 (só recebe) | ✅ 4 | ✅ 10 |
-| **Responder Confraria** | ✅ Sim | ✅ Sim | ✅ Sim |
-| **Elos (Amigos)** | ✅ 10 máx | ✅ 100 máx | ✅ Ilimitado |
-| **Anúncios Marketplace** | ❌ 0 | ✅ 2 simultâneos | ✅ 10 simultâneos |
-| **Enviar Mensagens** | ✅ Sim | ✅ Sim | ✅ Sim |
-| **Orar por outros** | ✅ Sim | ✅ Sim | ✅ Sim |
-| **Classificar usuários** | ✅ Sim | ✅ Sim | ✅ Sim |
+| Funcionalidade | RECRUTA | VETERANO | ELITE | LENDÁRIO |
+|----------------|---------|----------|-------|----------|
+| **Preço/mês** | Grátis | R$ 97 | R$ 127 | R$ 247 |
+| **Multi. XP** | 1.0x | 1.5x | 3.0x | 5.0x |
+| **Convites Confraria/mês** | ❌ 0 | ✅ 4 | ✅ 10 | ✅ ∞ |
+| **Responder Confraria** | ✅ Sim | ✅ Sim | ✅ Sim | ✅ Sim |
+| **Elos (Amigos)** | 10 máx | 100 máx | ∞ | ∞ |
+| **Anúncios Marketplace** | ❌ 0 | ✅ 2 | ✅ 10 | ✅ ∞ |
+| **Enviar Mensagens** | ✅ Sim | ✅ Sim | ✅ Sim | ✅ Sim |
+| **Orar por outros** | ✅ Sim | ✅ Sim | ✅ Sim | ✅ Sim |
+| **Classificar usuários** | ✅ Sim | ✅ Sim | ✅ Sim | ✅ Sim |
 
 ---
 
