@@ -11,6 +11,10 @@
         {
             "path": "/api/cron/manage-seasons",
             "schedule": "0 0 * * *"
+        },
+        {
+            "path": "/api/cron/expire-ads",
+            "schedule": "5 0 * * *"
         }
     ]
 }
