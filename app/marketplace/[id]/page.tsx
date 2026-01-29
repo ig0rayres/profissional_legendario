@@ -129,6 +129,11 @@ export default function AdDetailsPage() {
             return
         }
 
+        if (ad?.user_id === user.id) {
+            toast.error('Você não pode enviar mensagem para si mesmo')
+            return
+        }
+
         // Incrementar contador de contatos
         try {
             await supabase.rpc('increment_ad_contacts', { ad_id: adId })
@@ -136,16 +141,77 @@ export default function AdDetailsPage() {
             // Silently fail
         }
 
-        // Abrir WhatsApp se disponível
+        // Verificar se já existe conversa entre os usuários
+        const sellerId = ad?.user_id
+
+        const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id')
+            .or(`and(participant_1.eq.${user.id},participant_2.eq.${sellerId}),and(participant_1.eq.${sellerId},participant_2.eq.${user.id})`)
+            .maybeSingle()
+
+        let conversationId = existingConv?.id
+
+        // Se não existe conversa, criar uma nova
+        if (!conversationId) {
+            const { data: newConv, error: convError } = await supabase
+                .from('conversations')
+                .insert({
+                    participant_1: user.id < sellerId! ? user.id : sellerId,
+                    participant_2: user.id < sellerId! ? sellerId : user.id
+                })
+                .select('id')
+                .single()
+
+            if (convError) {
+                console.error('Erro ao criar conversa:', convError)
+                toast.error('Erro ao iniciar conversa')
+                return
+            }
+            conversationId = newConv?.id
+        }
+
+        // Enviar mensagem automática sobre o anúncio
+        const message = `Olá! Vi seu anúncio "${ad?.title}" no Rota Marketplace e gostaria de mais informações.\n\n📦 Anúncio: ${ad?.title}\n💰 Preço: ${formatPrice(ad?.price || 0)}\n🔗 Link: ${window.location.href}`
+
+        const { error: msgError } = await supabase
+            .from('messages')
+            .insert({
+                conversation_id: conversationId,
+                sender_id: user.id,
+                content: message
+            })
+
+        if (msgError) {
+            console.error('Erro ao enviar mensagem:', msgError)
+            toast.error('Erro ao enviar mensagem')
+            return
+        }
+
+        // Atualizar last_message na conversa
+        await supabase
+            .from('conversations')
+            .update({
+                last_message_at: new Date().toISOString(),
+                last_message_preview: message.substring(0, 100)
+            })
+            .eq('id', conversationId)
+
+        toast.success('Mensagem enviada! Redirecionando para o chat...')
+
+        // Redirecionar para o chat
+        router.push(`/dashboard?chat=${conversationId}`)
+    }
+
+    async function handleWhatsApp() {
+        // Abrir WhatsApp diretamente
         const phone = (ad?.user as any)?.whatsapp || (ad?.user as any)?.phone
         if (phone) {
             const cleanPhone = phone.replace(/\D/g, '')
             const message = encodeURIComponent(`Olá! Vi seu anúncio "${ad?.title}" no Rota Marketplace e gostaria de mais informações.`)
             window.open(`https://wa.me/55${cleanPhone}?text=${message}`, '_blank')
         } else {
-            // Fallback: abrir chat interno
-            toast.info('Abrindo chat...')
-            // TODO: Integrar com sistema de chat
+            toast.error('Este vendedor não possui WhatsApp cadastrado')
         }
     }
 
@@ -622,7 +688,7 @@ export default function AdDetailsPage() {
                                                 <Button
                                                     variant="outline"
                                                     className="w-full"
-                                                    onClick={handleContact}
+                                                    onClick={handleWhatsApp}
                                                     disabled={ad.status === 'sold'}
                                                 >
                                                     <Phone className="w-4 h-4 mr-2" />

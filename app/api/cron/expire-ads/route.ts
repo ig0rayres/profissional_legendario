@@ -95,6 +95,22 @@ export async function GET(request: NextRequest) {
             // Não falha o cron por causa de notificações
         }
 
+        // 4. Enviar mensagem no chat do sistema para cada usuário
+        for (const ad of expiredAds) {
+            try {
+                await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://rotabusinessclub.com.br'}/api/system-message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: ad.user_id,
+                        message: `📦 Seu anúncio "${ad.title}" expirou!\n\nAcesse o Marketplace para renovar seu anúncio e continuar recebendo contatos de interessados.\n\n👉 Renovar: ${process.env.NEXT_PUBLIC_APP_URL || 'https://rotabusinessclub.com.br'}/marketplace/${ad.id}`
+                    })
+                })
+            } catch (e) {
+                console.warn(`[CRON EXPIRE-ADS] Erro ao enviar mensagem chat para ${ad.user_id}:`, e)
+            }
+        }
+
         // Log dos resultados
         for (const ad of expiredAds) {
             results.push(`✅ Expirado: "${ad.title}"`)
