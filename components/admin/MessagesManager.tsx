@@ -243,6 +243,41 @@ export default function MessagesManager() {
                 }
             }
 
+            // Se filtro de categorias ativo, buscar user_ids da user_categories
+            let userIdsFromCategories: string[] = []
+            if (filters.categories.length > 0) {
+                const { data: userCats } = await supabase
+                    .from('user_categories')
+                    .select('user_id')
+                    .in('category_id', filters.categories)
+
+                userIdsFromCategories = Array.from(new Set(userCats?.map(uc => uc.user_id) || []))
+
+                // Se nenhum usuário com essas categorias, retornar vazio
+                if (userIdsFromCategories.length === 0) {
+                    setRecipientsCount(0)
+                    setRecipientsPreview([])
+                    setLoadingPreview(false)
+                    return
+                }
+            }
+
+            // Combinar filtros de planos e categorias (interseção)
+            let combinedUserIds: string[] | null = null
+            if (userIdsFromPlans.length > 0 && userIdsFromCategories.length > 0) {
+                combinedUserIds = userIdsFromPlans.filter(id => userIdsFromCategories.includes(id))
+                if (combinedUserIds.length === 0) {
+                    setRecipientsCount(0)
+                    setRecipientsPreview([])
+                    setLoadingPreview(false)
+                    return
+                }
+            } else if (userIdsFromPlans.length > 0) {
+                combinedUserIds = userIdsFromPlans
+            } else if (userIdsFromCategories.length > 0) {
+                combinedUserIds = userIdsFromCategories
+            }
+
             // Construir query de profiles
             let query = supabase
                 .from('profiles')
@@ -251,7 +286,7 @@ export default function MessagesManager() {
 
             // Filtro por pista
             if (filters.pistas.length > 0) {
-                query = query.in('pista', filters.pistas)
+                query = query.in('pista_id', filters.pistas)
             }
 
             // Filtro por usuários individuais
@@ -259,9 +294,9 @@ export default function MessagesManager() {
                 query = query.in('id', filters.individualUsers)
             }
 
-            // Filtro por planos (via user_ids)
-            if (userIdsFromPlans.length > 0) {
-                query = query.in('id', userIdsFromPlans)
+            // Filtro por planos/categorias (via user_ids combinados)
+            if (combinedUserIds && combinedUserIds.length > 0) {
+                query = query.in('id', combinedUserIds)
             }
 
             const { data } = await query.limit(10)
@@ -275,13 +310,13 @@ export default function MessagesManager() {
                 .not('email', 'is', null)
 
             if (filters.pistas.length > 0) {
-                countQuery = countQuery.in('pista', filters.pistas)
+                countQuery = countQuery.in('pista_id', filters.pistas)
             }
             if (filters.individualUsers.length > 0) {
                 countQuery = countQuery.in('id', filters.individualUsers)
             }
-            if (userIdsFromPlans.length > 0) {
-                countQuery = countQuery.in('id', userIdsFromPlans)
+            if (combinedUserIds && combinedUserIds.length > 0) {
+                countQuery = countQuery.in('id', combinedUserIds)
             }
 
             const { count: totalCount } = await countQuery
@@ -298,13 +333,13 @@ export default function MessagesManager() {
     // FUNÇÕES DE FILTRO
     // ============================================
 
-    function togglePista(pistaSlug: string) {
+    function togglePista(pistaId: string) {
         setFilters(prev => ({
             ...prev,
             sendToAll: false,
-            pistas: prev.pistas.includes(pistaSlug)
-                ? prev.pistas.filter(p => p !== pistaSlug)
-                : [...prev.pistas, pistaSlug]
+            pistas: prev.pistas.includes(pistaId)
+                ? prev.pistas.filter(p => p !== pistaId)
+                : [...prev.pistas, pistaId]
         }))
     }
 
@@ -402,6 +437,27 @@ export default function MessagesManager() {
                 userIdsFromPlans = subscriptions?.map(s => s.user_id) || []
             }
 
+            // Se filtro de categorias ativo, buscar user_ids da user_categories
+            let userIdsFromCategories: string[] = []
+            if (!filters.sendToAll && filters.categories.length > 0) {
+                const { data: userCats } = await supabase
+                    .from('user_categories')
+                    .select('user_id')
+                    .in('category_id', filters.categories)
+
+                userIdsFromCategories = Array.from(new Set(userCats?.map(uc => uc.user_id) || []))
+            }
+
+            // Combinar filtros de planos e categorias
+            let combinedUserIds: string[] | null = null
+            if (userIdsFromPlans.length > 0 && userIdsFromCategories.length > 0) {
+                combinedUserIds = userIdsFromPlans.filter(id => userIdsFromCategories.includes(id))
+            } else if (userIdsFromPlans.length > 0) {
+                combinedUserIds = userIdsFromPlans
+            } else if (userIdsFromCategories.length > 0) {
+                combinedUserIds = userIdsFromCategories
+            }
+
             // Buscar IDs dos destinatários
             let query = supabase
                 .from('profiles')
@@ -410,13 +466,13 @@ export default function MessagesManager() {
 
             if (!filters.sendToAll) {
                 if (filters.pistas.length > 0) {
-                    query = query.in('pista', filters.pistas)
+                    query = query.in('pista_id', filters.pistas)
                 }
                 if (filters.individualUsers.length > 0) {
                     query = query.in('id', filters.individualUsers)
                 }
-                if (userIdsFromPlans.length > 0) {
-                    query = query.in('id', userIdsFromPlans)
+                if (combinedUserIds && combinedUserIds.length > 0) {
+                    query = query.in('id', combinedUserIds)
                 }
             }
 
@@ -710,9 +766,9 @@ export default function MessagesManager() {
                                         {pistas.map((pista) => (
                                             <Badge
                                                 key={pista.id}
-                                                variant={filters.pistas.includes(pista.slug) ? "default" : "outline"}
+                                                variant={filters.pistas.includes(pista.id) ? "default" : "outline"}
                                                 className="cursor-pointer"
-                                                onClick={() => togglePista(pista.slug)}
+                                                onClick={() => togglePista(pista.id)}
                                             >
                                                 {pista.name}
                                             </Badge>
