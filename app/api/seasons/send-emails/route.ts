@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
                 try {
                     console.log(`[EMAIL] Enviando para ${user.email}...`)
                     const result = await emailClient.emails.send({
-                        from: 'Rota Business Club <contato@mail.rotabusinessclub.com.br>',
+                        from: 'Rota Business Club <noreply@rotabusinessclub.com.br>',
                         to: user.email,
                         subject: `🏆 Nova Temporada: ${season.name} - Veja os Prêmios!`,
                         html: generateNewSeasonEmail(season, prizes || [], user.full_name)
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
                 try {
                     console.log(`[EMAIL] Enviando para ${user.email}...`)
                     const result = await emailClient.emails.send({
-                        from: 'Rota Business Club <contato@mail.rotabusinessclub.com.br>',
+                        from: 'Rota Business Club <noreply@rotabusinessclub.com.br>',
                         to: user.email,
                         subject: `🏆 E OS CAMPEÕES SÃO... | ${season.name}`,
                         html: generateChampionsEmail(season, winners || [], user.full_name, prizes)
