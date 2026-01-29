@@ -7,7 +7,7 @@ import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
     Flame, Award, Shield, Instagram, MessageCircleIcon,
-    TrendingUp, Eye, Camera, Settings, Edit, Bell, Briefcase, CreditCard
+    TrendingUp, Eye, Camera, Settings, Edit, Bell, Briefcase, CreditCard, Store
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileActionButtonsV6 } from '@/components/profile/profile-action-buttons-v6'
@@ -297,6 +297,20 @@ export default function ImprovedCurrentHeaderV6Complete({
                                             </a>
                                         </TooltipTrigger>
                                         <TooltipContent>Editar Perfil</TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <a href="/dashboard/marketplace">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-9 w-9 bg-black/40 border border-white/10 text-white hover:bg-white/20 hover:text-white hover:border-white/30 transition-all"
+                                                >
+                                                    <Store className="w-4 h-4" />
+                                                </Button>
+                                            </a>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Meus Anúncios</TooltipContent>
                                     </Tooltip>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
