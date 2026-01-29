@@ -46,7 +46,8 @@ interface FilterState {
 interface Pista {
     id: string
     name: string
-    slug: string
+    city?: string
+    state?: string
 }
 
 interface Category {
@@ -155,7 +156,8 @@ export default function MessagesManager() {
             // Carregar pistas (todas)
             const { data: pistasData } = await supabase
                 .from('pistas')
-                .select('id, name, slug')
+                .select('id, name, city, state')
+                .eq('active', true)
                 .order('name')
 
             if (pistasData) setPistas(pistasData)
