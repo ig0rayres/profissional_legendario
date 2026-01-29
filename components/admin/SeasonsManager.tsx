@@ -117,6 +117,10 @@ export function SeasonsManager() {
     const [cropImageUrl, setCropImageUrl] = useState('')
     const [cropPosition, setCropPosition] = useState<1 | 2 | 3>(1)
 
+    // Email de teste
+    const [testEmail, setTestEmail] = useState('')
+    const [sendingEmail, setSendingEmail] = useState(false)
+
     // Handler para atualizar preview local ao selecionar arquivo
     const handleFileSelect = (pos: 1 | 2 | 3, file: File | undefined) => {
         if (file) {
@@ -1293,19 +1297,27 @@ export function SeasonsManager() {
                                         <div>
                                             <h4 className="text-gray-900 font-semibold text-base mb-3">🎁 Prêmios desta Temporada</h4>
                                             <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                                <div className="bg-green-800 text-white text-xs font-semibold grid grid-cols-3">
+                                                <div className="bg-green-800 text-white text-xs font-semibold grid grid-cols-4">
                                                     <div className="p-2 text-center"></div>
                                                     <div className="p-2">Posição</div>
+                                                    <div className="p-2">Imagem</div>
                                                     <div className="p-2">Prêmio</div>
                                                 </div>
                                                 {prizes.map((prize) => {
                                                     const bgColor = prize.position === 1 ? 'bg-amber-50' : prize.position === 2 ? 'bg-gray-50' : 'bg-orange-50'
                                                     const emoji = prize.position === 1 ? '🥇' : prize.position === 2 ? '🥈' : '🥉'
                                                     return (
-                                                        <div key={prize.id} className={`grid grid-cols-3 ${bgColor} border-t border-gray-200`}>
+                                                        <div key={prize.id} className={`grid grid-cols-4 ${bgColor} border-t border-gray-200 items-center`}>
                                                             <div className="p-3 text-center text-xl">{emoji}</div>
                                                             <div className="p-3 text-sm font-medium text-gray-700">{prize.position}º Lugar</div>
-                                                            <div className="p-3 text-sm text-gray-900">{prize.title}</div>
+                                                            <div className="p-2">
+                                                                {prize.image_url ? (
+                                                                    <img src={prize.image_url} alt="" className="w-10 h-10 object-contain rounded bg-gray-100" />
+                                                                ) : (
+                                                                    <div className="w-10 h-10 bg-gray-100 rounded"></div>
+                                                                )}
+                                                            </div>
+                                                            <div className="p-3 text-sm text-gray-900 font-medium">{prize.title}</div>
                                                         </div>
                                                     )
                                                 })}
@@ -1326,39 +1338,105 @@ export function SeasonsManager() {
                                     </div>
                                 </div>
 
-                                {/* Botão de Envio */}
-                                <div className="p-4 border-t border-border">
-                                    <Button
-                                        className="w-full bg-green-600 hover:bg-green-700"
-                                        onClick={async () => {
-                                            console.log('Enviando email para:', selectedSeasonId)
-                                            if (!selectedSeasonId) {
-                                                toast.error('Selecione uma temporada primeiro')
-                                                return
-                                            }
-                                            toast.loading('Enviando emails...')
-                                            try {
-                                                const res = await fetch('/api/seasons/send-emails', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ seasonId: selectedSeasonId, type: 'new_season' })
-                                                })
-                                                const data = await res.json()
-                                                toast.dismiss()
-                                                if (data.success) {
-                                                    toast.success(`${data.emailsSent} emails enviados!`)
-                                                } else {
-                                                    toast.error(data.error)
+                                {/* Área de Envio */}
+                                <div className="p-4 border-t border-border space-y-3">
+                                    {/* Campo de email para teste */}
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">Email para teste (opcional)</Label>
+                                        <Input
+                                            type="email"
+                                            placeholder="seu@email.com"
+                                            value={testEmail}
+                                            onChange={(e) => setTestEmail(e.target.value)}
+                                            className="mt-1"
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        {/* Botão de Teste */}
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                            disabled={!testEmail || sendingEmail}
+                                            onClick={async () => {
+                                                if (!selectedSeasonId) {
+                                                    toast.error('Selecione uma temporada primeiro')
+                                                    return
                                                 }
-                                            } catch (e) {
-                                                toast.dismiss()
-                                                toast.error('Erro ao enviar emails')
-                                            }
-                                        }}
-                                    >
-                                        <Send className="w-4 h-4 mr-2" />
-                                        Enviar Email de Abertura
-                                    </Button>
+                                                if (!testEmail) {
+                                                    toast.error('Informe um email para teste')
+                                                    return
+                                                }
+                                                setSendingEmail(true)
+                                                toast.loading('Enviando email de teste...')
+                                                try {
+                                                    const res = await fetch('/api/seasons/send-emails', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            seasonId: selectedSeasonId,
+                                                            type: 'new_season',
+                                                            testEmail: testEmail
+                                                        })
+                                                    })
+                                                    const data = await res.json()
+                                                    toast.dismiss()
+                                                    if (data.success) {
+                                                        toast.success(`Email de teste enviado para ${testEmail}!`)
+                                                    } else {
+                                                        toast.error(data.error || 'Erro ao enviar')
+                                                    }
+                                                } catch (e) {
+                                                    toast.dismiss()
+                                                    toast.error('Erro ao enviar email')
+                                                } finally {
+                                                    setSendingEmail(false)
+                                                }
+                                            }}
+                                        >
+                                            <Mail className="w-4 h-4 mr-2" />
+                                            Enviar Teste
+                                        </Button>
+
+                                        {/* Botão para Todos */}
+                                        <Button
+                                            className="flex-1 bg-green-600 hover:bg-green-700"
+                                            disabled={sendingEmail}
+                                            onClick={async () => {
+                                                if (!selectedSeasonId) {
+                                                    toast.error('Selecione uma temporada primeiro')
+                                                    return
+                                                }
+                                                if (!confirm('Tem certeza que deseja enviar para TODOS os usuários?')) {
+                                                    return
+                                                }
+                                                setSendingEmail(true)
+                                                toast.loading('Enviando emails para todos...')
+                                                try {
+                                                    const res = await fetch('/api/seasons/send-emails', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ seasonId: selectedSeasonId, type: 'new_season' })
+                                                    })
+                                                    const data = await res.json()
+                                                    toast.dismiss()
+                                                    if (data.success) {
+                                                        toast.success(`${data.emailsSent} emails enviados!`)
+                                                    } else {
+                                                        toast.error(data.error || 'Erro ao enviar')
+                                                    }
+                                                } catch (e) {
+                                                    toast.dismiss()
+                                                    toast.error('Erro ao enviar emails')
+                                                } finally {
+                                                    setSendingEmail(false)
+                                                }
+                                            }}
+                                        >
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Enviar p/ Todos
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -1441,40 +1519,94 @@ export function SeasonsManager() {
                                     </div>
                                 </div>
 
-                                {/* Botão de Envio */}
-                                <div className="p-4 border-t border-border">
-                                    <Button
-                                        variant="secondary"
-                                        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-                                        onClick={async () => {
-                                            console.log('Enviando email de encerramento para:', selectedSeasonId)
-                                            if (!selectedSeasonId) {
-                                                toast.error('Selecione uma temporada primeiro')
-                                                return
-                                            }
-                                            toast.loading('Enviando emails...')
-                                            try {
-                                                const res = await fetch('/api/seasons/send-emails', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ seasonId: selectedSeasonId, type: 'champions' })
-                                                })
-                                                const data = await res.json()
-                                                toast.dismiss()
-                                                if (data.success) {
-                                                    toast.success(`${data.emailsSent} emails enviados!`)
-                                                } else {
-                                                    toast.error(data.error)
+                                {/* Área de Envio */}
+                                <div className="p-4 border-t border-border space-y-3">
+                                    {/* Usa o mesmo campo de teste */}
+                                    <div className="flex gap-2">
+                                        {/* Botão de Teste */}
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                            disabled={!testEmail || sendingEmail}
+                                            onClick={async () => {
+                                                if (!selectedSeasonId) {
+                                                    toast.error('Selecione uma temporada primeiro')
+                                                    return
                                                 }
-                                            } catch (e) {
-                                                toast.dismiss()
-                                                toast.error('Erro ao enviar emails')
-                                            }
-                                        }}
-                                    >
-                                        <Send className="w-4 h-4 mr-2" />
-                                        Enviar Email de Encerramento
-                                    </Button>
+                                                if (!testEmail) {
+                                                    toast.error('Informe um email para teste acima')
+                                                    return
+                                                }
+                                                setSendingEmail(true)
+                                                toast.loading('Enviando email de teste...')
+                                                try {
+                                                    const res = await fetch('/api/seasons/send-emails', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            seasonId: selectedSeasonId,
+                                                            type: 'champions',
+                                                            testEmail: testEmail
+                                                        })
+                                                    })
+                                                    const data = await res.json()
+                                                    toast.dismiss()
+                                                    if (data.success) {
+                                                        toast.success(`Email de teste enviado para ${testEmail}!`)
+                                                    } else {
+                                                        toast.error(data.error || 'Erro ao enviar')
+                                                    }
+                                                } catch (e) {
+                                                    toast.dismiss()
+                                                    toast.error('Erro ao enviar email')
+                                                } finally {
+                                                    setSendingEmail(false)
+                                                }
+                                            }}
+                                        >
+                                            <Mail className="w-4 h-4 mr-2" />
+                                            Enviar Teste
+                                        </Button>
+
+                                        {/* Botão para Todos */}
+                                        <Button
+                                            className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                            disabled={sendingEmail}
+                                            onClick={async () => {
+                                                if (!selectedSeasonId) {
+                                                    toast.error('Selecione uma temporada primeiro')
+                                                    return
+                                                }
+                                                if (!confirm('Tem certeza que deseja enviar para TODOS os usuários?')) {
+                                                    return
+                                                }
+                                                setSendingEmail(true)
+                                                toast.loading('Enviando emails para todos...')
+                                                try {
+                                                    const res = await fetch('/api/seasons/send-emails', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ seasonId: selectedSeasonId, type: 'champions' })
+                                                    })
+                                                    const data = await res.json()
+                                                    toast.dismiss()
+                                                    if (data.success) {
+                                                        toast.success(`${data.emailsSent} emails enviados!`)
+                                                    } else {
+                                                        toast.error(data.error || 'Erro ao enviar')
+                                                    }
+                                                } catch (e) {
+                                                    toast.dismiss()
+                                                    toast.error('Erro ao enviar emails')
+                                                } finally {
+                                                    setSendingEmail(false)
+                                                }
+                                            }}
+                                        >
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Enviar p/ Todos
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

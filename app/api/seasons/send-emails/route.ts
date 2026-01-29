@@ -26,7 +26,7 @@ function getSupabaseAdmin() {
  */
 export async function POST(request: NextRequest) {
     try {
-        const { seasonId, type } = await request.json()
+        const { seasonId, type, testEmail } = await request.json()
         const supabase = getSupabaseAdmin()
 
         // Buscar temporada
@@ -47,14 +47,24 @@ export async function POST(request: NextRequest) {
             .eq('season_id', seasonId)
             .order('position')
 
-        // Buscar usuários ativos com email
-        const { data: users } = await supabase
-            .from('profiles')
-            .select('id, email, full_name')
-            .not('email', 'is', null)
+        // Se testEmail foi informado, enviar apenas para esse email
+        let users: { id: string; email: string; full_name: string }[] = []
 
-        if (!users || users.length === 0) {
-            return NextResponse.json({ error: 'Nenhum usuário para notificar' }, { status: 400 })
+        if (testEmail) {
+            // Modo teste: enviar apenas para o email informado
+            users = [{ id: 'test', email: testEmail, full_name: 'Usuário Teste' }]
+            console.log(`[EMAIL] Modo teste - enviando para: ${testEmail}`)
+        } else {
+            // Buscar todos os usuários ativos com email
+            const { data: allUsers } = await supabase
+                .from('profiles')
+                .select('id, email, full_name')
+                .not('email', 'is', null)
+
+            if (!allUsers || allUsers.length === 0) {
+                return NextResponse.json({ error: 'Nenhum usuário para notificar' }, { status: 400 })
+            }
+            users = allUsers
         }
 
         let emailsSent = 0
@@ -141,7 +151,7 @@ function generateNewSeasonEmail(season: any, prizes: any[], userName: string): s
     const startDate = new Date(season.start_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
     const endDate = new Date(season.end_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
 
-    // Tabela de prêmios limpa
+    // Tabela de prêmios com imagens
     const prizeRows = sortedPrizes.map(p => {
         const emoji = p.position === 1 ? '🥇' : p.position === 2 ? '🥈' : '🥉'
         const bgColor = p.position === 1 ? '#FEF3C7' : p.position === 2 ? '#F3F4F6' : '#FED7AA'
@@ -149,13 +159,18 @@ function generateNewSeasonEmail(season: any, prizes: any[], userName: string): s
 
         return `
             <tr style="background-color: ${bgColor};">
-                <td style="padding: 16px 20px; border-bottom: 1px solid #E5E7EB; text-align: center; font-size: 28px;">
+                <td style="padding: 16px 15px; border-bottom: 1px solid #E5E7EB; text-align: center; font-size: 28px; width: 50px;">
                     ${emoji}
                 </td>
-                <td style="padding: 16px 20px; border-bottom: 1px solid #E5E7EB; color: ${textColor}; font-weight: 600; font-size: 16px;">
+                <td style="padding: 16px 15px; border-bottom: 1px solid #E5E7EB; color: ${textColor}; font-weight: 600; font-size: 15px; width: 80px;">
                     ${p.position}º Lugar
                 </td>
-                <td style="padding: 16px 20px; border-bottom: 1px solid #E5E7EB; color: #111827; font-size: 16px;">
+                ${p.image_url ? `
+                <td style="padding: 12px 10px; border-bottom: 1px solid #E5E7EB; width: 70px;">
+                    <img src="${p.image_url}" alt="${p.title}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #f3f4f6;" />
+                </td>
+                ` : '<td style="padding: 12px 10px; border-bottom: 1px solid #E5E7EB; width: 70px;"></td>'}
+                <td style="padding: 16px 15px; border-bottom: 1px solid #E5E7EB; color: #111827; font-size: 15px; font-weight: 500;">
                     ${p.title}
                 </td>
             </tr>
