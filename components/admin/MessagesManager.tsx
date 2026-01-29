@@ -210,9 +210,40 @@ export default function MessagesManager() {
             return
         }
 
+        // Se nenhum filtro selecionado, zerar
+        if (filters.pistas.length === 0 &&
+            filters.plans.length === 0 &&
+            filters.categories.length === 0 &&
+            filters.individualUsers.length === 0) {
+            setRecipientsCount(0)
+            setRecipientsPreview([])
+            return
+        }
+
         setLoadingPreview(true)
 
         try {
+            // Se filtro de planos ativo, buscar user_ids das subscriptions primeiro
+            let userIdsFromPlans: string[] = []
+            if (filters.plans.length > 0) {
+                const { data: subscriptions } = await supabase
+                    .from('subscriptions')
+                    .select('user_id')
+                    .in('plan_id', filters.plans)
+                    .eq('status', 'active')
+
+                userIdsFromPlans = subscriptions?.map(s => s.user_id) || []
+
+                // Se nenhum usuário com esses planos, retornar vazio
+                if (userIdsFromPlans.length === 0) {
+                    setRecipientsCount(0)
+                    setRecipientsPreview([])
+                    setLoadingPreview(false)
+                    return
+                }
+            }
+
+            // Construir query de profiles
             let query = supabase
                 .from('profiles')
                 .select('id, full_name, email, avatar_url, pista')
@@ -228,29 +259,33 @@ export default function MessagesManager() {
                 query = query.in('id', filters.individualUsers)
             }
 
-            const { data, count } = await query.limit(10)
+            // Filtro por planos (via user_ids)
+            if (userIdsFromPlans.length > 0) {
+                query = query.in('id', userIdsFromPlans)
+            }
+
+            const { data } = await query.limit(10)
 
             setRecipientsPreview(data || [])
 
-            // Contar total
-            if (filters.pistas.length > 0 || filters.individualUsers.length > 0) {
-                let countQuery = supabase
-                    .from('profiles')
-                    .select('*', { count: 'exact', head: true })
-                    .not('email', 'is', null)
+            // Contar total com mesmos filtros
+            let countQuery = supabase
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+                .not('email', 'is', null)
 
-                if (filters.pistas.length > 0) {
-                    countQuery = countQuery.in('pista', filters.pistas)
-                }
-                if (filters.individualUsers.length > 0) {
-                    countQuery = countQuery.in('id', filters.individualUsers)
-                }
-
-                const { count: totalCount } = await countQuery
-                setRecipientsCount(totalCount || 0)
-            } else {
-                setRecipientsCount(0)
+            if (filters.pistas.length > 0) {
+                countQuery = countQuery.in('pista', filters.pistas)
             }
+            if (filters.individualUsers.length > 0) {
+                countQuery = countQuery.in('id', filters.individualUsers)
+            }
+            if (userIdsFromPlans.length > 0) {
+                countQuery = countQuery.in('id', userIdsFromPlans)
+            }
+
+            const { count: totalCount } = await countQuery
+            setRecipientsCount(totalCount || 0)
 
         } catch (error) {
             console.error('Erro ao atualizar preview:', error)
@@ -355,6 +390,18 @@ export default function MessagesManager() {
         toast.loading('Enviando mensagens...')
 
         try {
+            // Se filtro de planos ativo, buscar user_ids das subscriptions primeiro
+            let userIdsFromPlans: string[] = []
+            if (!filters.sendToAll && filters.plans.length > 0) {
+                const { data: subscriptions } = await supabase
+                    .from('subscriptions')
+                    .select('user_id')
+                    .in('plan_id', filters.plans)
+                    .eq('status', 'active')
+
+                userIdsFromPlans = subscriptions?.map(s => s.user_id) || []
+            }
+
             // Buscar IDs dos destinatários
             let query = supabase
                 .from('profiles')
@@ -367,6 +414,9 @@ export default function MessagesManager() {
                 }
                 if (filters.individualUsers.length > 0) {
                     query = query.in('id', filters.individualUsers)
+                }
+                if (userIdsFromPlans.length > 0) {
+                    query = query.in('id', userIdsFromPlans)
                 }
             }
 
