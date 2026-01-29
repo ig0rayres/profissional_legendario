@@ -121,7 +121,7 @@ export default function ProfessionalsPage() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Flame className="w-8 h-8 text-primary" />
-                            <h1 className="text-2xl font-bold text-impact text-primary">Profissional Legendário</h1>
+                            <h1 className="text-2xl font-bold text-impact text-primary">Profissional ROTA</h1>
                         </div>
                         <Link href="/dashboard">
                             <Button variant="outline" size="sm" className="border-primary/20">

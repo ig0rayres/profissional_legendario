@@ -7,6 +7,10 @@
         {
             "path": "/api/cron/send-confraternity-notifications",
             "schedule": "0 18 * * *"
+        },
+        {
+            "path": "/api/cron/manage-seasons",
+            "schedule": "0 0 * * *"
         }
     ]
 }

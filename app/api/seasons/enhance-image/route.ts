@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
         const fileName = `prize_${position}_${Date.now()}.png`
         const { error: uploadError } = await supabase.storage
-            .from('public')
+            .from('seasons')
             .upload(`seasons/${fileName}`, imageBuffer, {
                 contentType: 'image/png',
                 upsert: true
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { data: urlData } = supabase.storage
-            .from('public')
+            .from('seasons')
             .getPublicUrl(`seasons/${fileName}`)
 
         console.log('[DALL-E 3] Imagem gerada e salva:', urlData.publicUrl)

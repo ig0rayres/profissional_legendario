@@ -4,7 +4,7 @@ import { LogoOption1, LogoOption2, LogoOption3 } from "@/components/branding/log
 export default function LogoOptionsPage() {
     return (
         <div className="min-h-screen bg-neutral-950 text-white p-10 flex flex-col items-center gap-12">
-            <h1 className="text-3xl font-bold mb-8">Opções de Logo - Legendários</h1>
+            <h1 className="text-3xl font-bold mb-8">Opções de Logo - ROTA</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-4xl">
                 {/* Original */}

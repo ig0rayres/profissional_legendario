@@ -162,7 +162,7 @@ export default function AdminLayout({
                     <div className="flex items-center gap-2">
                         <Flame className="w-6 h-6 text-primary" />
                         <h1 className="text-xl font-bold text-impact text-primary">
-                            Profissional Legendário Admin
+                            Profissional ROTA Admin
                         </h1>
                     </div>
                 </div>

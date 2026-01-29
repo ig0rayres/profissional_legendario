@@ -79,7 +79,7 @@ export default function AdminDashboard() {
             <div>
                 <h2 className="text-3xl font-bold text-impact text-primary">Dashboard Administrativo</h2>
                 <p className="text-muted-foreground">
-                    Visão geral da plataforma Profissional Legendário (Modo Demo)
+                    Visão geral da plataforma Profissional ROTA (Modo Demo)
                 </p>
             </div>
 

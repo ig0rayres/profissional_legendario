@@ -1,8 +1,8 @@
 # 📋 ROTA BUSINESS CLUB - ESCOPO COMPLETO DO PROJETO
 
-**Versão:** 2.0  
-**Data:** 27/01/2026  
-**Status:** 🟢 Produção + Novas Features em Desenvolvimento
+**Versão:** 2.1  
+**Data:** 28/01/2026  
+**Status:** 🟢 Produção + Sistema de Temporadas Implementado
 
 ---
 
@@ -875,17 +875,53 @@ PostgreSQL via Supabase com:
 - Notificações com Realtime
 - Painel Admin
 - Deploy em produção
+- **Sistema de Temporadas** ✨ (NOVO)
+  - 12 temporadas criadas (2026 inteiro)
+  - 36 prêmios configurados
+  - Emails de abertura/encerramento
+  - Ranking mensal centralizado
 
 ### 🚧 Em Desenvolvimento
 
 - Sistema de Indicação (especificado, aguardando implementação)
-- Sistema de Temporadas (especificado, aguardando implementação)
 
 ### 🔮 Futuro
 
 - Marketplace
 - Eventos
 - App Mobile
+
+---
+
+## 📐 ARQUITETURA DE RANKING (CENTRALIZADO)
+
+### Tabela `user_gamification`
+Fonte única de verdade para ranking mensal:
+
+```sql
+SELECT 
+    ug.user_id,
+    p.full_name,
+    p.avatar_url,
+    ug.monthly_vigor as xp_month,
+    ug.total_points
+FROM user_gamification ug
+JOIN profiles p ON p.id = ug.user_id
+ORDER BY ug.monthly_vigor DESC
+LIMIT 10
+```
+
+### Onde é usado:
+- **Rota do Valente** (página pública): Top 10
+- **Admin > Temporadas**: Ranking completo + gestão
+- **Emails**: Top 3 para premiação
+- **API de encerramento**: Ganhadores salvos em `season_winners`
+
+### Reset Mensal
+```sql
+-- Todo dia 1º às 00:01 (via cron)
+UPDATE user_gamification SET monthly_vigor = 0
+```
 
 ---
 
@@ -900,6 +936,6 @@ PostgreSQL via Supabase com:
 
 ---
 
-*Última atualização: 27/01/2026*  
-*Versão: 2.0*  
+*Última atualização: 28/01/2026*  
+*Versão: 2.1*  
 *Mantido por: Equipe Rota Business Club*
