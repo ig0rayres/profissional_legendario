@@ -725,24 +725,65 @@ Dia 01 às 00:01:
 
 ---
 
-## 14. MARKETPLACE (FUTURO) 🔮
+## 14. MARKETPLACE ✅
 
 ### Conceito
 
-Área para membros anunciarem produtos e serviços.
+Área para membros anunciarem produtos, veículos, imóveis e serviços.
 
-### Funcionalidades Planejadas
+### Funcionalidades Implementadas
 
-- Cadastro de produtos/serviços
-- Categorias
-- Busca e filtros
-- Contato via Chat
-- Avaliações e reviews
-- Destaque para planos Elite
+- ✅ Cadastro de produtos/serviços
+- ✅ Categorias configuráveis (Veículos, Imóveis, Eletrônicos, etc)
+- ✅ Campos específicos por categoria (Veículos: ano/km/cor, Imóveis: m²/venda/locação)
+- ✅ Modalidades de anúncio (Básico/Elite/Lendário) com preços diferentes
+- ✅ Destaque visual para anúncios Elite e Lendário
+- ✅ Limite de anúncios por plano do usuário
+- ✅ Upload de múltiplas fotos
+- ✅ Expiração automática de anúncios (duração por categoria)
+- ✅ Marcar como vendido
+- ✅ Admin completo com 3 abas (Anúncios, Categorias, Modalidades)
+
+### Limites por Plano
+
+| Plano | Anúncios Permitidos |
+|-------|--------------------|
+| Recruta | 0 |
+| Veterano | 2 |
+| Elite | 10 |
+| Lendário | Ilimitado |
+
+### Modalidades de Anúncio (Veículos)
+
+| Modalidade | Preço | Duração | Destaque |
+|------------|-------|---------|----------|
+| Básico | Grátis | 30 dias | - |
+| Elite | R$ 49,90 | 45 dias | Badge verde, posição privilegiada |
+| Lendário | R$ 99,90 | 60 dias | Badge dourado, topo da listagem |
+
+### Modalidades de Anúncio (Imóveis)
+
+| Modalidade | Preço | Duração | Destaque |
+|------------|-------|---------|----------|
+| Básico | Grátis | 60 dias | - |
+| Elite | R$ 79,90 | 90 dias | Badge verde |
+| Lendário | R$ 149,90 | 120 dias | Badge dourado, tour virtual |
+
+### Tabelas do Banco
+
+- `marketplace_categories` - Categorias (nome, slug, ícone, duração padrão)
+- `marketplace_ad_tiers` - Modalidades (preço, duração, destaques)
+- `marketplace_ads` - Anúncios em si
+
+### Admin
+
+- URL: `/admin/marketplace`
+- 3 abas: Anúncios | Categorias | Modalidades
+- CRUD completo para cada aba
 
 ### Status
 
-⏸️ **Não iniciado** - Prioridade média
+✅ **Implementado** - Falta apenas integração Stripe para pagamento de tiers
 
 ---
 
@@ -875,21 +916,33 @@ PostgreSQL via Supabase com:
 - Notificações com Realtime
 - Painel Admin
 - Deploy em produção
-- **Sistema de Temporadas** ✨ (NOVO)
+- **Sistema de Temporadas** ✨
   - 12 temporadas criadas (2026 inteiro)
   - 36 prêmios configurados
   - Emails de abertura/encerramento
   - Ranking mensal centralizado
+- **Marketplace** ✨ (29/01/2026)
+  - Categorias configuráveis (Veículos, Imóveis, Eletrônicos, etc)
+  - Modalidades (Básico/Elite/Lendário)
+  - Campos específicos por categoria
+  - Limite por plano
+  - Expiração automática
+  - Admin completo
+- **Gestão de Pistas** ✨ (29/01/2026)
+  - Upload de brasão por pista
 
 ### 🚧 Em Desenvolvimento
 
 - Sistema de Indicação (especificado, aguardando implementação)
+- Integração Stripe para pagamento de tiers do Marketplace
+- Página de detalhes do anúncio (/marketplace/[id])
+- Cron para expirar anúncios automaticamente
 
 ### 🔮 Futuro
 
-- Marketplace
 - Eventos
 - App Mobile
+- Avaliações/reviews no Marketplace
 
 ---
 
@@ -936,6 +989,6 @@ UPDATE user_gamification SET monthly_vigor = 0
 
 ---
 
-*Última atualização: 28/01/2026*  
-*Versão: 2.1*  
+*Última atualização: 29/01/2026*  
+*Versão: 2.2*  
 *Mantido por: Equipe Rota Business Club*
