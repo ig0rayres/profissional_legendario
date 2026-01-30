@@ -197,10 +197,12 @@ export default function AdDetailsPage() {
             })
             .eq('id', conversationId)
 
-        toast.success('Mensagem enviada! Redirecionando para o chat...')
+        toast.success('Mensagem enviada!')
 
-        // Redirecionar para o chat
-        router.push(`/dashboard?chat=${conversationId}`)
+        // Abrir o chat diretamente usando o evento existente
+        window.dispatchEvent(new CustomEvent('openChat', {
+            detail: { userId: ad?.user_id }
+        }))
     }
 
     async function handleWhatsApp() {
