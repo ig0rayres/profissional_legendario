@@ -1245,7 +1245,7 @@ export function NaRotaFeedV13({ userId, userName, userAvatar, userRankId, showCr
                                         <LogoFrameAvatar
                                             src={userAvatar}
                                             alt={userName}
-                                            size="xs"
+                                            size="sm"
                                             className="w-10 h-10"
                                         />
                                         {userRankId && (
