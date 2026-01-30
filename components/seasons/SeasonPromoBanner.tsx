@@ -15,6 +15,7 @@ interface Season {
     end_date: string
     days_remaining: number
     banner_url: string | null
+    banner_sidebar_url: string | null // Banner gerado automaticamente para sidebar
 }
 
 interface Prize {
@@ -49,11 +50,15 @@ export function SeasonPromoBanner({ showFullVersion = false }: SeasonPromoBanner
 
                 const { data: fullSeason } = await supabase
                     .from('seasons')
-                    .select('banner_url')
+                    .select('banner_url, banner_sidebar_url')
                     .eq('id', activeSeason.season_id)
                     .single()
 
-                setSeason({ ...activeSeason, banner_url: fullSeason?.banner_url || null })
+                setSeason({
+                    ...activeSeason,
+                    banner_url: fullSeason?.banner_url || null,
+                    banner_sidebar_url: fullSeason?.banner_sidebar_url || null
+                })
 
                 const { data: prizesData } = await supabase
                     .from('season_prizes')
@@ -83,8 +88,35 @@ export function SeasonPromoBanner({ showFullVersion = false }: SeasonPromoBanner
         return null
     }
 
-    // Versão compacta para home/sidebar (seguindo conceito do banner admin!)
+    // Versão compacta para home/sidebar (usa banner gerado se disponível)
     if (!showFullVersion) {
+        // Se tem banner sidebar gerado, usa ele (proporção 700x250 = 2.8:1)
+        if (season.banner_sidebar_url) {
+            return (
+                <Link href="/dashboard/rota-do-valente">
+                    <Card className="relative border-0 overflow-hidden group cursor-pointer">
+                        {/* Banner gerado automaticamente */}
+                        <div className="relative w-full" style={{ aspectRatio: '2.8' }}>
+                            <img
+                                src={season.banner_sidebar_url}
+                                alt={`Temporada ${season.season_name}`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            {/* Overlay sutil para dar hover effect */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+
+                            {/* Badge de dias restantes no canto */}
+                            <Badge className="absolute top-2 right-2 bg-orange-500 hover:bg-orange-500 text-white border-0 text-[10px] px-2 py-0.5 shadow-lg">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {season.days_remaining} dias
+                            </Badge>
+                        </div>
+                    </Card>
+                </Link>
+            )
+        }
+
+        // Fallback: Layout de pódio (quando não tem banner gerado)
         return (
             <Link href="/dashboard/rota-do-valente">
                 <Card className="relative border-0 overflow-hidden group cursor-pointer">

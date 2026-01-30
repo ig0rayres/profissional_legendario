@@ -13,6 +13,7 @@ interface ComposeRequest {
     }[]
     theme: 'gold' | 'silver' | 'bronze' | 'modern'
     seasonTitle?: string
+    seasonId?: string // ID da temporada para salvar os banners
 }
 
 // Definição dos 4 tamanhos de banners
@@ -223,7 +224,7 @@ async function createPodiumBanner(
 export async function POST(req: NextRequest) {
     try {
         const body: ComposeRequest = await req.json()
-        const { prizes, theme, seasonTitle } = body
+        const { prizes, theme, seasonTitle, seasonId } = body
 
         if (!prizes || prizes.length === 0 || prizes.length > 3) {
             return NextResponse.json(
@@ -305,6 +306,25 @@ export async function POST(req: NextRequest) {
             acc[size] = url
             return acc
         }, {} as Record<string, string>)
+
+        // Salvar URLs na temporada se seasonId fornecido
+        if (seasonId) {
+            const { error: updateError } = await supabase
+                .from('seasons')
+                .update({
+                    banner_hero_url: bannerUrls.hero,
+                    banner_card_url: bannerUrls.card,
+                    banner_sidebar_url: bannerUrls.sidebar,
+                    banner_square_url: bannerUrls.square,
+                })
+                .eq('id', seasonId)
+
+            if (updateError) {
+                console.error('[PODIUM BANNER] Erro ao salvar URLs na temporada:', updateError)
+            } else {
+                console.log('[PODIUM BANNER] URLs salvas na temporada:', seasonId)
+            }
+        }
 
         return NextResponse.json({
             success: true,

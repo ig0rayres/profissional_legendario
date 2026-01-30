@@ -442,10 +442,11 @@ export function SeasonsManager() {
                     prizes: top3Prizes.map(p => ({
                         position: p.position,
                         title: p.title,
-                        imageUrls: [p.image_url!] // Por enquanto só primeira imagem
+                        imageUrls: [p.image_url!]
                     })),
                     theme: compositionTheme,
-                    seasonTitle: `${activeSeason.name} - ${activeSeason.month}/${activeSeason.year}`
+                    seasonTitle: `${activeSeason.name} - ${activeSeason.month}/${activeSeason.year}`,
+                    seasonId: activeSeason.id // Salvar URLs na temporada
                 })
             })
 
