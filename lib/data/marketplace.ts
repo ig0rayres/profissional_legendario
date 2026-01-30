@@ -20,7 +20,9 @@ export interface MarketplaceCategory {
     duration_days: number
     is_active: boolean
     display_order: number
+    requires_tier?: boolean
 }
+
 
 export interface MarketplaceAdTier {
     id: string
@@ -29,6 +31,7 @@ export interface MarketplaceAdTier {
     tier_level: 'basico' | 'elite' | 'lendario'
     price: number
     duration_days: number
+    max_photos: number
     highlight_color: string | null
     highlight_badge: string | null
     position_boost: number

@@ -242,6 +242,17 @@ export default function AdDetailsPage() {
         } else {
             toast.success('Anúncio marcado como vendido!')
             setAd({ ...ad, status: 'sold' })
+
+            // Processar gamificação (medalhas e proezas)
+            if (user?.id) {
+                try {
+                    const { processMarketplaceSaleGamification } = await import('@/lib/gamification/marketplace')
+                    await processMarketplaceSaleGamification(user.id)
+                } catch (error) {
+                    console.error('Erro ao processar gamificação:', error)
+                    // Não bloqueia o fluxo principal
+                }
+            }
         }
     }
 

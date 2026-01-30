@@ -113,11 +113,21 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Checkout completado - Criar/atualizar assinatura
+ * Checkout completado - Criar/atualizar assinatura OU ativar anúncio
  */
 async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Session) {
-    const userId = session.metadata?.supabase_user_id
-    const planTier = session.metadata?.plan_tier  // Usar tier diretamente
+    const metadata = session.metadata
+    const type = metadata?.type || 'subscription'
+
+    // === PAGAMENTO DE ANÚNCIO DO MARKETPLACE ===
+    if (type === 'marketplace_ad') {
+        await handleMarketplaceAdPayment(supabase, session)
+        return
+    }
+
+    // === ASSINATURA DE PLANO ===
+    const userId = metadata?.supabase_user_id
+    const planTier = metadata?.plan_tier
 
     if (!userId) {
         console.error('[Stripe Webhook] Missing user_id in checkout session metadata')
@@ -129,7 +139,7 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
         return
     }
 
-    console.log('[Stripe Webhook] Checkout complete for user:', userId, 'tier:', planTier)
+    console.log('[Stripe Webhook] Subscription checkout complete for user:', userId, 'tier:', planTier)
 
     // Verificar se já tem subscription
     const { data: existingSub } = await supabase
@@ -144,19 +154,16 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
     let periodEnd: string
     try {
         if (session.subscription) {
-            // Buscar a subscription do Stripe para pegar o current_period_end real
             const stripe = getStripe()
             const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription as string)
             if (stripeSubscription.current_period_end) {
                 periodEnd = new Date(stripeSubscription.current_period_end * 1000).toISOString()
             } else {
-                // Fallback: calcular 30 dias
                 const endDate = new Date()
                 endDate.setDate(endDate.getDate() + 30)
                 periodEnd = endDate.toISOString()
             }
         } else {
-            // Fallback: calcular 30 dias
             const endDate = new Date()
             endDate.setDate(endDate.getDate() + 30)
             periodEnd = endDate.toISOString()
@@ -171,11 +178,10 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
     console.log('[Stripe Webhook] Period end:', periodEnd)
 
     if (existingSub) {
-        // Atualizar existente
         const { error: updateError } = await supabase
             .from('subscriptions')
             .update({
-                plan_id: planTier,  // Usar TIER, não UUID!
+                plan_id: planTier,
                 status: 'active',
                 stripe_customer_id: session.customer as string,
                 stripe_subscription_id: session.subscription as string,
@@ -191,12 +197,11 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
         }
         console.log('[Stripe Webhook] Subscription UPDATED for user:', userId, 'to tier:', planTier)
     } else {
-        // Criar nova
         const { error: insertError } = await supabase
             .from('subscriptions')
             .insert({
                 user_id: userId,
-                plan_id: planTier,  // Usar TIER, não UUID!
+                plan_id: planTier,
                 status: 'active',
                 stripe_customer_id: session.customer as string,
                 stripe_subscription_id: session.subscription as string,
@@ -231,11 +236,54 @@ async function handleCheckoutComplete(supabase: any, session: Stripe.Checkout.Se
 }
 
 /**
+ * Pagamento de Anúncio do Marketplace
+ */
+async function handleMarketplaceAdPayment(supabase: any, session: Stripe.Checkout.Session) {
+    const metadata = session.metadata
+    const adId = metadata?.ad_id
+    const tierId = metadata?.tier_id
+    const userId = metadata?.supabase_user_id
+    const durationDays = parseInt(metadata?.duration_days || '30')
+
+    if (!adId || !tierId || !userId) {
+        console.error('[Stripe Webhook] Missing marketplace ad metadata:', metadata)
+        return
+    }
+
+    console.log('[Stripe Webhook] Marketplace ad payment received:', { adId, tierId, userId })
+
+    // Calcular data de expiração
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + durationDays)
+
+    // Ativar anúncio
+    const { error: updateError } = await supabase
+        .from('marketplace_ads')
+        .update({
+            tier_id: tierId,
+            status: 'active',
+            payment_status: 'paid',
+            published_at: new Date().toISOString(),
+            expires_at: expiresAt.toISOString(),
+            stripe_payment_id: session.payment_intent as string,
+        })
+        .eq('id', adId)
+        .eq('user_id', userId)
+
+    if (updateError) {
+        console.error('[Stripe Webhook] Error activating marketplace ad:', updateError)
+        throw updateError
+    }
+
+    console.log('[Stripe Webhook] Marketplace ad ACTIVATED:', adId, 'expires:', expiresAt.toISOString())
+}
+
+/**
  * Assinatura atualizada (upgrade/downgrade, renovação)
  */
 async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subscription) {
     const userId = subscription.metadata?.supabase_user_id
-    const planTier = subscription.metadata?.plan_tier  // Usar tier diretamente
+    const planTier = subscription.metadata?.plan_tier
 
     if (!userId) {
         console.error('[Stripe Webhook] Missing user_id in subscription metadata')
@@ -248,24 +296,11 @@ async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subs
         subscription.status === 'past_due' ? 'past_due' :
             subscription.status === 'canceled' ? 'canceled' : 'inactive'
 
-    // Converter timestamp para ISO string com validação
     let periodEnd: string | null = null
     if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
         periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
-        console.log('[Stripe Webhook] Period end from subscription:', periodEnd)
-    } else {
-        // Tentar pegar de items.data[0] se disponível
-        const firstItem = subscription.items?.data?.[0]
-        if (firstItem && (firstItem as any).current_period_end) {
-            const itemPeriodEnd = (firstItem as any).current_period_end
-            if (typeof itemPeriodEnd === 'number') {
-                periodEnd = new Date(itemPeriodEnd * 1000).toISOString()
-                console.log('[Stripe Webhook] Period end from item:', periodEnd)
-            }
-        }
     }
 
-    // Verificar se já existe subscription para este usuário
     const { data: existingSub } = await supabase
         .from('subscriptions')
         .select('user_id')
@@ -275,7 +310,6 @@ async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subs
     const now = new Date().toISOString()
 
     if (existingSub) {
-        // Atualizar existente
         const updateData: any = {
             status,
             cancel_at_period_end: subscription.cancel_at_period_end || false,
@@ -284,14 +318,8 @@ async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subs
             updated_at: now
         }
 
-        if (periodEnd) {
-            updateData.current_period_end = periodEnd
-        }
-
-        // Usar tier se disponível
-        if (planTier) {
-            updateData.plan_id = planTier  // Usar TIER, não UUID!
-        }
+        if (periodEnd) updateData.current_period_end = periodEnd
+        if (planTier) updateData.plan_id = planTier
 
         const { error: updateError } = await supabase
             .from('subscriptions')
@@ -305,7 +333,6 @@ async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subs
 
         console.log('[Stripe Webhook] Subscription updated for user:', userId, 'tier:', planTier, 'status:', status)
     } else {
-        // Criar nova subscription se não existir
         if (!planTier) {
             console.error('[Stripe Webhook] Cannot create subscription without plan_tier')
             return
@@ -313,16 +340,14 @@ async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subs
 
         const insertData: any = {
             user_id: userId,
-            plan_id: planTier,  // Usar TIER, não UUID!
+            plan_id: planTier,
             status,
             stripe_customer_id: subscription.customer as string,
             stripe_subscription_id: subscription.id,
             cancel_at_period_end: subscription.cancel_at_period_end || false
         }
 
-        if (periodEnd) {
-            insertData.current_period_end = periodEnd
-        }
+        if (periodEnd) insertData.current_period_end = periodEnd
 
         const { error: insertError } = await supabase
             .from('subscriptions')
@@ -341,7 +366,6 @@ async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subs
  * Assinatura cancelada
  */
 async function handleSubscriptionDeleted(supabase: any, subscription: Stripe.Subscription) {
-    // Buscar plano Recruta (grátis) para fazer downgrade
     const { data: recruitaPlan } = await supabase
         .from('plans')
         .select('id')
@@ -352,7 +376,7 @@ async function handleSubscriptionDeleted(supabase: any, subscription: Stripe.Sub
         .from('subscriptions')
         .update({
             status: 'canceled',
-            plan_id: recruitaPlan?.id || null, // Downgrade para Recruta
+            plan_id: recruitaPlan?.id || null,
             cancel_at_period_end: false,
             updated_at: new Date().toISOString()
         })
@@ -367,7 +391,6 @@ async function handleSubscriptionDeleted(supabase: any, subscription: Stripe.Sub
 async function handlePaymentSucceeded(supabase: any, invoice: Stripe.Invoice) {
     if (!invoice.subscription) return
 
-    // Buscar user_id da subscription
     const { data: subscription } = await supabase
         .from('subscriptions')
         .select('user_id')
@@ -375,10 +398,8 @@ async function handlePaymentSucceeded(supabase: any, invoice: Stripe.Invoice) {
         .single()
 
     if (subscription?.user_id) {
-        // Valor pago (em centavos -> reais)
         const paymentAmount = (invoice.amount_paid || 0) / 100
 
-        // Registrar comissão se for indicado
         if (paymentAmount > 0) {
             try {
                 const result = await registerCommission(
@@ -393,7 +414,6 @@ async function handlePaymentSucceeded(supabase: any, invoice: Stripe.Invoice) {
                 }
             } catch (error) {
                 console.error('[Stripe Webhook] Error registering commission:', error)
-                // Não impede o fluxo principal
             }
         }
     }

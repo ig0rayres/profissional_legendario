@@ -94,6 +94,18 @@ export default function MeusAnunciosPage() {
             toast.error('Erro ao marcar como vendido')
         } else {
             toast.success('Anúncio marcado como vendido!')
+
+            // Processar gamificação (medalhas e proezas)
+            if (user?.id) {
+                try {
+                    const { processMarketplaceSaleGamification } = await import('@/lib/gamification/marketplace')
+                    await processMarketplaceSaleGamification(user.id)
+                } catch (error) {
+                    console.error('Erro ao processar gamificação:', error)
+                    // Não bloqueia o fluxo principal
+                }
+            }
+
             loadAds()
         }
     }

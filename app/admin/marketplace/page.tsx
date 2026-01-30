@@ -59,8 +59,10 @@ export default function MarketplaceAdminPage() {
         slug: '',
         icon: 'Package',
         duration_days: 30,
-        is_active: true
+        is_active: true,
+        requires_tier: false
     })
+
 
     const [tierForm, setTierForm] = useState({
         category_id: '',
@@ -68,6 +70,7 @@ export default function MarketplaceAdminPage() {
         tier_level: 'basico' as 'basico' | 'elite' | 'lendario',
         price: 0,
         duration_days: 30,
+        max_photos: 5,
         highlight_color: '',
         highlight_badge: '',
         position_boost: 0,
@@ -154,7 +157,8 @@ export default function MarketplaceAdminPage() {
             slug: '',
             icon: 'Package',
             duration_days: 30,
-            is_active: true
+            is_active: true,
+            requires_tier: false
         })
         setCategoryDialogOpen(true)
     }
@@ -166,7 +170,8 @@ export default function MarketplaceAdminPage() {
             slug: cat.slug,
             icon: cat.icon,
             duration_days: cat.duration_days,
-            is_active: cat.is_active
+            is_active: cat.is_active,
+            requires_tier: cat.requires_tier || false
         })
         setCategoryDialogOpen(true)
     }
@@ -189,6 +194,7 @@ export default function MarketplaceAdminPage() {
                         icon: categoryForm.icon,
                         duration_days: categoryForm.duration_days,
                         is_active: categoryForm.is_active,
+                        requires_tier: categoryForm.requires_tier,
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', selectedCategory.id)
@@ -201,6 +207,7 @@ export default function MarketplaceAdminPage() {
                         icon: categoryForm.icon,
                         duration_days: categoryForm.duration_days,
                         is_active: categoryForm.is_active,
+                        requires_tier: categoryForm.requires_tier,
                         display_order: categories.length + 1
                     })
             }
@@ -232,6 +239,7 @@ export default function MarketplaceAdminPage() {
             tier_level: 'basico',
             price: 0,
             duration_days: 30,
+            max_photos: 5,
             highlight_color: '',
             highlight_badge: '',
             position_boost: 0,
@@ -248,6 +256,7 @@ export default function MarketplaceAdminPage() {
             tier_level: tier.tier_level,
             price: tier.price,
             duration_days: tier.duration_days,
+            max_photos: tier.max_photos || 5,
             highlight_color: tier.highlight_color || '',
             highlight_badge: tier.highlight_badge || '',
             position_boost: tier.position_boost,
@@ -274,6 +283,7 @@ export default function MarketplaceAdminPage() {
                         tier_level: tierForm.tier_level,
                         price: tierForm.price,
                         duration_days: tierForm.duration_days,
+                        max_photos: tierForm.max_photos,
                         highlight_color: tierForm.highlight_color || null,
                         highlight_badge: tierForm.highlight_badge || null,
                         position_boost: tierForm.position_boost,
@@ -290,6 +300,7 @@ export default function MarketplaceAdminPage() {
                         tier_level: tierForm.tier_level,
                         price: tierForm.price,
                         duration_days: tierForm.duration_days,
+                        max_photos: tierForm.max_photos,
                         highlight_color: tierForm.highlight_color || null,
                         highlight_badge: tierForm.highlight_badge || null,
                         position_boost: tierForm.position_boost,
@@ -317,24 +328,54 @@ export default function MarketplaceAdminPage() {
 
     // ===== AD HANDLERS =====
     const updateAdStatus = async (ad: MarketplaceAd, newStatus: string) => {
-        const updates: any = { status: newStatus, updated_at: new Date().toISOString() }
+        console.log('[Admin] Atualizando status do anúncio:', ad.id, '→', newStatus)
+        try {
+            const updates: any = { status: newStatus, updated_at: new Date().toISOString() }
 
-        if (newStatus === 'sold') {
-            updates.sold_at = new Date().toISOString()
+            if (newStatus === 'sold') {
+                updates.sold_at = new Date().toISOString()
+            }
+
+            const { error } = await supabase.from('marketplace_ads').update(updates).eq('id', ad.id)
+
+            if (error) {
+                console.error('[Admin] Erro ao atualizar:', error)
+                toast.error('Erro: ' + error.message)
+                return
+            }
+
+            toast.success('Status atualizado!')
+            loadData()
+        } catch (err) {
+            console.error('[Admin] Exceção:', err)
+            toast.error('Erro ao atualizar status')
         }
-
-        await supabase.from('marketplace_ads').update(updates).eq('id', ad.id)
-        toast.success('Status atualizado')
-        loadData()
     }
 
     const deleteAd = async (ad: MarketplaceAd) => {
-        if (!confirm(`Excluir anúncio "${ad.title}"?`)) return
+        console.log('[Admin] Tentando excluir anúncio:', ad.id, ad.title)
+        if (!confirm(`Excluir anúncio "${ad.title}"?`)) {
+            console.log('[Admin] Exclusão cancelada pelo usuário')
+            return
+        }
 
-        await supabase.from('marketplace_ads').delete().eq('id', ad.id)
-        toast.success('Anúncio excluído')
-        loadData()
+        try {
+            const { error } = await supabase.from('marketplace_ads').delete().eq('id', ad.id)
+
+            if (error) {
+                console.error('[Admin] Erro ao excluir:', error)
+                toast.error('Erro: ' + error.message)
+                return
+            }
+
+            toast.success('Anúncio excluído!')
+            loadData()
+        } catch (err) {
+            console.error('[Admin] Exceção:', err)
+            toast.error('Erro ao excluir anúncio')
+        }
     }
+
 
     if (loading) {
         return (
@@ -391,8 +432,8 @@ export default function MarketplaceAdminPage() {
                         <Tag className="w-4 h-4 mr-2" />
                         Categorias
                     </TabsTrigger>
-                    <TabsTrigger value="modalidades">
-                        <Crown className="w-4 h-4 mr-2" />
+                    <TabsTrigger value="planos">
+                        <Settings className="w-4 h-4 mr-2" />
                         Modalidades
                     </TabsTrigger>
                 </TabsList>
@@ -485,6 +526,16 @@ export default function MarketplaceAdminPage() {
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex gap-1 justify-center">
+                                                    {/* Ver anúncio */}
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => window.open(`/marketplace/${ad.id}`, '_blank')}
+                                                        title="Ver anúncio"
+                                                    >
+                                                        <Eye className="w-3 h-3" />
+                                                    </Button>
+                                                    {/* Marcar como vendido */}
                                                     {ad.status === 'active' && (
                                                         <Button
                                                             size="sm"
@@ -496,16 +547,19 @@ export default function MarketplaceAdminPage() {
                                                             <CheckCircle className="w-3 h-3" />
                                                         </Button>
                                                     )}
+                                                    {/* Deletar */}
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
                                                         className="text-destructive"
                                                         onClick={() => deleteAd(ad)}
+                                                        title="Excluir anúncio"
                                                     >
                                                         <Trash2 className="w-3 h-3" />
                                                     </Button>
                                                 </div>
                                             </td>
+
                                         </tr>
                                     ))}
                                 </tbody>
@@ -529,127 +583,284 @@ export default function MarketplaceAdminPage() {
                         </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {categories.map(cat => {
-                            const catAds = ads.filter(a => a.category_id === cat.id).length
-                            const catTiers = tiers.filter(t => t.category_id === cat.id).length
+                    {/* Tabela Compacta Inline Editável - Design Lucas */}
+                    <div className="glass-strong rounded-xl border border-primary/20 overflow-hidden">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-primary/5 border-b border-primary/10">
+                                    <th className="text-left py-3 px-4 text-xs font-bold text-primary uppercase tracking-wider w-12">Ícone</th>
+                                    <th className="text-left py-3 px-4 text-xs font-bold text-primary uppercase tracking-wider">Categoria</th>
+                                    <th className="text-center py-3 px-4 text-xs font-bold text-primary uppercase tracking-wider w-20">Dias</th>
+                                    <th className="text-center py-3 px-4 text-xs font-bold text-primary uppercase tracking-wider w-24">Anúncios</th>
+                                    <th className="text-center py-3 px-4 text-xs font-bold text-primary uppercase tracking-wider w-20">Ativa</th>
+                                    <th className="text-center py-3 px-4 text-xs font-bold text-primary uppercase tracking-wider w-32">Modalidade</th>
+                                    <th className="text-center py-3 px-4 text-xs font-bold text-primary uppercase tracking-wider w-16">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-primary/5">
+                                {categories.map((cat, index) => {
+                                    const catAds = ads.filter(a => a.category_id === cat.id).length
+                                    return (
+                                        <tr
+                                            key={cat.id}
+                                            className="hover:bg-primary/5 transition-colors group"
+                                            style={{ animationDelay: `${index * 50}ms` }}
+                                        >
+                                            {/* Ícone */}
+                                            <td className="py-3 px-4">
+                                                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                                                    {getIcon(cat.icon)}
+                                                </div>
+                                            </td>
 
-                            return (
-                                <div key={cat.id} className="glass-strong p-5 rounded-lg border border-primary/20 hover:border-primary/40 transition-all">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-md flex items-center justify-center bg-primary/10 text-primary">
-                                                {getIcon(cat.icon)}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-lg text-primary">{cat.name}</h3>
-                                                <span className="text-xs text-muted-foreground">/{cat.slug}</span>
-                                            </div>
-                                        </div>
-                                        <Badge variant={cat.is_active ? "default" : "secondary"}>
-                                            {cat.is_active ? 'Ativa' : 'Inativa'}
-                                        </Badge>
-                                    </div>
+                                            {/* Nome/Slug */}
+                                            <td className="py-3 px-4">
+                                                <div>
+                                                    <span className="font-semibold text-primary block">{cat.name}</span>
+                                                    <span className="text-xs text-muted-foreground">/{cat.slug}</span>
+                                                </div>
+                                            </td>
 
-                                    <div className="mb-4 flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-secondary" />
-                                        <span className="text-sm font-semibold text-secondary">
-                                            Expira em {cat.duration_days} dias
-                                        </span>
-                                    </div>
+                                            {/* Dias - Editável inline */}
+                                            <td className="py-3 px-4 text-center">
+                                                {cat.requires_tier ? (
+                                                    <span className="text-xs text-amber-600 font-medium">--</span>
+                                                ) : (
+                                                    <input
+                                                        type="number"
+                                                        value={cat.duration_days}
+                                                        onChange={async (e) => {
+                                                            const newDays = parseInt(e.target.value) || 30
+                                                            await supabase
+                                                                .from('marketplace_categories')
+                                                                .update({ duration_days: newDays })
+                                                                .eq('id', cat.id)
+                                                            loadData()
+                                                        }}
+                                                        className="w-14 h-8 text-center text-sm font-semibold bg-transparent border border-primary/20 rounded-md focus:border-primary focus:outline-none"
+                                                    />
+                                                )}
+                                            </td>
 
-                                    <div className="flex gap-4 mb-4 text-sm">
-                                        <div>
-                                            <span className="text-muted-foreground">Anúncios: </span>
-                                            <span className="font-semibold text-blue-500">{catAds}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-muted-foreground">Modalidades: </span>
-                                            <span className="font-semibold text-purple-500">{catTiers}</span>
-                                        </div>
-                                    </div>
+                                            {/* Qtd Anúncios */}
+                                            <td className="py-3 px-4 text-center">
+                                                <Badge variant="outline" className="font-semibold">
+                                                    {catAds}
+                                                </Badge>
+                                            </td>
 
-                                    <div className="flex gap-2 pt-3 border-t border-primary/10">
-                                        <Button size="sm" variant="outline" className="flex-1" onClick={() => openEditCategory(cat)}>
-                                            <Edit2 className="w-3 h-3 mr-1" />
-                                            Editar
-                                        </Button>
-                                        <Button size="sm" variant="outline" className="text-destructive" onClick={() => deleteCategory(cat)}>
-                                            <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            )
-                        })}
+                                            {/* Toggle Ativa */}
+                                            <td className="py-3 px-4 text-center">
+                                                <Switch
+                                                    checked={cat.is_active}
+                                                    onCheckedChange={async (checked) => {
+                                                        await supabase
+                                                            .from('marketplace_categories')
+                                                            .update({ is_active: checked })
+                                                            .eq('id', cat.id)
+                                                        toast.success(checked ? 'Categoria ativada!' : 'Categoria desativada')
+                                                        loadData()
+                                                    }}
+                                                    className="data-[state=checked]:bg-primary"
+                                                />
+                                            </td>
+
+                                            {/* Toggle Modalidade */}
+                                            <td className="py-3 px-4 text-center">
+                                                <button
+                                                    onClick={async () => {
+                                                        const newValue = !cat.requires_tier
+                                                        await supabase
+                                                            .from('marketplace_categories')
+                                                            .update({ requires_tier: newValue })
+                                                            .eq('id', cat.id)
+                                                        toast.success(newValue ? '⭐ Modalidade exigida' : '✅ Anúncios grátis')
+                                                        loadData()
+                                                    }}
+                                                    className={`
+                                                        inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all
+                                                        ${cat.requires_tier
+                                                            ? 'bg-secondary/20 text-secondary border border-secondary/30 hover:bg-secondary/30'
+                                                            : 'bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30'
+                                                        }
+                                                    `}
+                                                >
+                                                    {cat.requires_tier ? '⭐ Exige' : '✅ Grátis'}
+                                                </button>
+
+                                            </td>
+
+                                            {/* Ações */}
+                                            <td className="py-3 px-4 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <button
+                                                        onClick={() => openEditCategory(cat)}
+                                                        className="p-1.5 rounded-md hover:bg-primary/10 text-primary transition-colors"
+                                                        title="Editar"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteCategory(cat)}
+                                                        className="p-1.5 rounded-md hover:bg-red-500/10 text-red-500 transition-colors"
+                                                        title="Excluir"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+
+                        {categories.length === 0 && (
+                            <div className="text-center py-12 text-muted-foreground">
+                                Nenhuma categoria cadastrada
+                            </div>
+                        )}
                     </div>
+
                 </TabsContent>
 
-                {/* ===== MODALIDADES TAB ===== */}
-                <TabsContent value="modalidades" className="mt-6 space-y-4">
-                    <div className="flex justify-end">
-                        <Button onClick={openNewTier} className="glow-orange bg-secondary hover:bg-secondary/90">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Nova Modalidade
-                        </Button>
-                    </div>
+                {/* ===== PLANOS TAB ===== */}
+                <TabsContent value="planos" className="mt-6 space-y-4">
+                    <div className="glass-strong p-6 rounded-lg border border-primary/20">
+                        <h2 className="text-xl font-bold text-primary mb-2">Modalidades de Anúncio</h2>
+                        <p className="text-sm text-muted-foreground mb-6">
+                            Gerencie as 3 modalidades de anúncios do Marketplace. Estas modalidades são globais e aplicam-se a todas as categorias.
+                        </p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {tiers.map(tier => {
-                            const tierCategory = categories.find(c => c.id === tier.category_id)
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Básico */}
+                            <div className="glass p-6 rounded-lg border-2 border-primary/30 hover:border-primary/50 transition-all">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <ShoppingBag className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-primary">Básico</h3>
+                                        <p className="text-xs text-muted-foreground">Incluído nos planos</p>
+                                    </div>
+                                </div>
 
-                            return (
-                                <div
-                                    key={tier.id}
-                                    className={`
-                                        glass-strong p-5 rounded-lg border-2 transition-all
-                                        ${tier.tier_level === 'lendario' ? 'border-amber-500/50' :
-                                            tier.tier_level === 'elite' ? 'border-green-500/50' : 'border-primary/20'}
-                                    `}
+                                <div className="space-y-3 mb-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Preço:</span>
+                                        <span className="font-bold text-green-600">GRÁTIS</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Max Fotos:</span>
+                                        <span className="font-semibold">5 fotos</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Duração:</span>
+                                        <span className="font-semibold">30 dias</span>
+                                    </div>
+                                </div>
+
+                                <div className="pt-3 border-t border-primary/10">
+                                    <p className="text-xs text-muted-foreground">
+                                        ✅ Veterano: 2 anúncios<br />
+                                        ✅ Elite: 10 anúncios<br />
+                                        ✅ Lendário: Ilimitados
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Elite */}
+                            <div className="glass p-6 rounded-lg border-2 border-green-500/50 hover:border-green-500/70 transition-all">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                                        <Star className="w-6 h-6 text-green-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-green-600">Elite</h3>
+                                        <p className="text-xs text-muted-foreground">Destaque verde</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 mb-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Preço:</span>
+                                        <span className="font-bold text-green-600">R$ 49,90</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Max Fotos:</span>
+                                        <span className="font-semibold">10 fotos</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Duração:</span>
+                                        <span className="font-semibold">45 dias</span>
+                                    </div>
+                                </div>
+
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => {
+                                        const tier = tiers.find(t => t.tier_level === 'elite')
+                                        if (tier) openEditTier(tier)
+                                    }}
                                 >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            {tier.tier_level === 'lendario' && <Crown className="w-5 h-5 text-amber-500" />}
-                                            {tier.tier_level === 'elite' && <Star className="w-5 h-5 text-green-500" />}
-                                            <div>
-                                                <h3 className="font-bold text-lg text-primary">{tier.name}</h3>
-                                                <span className="text-xs text-muted-foreground">{tierCategory?.name}</span>
-                                            </div>
-                                        </div>
-                                        <Badge variant={tier.is_active ? "default" : "secondary"}>
-                                            {tier.is_active ? 'Ativa' : 'Inativa'}
-                                        </Badge>
-                                    </div>
+                                    <Edit2 className="w-3 h-3 mr-2" />
+                                    Editar Plano
+                                </Button>
+                            </div>
 
-                                    <div className="space-y-2 mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4 text-green-500" />
-                                            <span className="text-lg font-bold text-green-500">
-                                                {tier.price === 0 ? 'Grátis' : formatCurrency(tier.price)}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="w-4 h-4 text-secondary" />
-                                            <span className="text-sm text-secondary">{tier.duration_days} dias online</span>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            Boost: +{tier.position_boost}
-                                        </div>
+                            {/* Lendário */}
+                            <div className="glass p-6 rounded-lg border-2 border-amber-500/50 hover:border-amber-500/70 transition-all glow-orange">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                        <Crown className="w-6 h-6 text-amber-500" />
                                     </div>
-
-                                    <div className="flex gap-2 pt-3 border-t border-primary/10">
-                                        <Button size="sm" variant="outline" className="flex-1" onClick={() => openEditTier(tier)}>
-                                            <Edit2 className="w-3 h-3 mr-1" />
-                                            Editar
-                                        </Button>
-                                        <Button size="sm" variant="outline" className="text-destructive" onClick={() => deleteTier(tier)}>
-                                            <Trash2 className="w-3 h-3" />
-                                        </Button>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-amber-600">Lendário</h3>
+                                        <p className="text-xs text-muted-foreground">Banner carrossel</p>
                                     </div>
                                 </div>
-                            )
-                        })}
+
+                                <div className="space-y-3 mb-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Preço:</span>
+                                        <span className="font-bold text-amber-600">R$ 79,90</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Max Fotos:</span>
+                                        <span className="font-semibold">25 fotos</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Duração:</span>
+                                        <span className="font-semibold">60 dias</span>
+                                    </div>
+                                </div>
+
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                                    onClick={() => {
+                                        const tier = tiers.find(t => t.tier_level === 'lendario')
+                                        if (tier) openEditTier(tier)
+                                    }}
+                                >
+                                    <Edit2 className="w-3 h-3 mr-2" />
+                                    Editar Plano
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <p className="text-sm text-blue-600 font-medium">
+                                💡 <strong>Importante:</strong> As modalidades são globais e aplicam-se a todas as categorias.
+                                Anúncios Básicos são inclusos nos planos de usuário (Veterano, Elite, Lendário).
+                            </p>
+                        </div>
                     </div>
                 </TabsContent>
+
             </Tabs>
 
             {/* ===== CATEGORY DIALOG ===== */}
@@ -702,7 +913,29 @@ export default function MarketplaceAdminPage() {
                                 onCheckedChange={(checked) => setCategoryForm(prev => ({ ...prev, is_active: checked }))}
                             />
                         </div>
+                        <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${categoryForm.requires_tier
+                            ? 'bg-amber-500/20 border-amber-500/50'
+                            : 'bg-green-500/10 border-green-500/20'
+                            }`}>
+                            <div>
+                                <Label className={`font-medium ${categoryForm.requires_tier ? 'text-amber-700' : 'text-green-700'}`}>
+                                    {categoryForm.requires_tier ? '⭐ Exige Modalidade' : '✅ Anúncios Grátis'}
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    {categoryForm.requires_tier
+                                        ? 'Anúncios passam por escolha de tier (Básico/Elite/Lendário)'
+                                        : 'Anúncios são publicados gratuitamente sem restrição'}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={categoryForm.requires_tier || false}
+                                onCheckedChange={(checked) => setCategoryForm(prev => ({ ...prev, requires_tier: checked }))}
+                                className={categoryForm.requires_tier ? 'data-[state=checked]:bg-amber-500' : ''}
+                            />
+                        </div>
+
                     </div>
+
                     <div className="flex justify-end gap-2">
                         <Button variant="ghost" onClick={() => setCategoryDialogOpen(false)}>Cancelar</Button>
                         <Button onClick={saveCategory} disabled={saving}>
@@ -770,6 +1003,15 @@ export default function MarketplaceAdminPage() {
                                     onChange={(e) => setTierForm(prev => ({ ...prev, duration_days: parseInt(e.target.value) || 30 }))}
                                 />
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Máximo de Fotos</Label>
+                            <Input
+                                type="number"
+                                value={tierForm.max_photos}
+                                onChange={(e) => setTierForm(prev => ({ ...prev, max_photos: parseInt(e.target.value) || 5 }))}
+                                placeholder="5, 10, 25..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label>Boost de Posição</Label>

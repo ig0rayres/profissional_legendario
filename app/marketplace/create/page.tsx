@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { ArrowLeft, Upload, X, Loader2, Car, Home, Crown, Star, Check, AlertCircle, Info } from 'lucide-react'
+import { ArrowLeft, Upload, X, Loader2, Car, Home, Crown, Star, Check, AlertCircle, Info, ChevronLeft, ChevronRight, ImageIcon, GripVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,6 +19,8 @@ import { useAuth } from '@/lib/auth/context'
 import { createClient } from '@/lib/supabase/client'
 import { MarketplaceCategory, MarketplaceAdTier, AD_CONDITIONS, canCreateAd, calculateExpirationDate } from '@/lib/data/marketplace'
 import { toast } from 'sonner'
+import { LocationSelector } from '@/components/ui/location-selector'
+import { VehicleSelector } from '@/components/ui/vehicle-selector'
 
 // Schema de Validação
 const formSchema = z.object({
@@ -29,7 +31,8 @@ const formSchema = z.object({
     description: z.string().min(10, 'Descrição muito curta'),
     location: z.string().min(3, 'Informe a localização'),
     // Veículos
-    vehicle_year: z.string().optional(),
+    vehicle_year_fab: z.string().optional(),
+    vehicle_year_model: z.string().optional(),
     vehicle_make: z.string().optional(),
     vehicle_model: z.string().optional(),
     vehicle_km: z.string().optional(),
@@ -52,6 +55,8 @@ export default function CreateListingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [images, setImages] = useState<File[]>([])
     const [imageUrls, setImageUrls] = useState<string[]>([])
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
     const [categories, setCategories] = useState<MarketplaceCategory[]>([])
     const [tiers, setTiers] = useState<MarketplaceAdTier[]>([])
@@ -140,29 +145,123 @@ export default function CreateListingPage() {
     const adPermission = canCreateAd(currentAdsCount, userPlan.maxAds)
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const MAX_PHOTOS = 5
+
         if (e.target.files) {
             const newFiles = Array.from(e.target.files)
-            setImages(prev => [...prev, ...newFiles])
+            const currentCount = images.length
+            const remaining = MAX_PHOTOS - currentCount
+
+            if (remaining <= 0) {
+                toast.error(`Limite de ${MAX_PHOTOS} fotos atingido`)
+                return
+            }
+
+            const filesToAdd = newFiles.slice(0, remaining)
+
+            if (filesToAdd.length < newFiles.length) {
+                toast.warning(`Apenas ${remaining} foto(s) adicionada(s). Limite: ${MAX_PHOTOS}`)
+            }
+
+            setImages(prev => [...prev, ...filesToAdd])
 
             // Criar previews
-            newFiles.forEach(file => {
+            filesToAdd.forEach(file => {
                 const url = URL.createObjectURL(file)
                 setImageUrls(prev => [...prev, url])
             })
         }
     }
 
+
     const removeImage = (index: number) => {
         setImages(prev => prev.filter((_, i) => i !== index))
         setImageUrls(prev => prev.filter((_, i) => i !== index))
     }
 
-    const onSubmit = async (data: FormData) => {
-        if (!user) return
-        if (!adPermission.allowed) {
-            toast.error(adPermission.message)
+    const moveImage = (index: number, direction: 'left' | 'right') => {
+        const newIndex = direction === 'left' ? index - 1 : index + 1
+        if (newIndex < 0 || newIndex >= images.length) return
+
+        setImages(prev => {
+            const newArr = [...prev]
+                ;[newArr[index], newArr[newIndex]] = [newArr[newIndex], newArr[index]]
+            return newArr
+        })
+        setImageUrls(prev => {
+            const newArr = [...prev]
+                ;[newArr[index], newArr[newIndex]] = [newArr[newIndex], newArr[index]]
+            return newArr
+        })
+    }
+
+    const setAsCover = (index: number) => {
+        if (index === 0) return
+        setImages(prev => {
+            const newArr = [...prev]
+            const [item] = newArr.splice(index, 1)
+            newArr.unshift(item)
+            return newArr
+        })
+        setImageUrls(prev => {
+            const newArr = [...prev]
+            const [item] = newArr.splice(index, 1)
+            newArr.unshift(item)
+            return newArr
+        })
+        toast.success('Foto definida como capa!')
+    }
+
+    // Drag and Drop handlers
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index)
+    }
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault()
+        if (draggedIndex !== null && draggedIndex !== index) {
+            setDragOverIndex(index)
+        }
+    }
+
+    const handleDragLeave = () => {
+        setDragOverIndex(null)
+    }
+
+    const handleDrop = (index: number) => {
+        if (draggedIndex === null || draggedIndex === index) {
+            setDraggedIndex(null)
+            setDragOverIndex(null)
             return
         }
+
+        // Reordenar arrays
+        setImages(prev => {
+            const newArr = [...prev]
+            const [draggedItem] = newArr.splice(draggedIndex, 1)
+            newArr.splice(index, 0, draggedItem)
+            return newArr
+        })
+        setImageUrls(prev => {
+            const newArr = [...prev]
+            const [draggedItem] = newArr.splice(draggedIndex, 1)
+            newArr.splice(index, 0, draggedItem)
+            return newArr
+        })
+
+        setDraggedIndex(null)
+        setDragOverIndex(null)
+    }
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null)
+        setDragOverIndex(null)
+    }
+
+    const onSubmit = async (data: FormData) => {
+        if (!user) return
+        // REMOVIDO: Verificação movida para página de escolha de modalidade
+
 
         setIsSubmitting(true)
 
@@ -217,7 +316,8 @@ export default function CreateListingPage() {
             const payment_status = tierIsFree ? 'free' : 'pending'
 
             // Criar anúncio
-            const { error: insertError } = await supabase
+            const { data: newAd, error: insertError } = await supabase
+
                 .from('marketplace_ads')
                 .insert({
                     user_id: user.id,
@@ -236,6 +336,9 @@ export default function CreateListingPage() {
                     expires_at: expiresAt.toISOString(),
                     published_at: tierIsFree ? new Date().toISOString() : null
                 })
+                .select('id')
+                .single()
+
 
             if (insertError) throw insertError
 
@@ -247,7 +350,8 @@ export default function CreateListingPage() {
                 toast.info('Redirecionando para pagamento...')
             }
 
-            router.push('/marketplace')
+            router.push(`/marketplace/${newAd.id}/choose-tier`)
+
 
         } catch (error: any) {
             console.error('Erro ao criar anúncio:', error)
@@ -265,7 +369,10 @@ export default function CreateListingPage() {
         )
     }
 
-    if (!adPermission.allowed) {
+    // REMOVIDO: Agora SEMPRE permite criar anúncio
+    // Verificação de modalidade será feita na próxima página
+    if (false && !adPermission.allowed) {
+
         return (
             <div className="min-h-screen bg-adventure pt-24 pb-12">
                 <div className="container mx-auto px-4 max-w-2xl text-center">
@@ -296,9 +403,6 @@ export default function CreateListingPage() {
                         </Button>
                     </Link>
                     <h1 className="text-3xl font-bold text-primary font-montserrat">Criar Anúncio</h1>
-                    <p className="text-muted-foreground">
-                        {adPermission.message}
-                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -414,8 +518,11 @@ export default function CreateListingPage() {
 
                             <div>
                                 <Label>Localização *</Label>
-                                <Input placeholder="Cidade, Estado" {...register('location')} />
-                                {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
+                                <LocationSelector
+                                    onLocationChange={(location) => setValue('location', location)}
+                                    defaultValue={watch('location')}
+                                />
+                                {errors.location && <p className="text-sm text-destructive mt-1">{errors.location.message}</p>}
                             </div>
 
                             <div>
@@ -434,28 +541,16 @@ export default function CreateListingPage() {
                                     <Car className="w-5 h-5" />
                                     <h3 className="font-semibold">Detalhes do Veículo</h3>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label>Montadora</Label>
-                                        <Input placeholder="Ex: Toyota" {...register('vehicle_make')} />
-                                    </div>
-                                    <div>
-                                        <Label>Modelo</Label>
-                                        <Input placeholder="Ex: Hilux SRX" {...register('vehicle_model')} />
-                                    </div>
-                                    <div>
-                                        <Label>Ano</Label>
-                                        <Input type="number" placeholder="2023" {...register('vehicle_year')} />
-                                    </div>
-                                    <div>
-                                        <Label>Quilometragem</Label>
-                                        <Input type="number" placeholder="0" {...register('vehicle_km')} />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <Label>Cor</Label>
-                                        <Input placeholder="Ex: Preto Metálico" {...register('vehicle_color')} />
-                                    </div>
-                                </div>
+                                <VehicleSelector
+                                    onVehicleChange={(data) => {
+                                        setValue('vehicle_make', data.make)
+                                        setValue('vehicle_model', data.model)
+                                        setValue('vehicle_year_fab', data.yearFab)
+                                        setValue('vehicle_year_model', data.yearModel)
+                                        setValue('vehicle_km', data.km)
+                                        setValue('vehicle_color', data.color)
+                                    }}
+                                />
                             </CardContent>
                         </Card>
                     )}
@@ -501,10 +596,18 @@ export default function CreateListingPage() {
                     {/* Imagens */}
                     <Card className="bg-card/80 backdrop-blur-md border-primary/20">
                         <CardContent className="p-6">
-                            <Label className="mb-4 block">Fotos</Label>
+                            <div className="flex items-center justify-between mb-4">
+                                <Label>Fotos</Label>
+                                <span className={`text-sm font-medium ${images.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                    {images.length}/5
+                                </span>
+                            </div>
                             <div
-                                className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center hover:bg-primary/5 transition-colors cursor-pointer"
-                                onClick={() => document.getElementById('image-upload')?.click()}
+                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${images.length >= 5
+                                    ? 'border-destructive/30 bg-destructive/5 cursor-not-allowed'
+                                    : 'border-primary/30 hover:bg-primary/5 cursor-pointer'
+                                    }`}
+                                onClick={() => images.length < 5 && document.getElementById('image-upload')?.click()}
                             >
                                 <input
                                     type="file"
@@ -513,24 +616,95 @@ export default function CreateListingPage() {
                                     multiple
                                     accept="image/*"
                                     onChange={handleImageChange}
+                                    disabled={images.length >= 5}
                                 />
-                                <Upload className="w-8 h-8 mx-auto text-primary/50 mb-2" />
-                                <p className="text-sm text-muted-foreground">Clique para adicionar fotos</p>
+                                <Upload className={`w-8 h-8 mx-auto mb-2 ${images.length >= 5 ? 'text-destructive/50' : 'text-primary/50'}`} />
+                                <p className="text-sm text-muted-foreground">
+                                    {images.length >= 5 ? 'Limite de fotos atingido' : 'Clique para adicionar fotos'}
+                                </p>
+
                             </div>
 
                             {imageUrls.length > 0 && (
-                                <div className="flex gap-2 overflow-x-auto py-4">
-                                    {imageUrls.map((url, i) => (
-                                        <div key={i} className="relative w-24 h-24 flex-shrink-0 rounded overflow-hidden group">
-                                            <Image src={url} alt={`Imagem ${i + 1}`} fill className="object-cover" />
+                                <div className="mt-4 space-y-3">
+                                    {/* Grid de todas as imagens com drag and drop */}
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                        {imageUrls.map((url, index) => (
                                             <div
-                                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                                                onClick={() => removeImage(i)}
+                                                key={index}
+                                                draggable
+                                                onDragStart={() => handleDragStart(index)}
+                                                onDragOver={(e) => handleDragOver(e, index)}
+                                                onDragLeave={handleDragLeave}
+                                                onDrop={() => handleDrop(index)}
+                                                onDragEnd={handleDragEnd}
+                                                className={`relative aspect-square rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 ${index === 0
+                                                        ? 'ring-2 ring-primary ring-offset-2 col-span-2 row-span-2'
+                                                        : 'border border-primary/30'
+                                                    } ${draggedIndex === index ? 'opacity-50 scale-95' : ''
+                                                    } ${dragOverIndex === index ? 'ring-2 ring-blue-500 scale-105' : ''
+                                                    }`}
                                             >
-                                                <X className="w-6 h-6 text-white" />
+                                                <Image
+                                                    src={url}
+                                                    alt={`Imagem ${index + 1}`}
+                                                    fill
+                                                    className="object-cover pointer-events-none"
+                                                />
+
+                                                {/* Badge de capa */}
+                                                {index === 0 && (
+                                                    <div className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+                                                        <ImageIcon className="w-3 h-3" />
+                                                        CAPA
+                                                    </div>
+                                                )}
+
+                                                {/* Overlay com ações */}
+                                                <div className="absolute inset-0 bg-black/0 hover:bg-black/50 transition-colors group">
+                                                    {/* Ícone de arrastar */}
+                                                    <div className="absolute top-1 left-1 p-1 bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <GripVertical className="w-4 h-4 text-white" />
+                                                    </div>
+
+                                                    {/* Botão remover */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            removeImage(index)
+                                                        }}
+                                                        className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+
+                                                    {/* Botão definir como capa (exceto para a primeira) */}
+                                                    {index > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setAsCover(index)
+                                                            }}
+                                                            className="absolute bottom-1 left-1 right-1 mx-auto w-fit px-2 py-0.5 bg-primary/90 text-primary-foreground text-xs rounded font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary"
+                                                        >
+                                                            ★ Definir capa
+                                                        </button>
+                                                    )}
+
+                                                    {/* Número da foto */}
+                                                    <div className={`absolute ${index === 0 ? 'bottom-2 right-2' : 'bottom-1 right-1'} bg-black/60 text-white text-xs px-1.5 py-0.5 rounded`}>
+                                                        {index + 1}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+
+                                    <p className="text-xs text-muted-foreground text-center">
+                                        ✋ Arraste para reordenar • A primeira foto é a capa
+                                    </p>
                                 </div>
                             )}
                         </CardContent>
