@@ -10,6 +10,7 @@ interface LogoFrameAvatarProps {
     size?: 'sm' | 'md' | 'lg' | 'xl'
     className?: string
     priority?: boolean
+    style?: React.CSSProperties
 }
 
 export function LogoFrameAvatar({
@@ -17,7 +18,8 @@ export function LogoFrameAvatar({
     alt,
     size = 'lg',
     className,
-    priority = false
+    priority = false,
+    style
 }: LogoFrameAvatarProps) {
 
     // Dimensões
@@ -32,9 +34,10 @@ export function LogoFrameAvatar({
         <div
             className={cn(
                 "relative flex items-center justify-center group cursor-pointer transition-transform duration-500 ease-out hover:scale-105",
-                sizeClasses[size],
+                size ? sizeClasses[size] : '',
                 className
             )}
+            style={style}
         >
             {/* EFEITO DE GLOW EXTREMO NO FUNDO AO PASSAR O MOUSE */}
             <div className="absolute inset-2 bg-orange-500/0 blur-2xl rounded-full opacity-0 group-hover:opacity-60 group-hover:bg-orange-500/30 transition-all duration-500 will-change-[opacity]" />

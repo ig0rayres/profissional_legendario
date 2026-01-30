@@ -15,10 +15,13 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { AvatarWithRank } from '@/components/ui/avatar-with-rank'
+import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
+import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { PostTypeBanner, PostTypeSeal } from './post-type-patch'
 import { PostComments } from './post-comments'
 import { EditPostModal } from './edit-post-modal'
+
+
 
 interface Post {
     id: string
@@ -230,17 +233,70 @@ export function PostCard({
                                 <div className="flex -space-x-3">
                                     {post.confraternity.member1 && (
                                         <div className="relative z-10">
-                                            <AvatarWithRank user={post.confraternity.member1} size="sm" linkToProfile={true} frameStyle="diamond" />
+                                            <div className="relative w-[58px] h-[58px]">
+                                                <LogoFrameAvatar
+                                                    src={post.confraternity.member1.avatar_url}
+                                                    alt={post.confraternity.member1.full_name}
+                                                    size="sm"
+                                                    className="w-full h-full"
+                                                />
+                                                {post.confraternity.member1.rank_id && (
+                                                    <div className="absolute bottom-[0px] right-[0px] z-[5]">
+                                                        <RankInsignia
+                                                            rankId={post.confraternity.member1.rank_id}
+                                                            size="xs"
+                                                            variant="icon-only"
+                                                            className="w-[24px] h-[24px] border-[1.5px] border-white"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                     {post.confraternity.member2 && (
                                         <div className="relative z-0">
-                                            <AvatarWithRank user={post.confraternity.member2} size="sm" linkToProfile={true} frameStyle="diamond" />
+                                            <div className="relative w-[58px] h-[58px]">
+                                                <LogoFrameAvatar
+                                                    src={post.confraternity.member2.avatar_url}
+                                                    alt={post.confraternity.member2.full_name}
+                                                    size="sm"
+                                                    className="w-full h-full"
+                                                />
+                                                {post.confraternity.member2.rank_id && (
+                                                    <div className="absolute bottom-[0px] right-[0px] z-[5]">
+                                                        <RankInsignia
+                                                            rankId={post.confraternity.member2.rank_id}
+                                                            size="xs"
+                                                            variant="icon-only"
+                                                            className="w-[24px] h-[24px] border-[1.5px] border-white"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             ) : post.user && (
-                                <AvatarWithRank user={post.user} size="md" linkToProfile={true} frameStyle="diamond" />
+                                <div className="relative">
+                                    <div className="relative w-[58px] h-[58px]">
+                                        <LogoFrameAvatar
+                                            src={post.user.avatar_url}
+                                            alt={post.user.full_name}
+                                            size="sm"
+                                            className="w-full h-full"
+                                        />
+                                        {post.user.rank_id && (
+                                            <div className="absolute bottom-[0px] right-[0px] z-[5]">
+                                                <RankInsignia
+                                                    rankId={post.user.rank_id}
+                                                    size="xs"
+                                                    variant="icon-only"
+                                                    className="w-[24px] h-[24px] border-[1.5px] border-white"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             )}
 
                             {/* User info - Names as links */}

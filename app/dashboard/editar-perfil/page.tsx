@@ -558,8 +558,8 @@ export default function EditarPerfilPage() {
                                 </div>
                             </div>
 
-                            {/* Preset Selector */}
-                            <div className="p-4 bg-muted/30 border-t border-white/5">
+                            {/* Preset Selector - DESABILITADO TEMPORARIAMENTE */}
+                            {/* <div className="p-4 bg-muted/30 border-t border-white/5">
                                 <div className="flex items-center justify-between mb-3">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Temas Disponíveis</p>
                                     <span className="text-[10px] text-muted-foreground/50">Clique para aplicar</span>
@@ -602,7 +602,7 @@ export default function EditarPerfilPage() {
                                         </button>
                                     ))}
                                 </div>
-                            </div>
+                            </div> */}
                         </div>
 
                         <CardContent className="pt-6 pb-6">

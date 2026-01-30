@@ -170,8 +170,18 @@ export class PostsService {
                 .select('id, full_name, avatar_url, slug, rota_number')
                 .in('id', userIds)
 
+            // Buscar rank_id de cada usuário
+            const { data: gamification } = await this.supabase
+                .from('user_gamification')
+                .select('user_id, current_rank_id')
+                .in('user_id', userIds)
+
             const profileMap = new Map<string, any>()
             profiles?.forEach(p => profileMap.set(p.id, p))
+
+            // Mapa de ranks
+            const rankMap = new Map<string, string>()
+            gamification?.forEach(g => rankMap.set(g.user_id, g.current_rank_id))
 
             // Buscar confrarias (se houver)
             const confraternityIds = postsData
@@ -198,7 +208,25 @@ export class PostsService {
                         .select('id, full_name, avatar_url, slug, rota_number')
                         .in('id', memberIds)
 
+                    // Buscar ranks dos membros
+                    const { data: memberGamification } = await this.supabase
+                        .from('user_gamification')
+                        .select('user_id, current_rank_id')
+                        .in('user_id', memberIds)
+
                     members?.forEach(m => memberMap.set(m.id, m))
+
+                    // Mapa de ranks dos membros
+                    const memberRankMap = new Map<string, string>()
+                    memberGamification?.forEach(g => memberRankMap.set(g.user_id, g.current_rank_id))
+
+                    // Adicionar rank_id aos perfis dos membros
+                    memberIds.forEach(id => {
+                        const member = memberMap.get(id)
+                        if (member) {
+                            member.rank_id = memberRankMap.get(id) || null
+                        }
+                    })
                 }
 
                 confs?.forEach(c => {
@@ -244,7 +272,8 @@ export class PostsService {
                         full_name: profile?.full_name || 'Usuário',
                         avatar_url: profile?.avatar_url || null,
                         slug: profile?.slug || null,
-                        rota_number: profile?.rota_number || null
+                        rota_number: profile?.rota_number || null,
+                        rank_id: rankMap.get(post.user_id) || null
                     },
                     confraternity,
                     user_has_liked: likedPostIds.has(post.id)
@@ -262,12 +291,23 @@ export class PostsService {
      * Busca IDs de confrarias que o usuário participou
      */
     private async getUserConfraternityIds(userId: string): Promise<string[]> {
-        const { data } = await this.supabase
-            .from('confraternities')
-            .select('id')
-            .or(`member1_id.eq.${userId},member2_id.eq.${userId}`)
+        try {
+            const { data, error } = await this.supabase
+                .from('confraternity_invites')
+                .select('id')
+                .eq('status', 'completed')
+                .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
 
-        return data?.map(c => c.id) || []
+            if (error) {
+                console.error('Erro ao buscar confrarias:', error)
+                return []
+            }
+
+            return data?.map(c => c.id) || []
+        } catch (e) {
+            console.error('Erro ao buscar confrarias:', e)
+            return []
+        }
     }
 
     /**
@@ -373,9 +413,10 @@ export class PostsService {
             const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
             const { count } = await this.supabase
-                .from('confraternities')
+                .from('confraternity_invites')
                 .select('*', { count: 'exact', head: true })
-                .gte('date_occurred', firstDayOfMonth)
+                .eq('status', 'completed')
+                .gte('proposed_date', firstDayOfMonth)
             return count || 0
         } catch {
             return 0

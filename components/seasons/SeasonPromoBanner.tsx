@@ -54,6 +54,9 @@ export function SeasonPromoBanner({ showFullVersion = false }: SeasonPromoBanner
                     .eq('id', activeSeason.season_id)
                     .single()
 
+                console.log('[SEASON BANNER] fullSeason:', fullSeason)
+                console.log('[SEASON BANNER] banner_sidebar_url:', fullSeason?.banner_sidebar_url)
+
                 setSeason({
                     ...activeSeason,
                     banner_url: fullSeason?.banner_url || null,
@@ -85,13 +88,21 @@ export function SeasonPromoBanner({ showFullVersion = false }: SeasonPromoBanner
     }
 
     if (loading || !season) {
+        console.log('[SEASON BANNER] Returning null:', { loading, hasSeason: !!season })
         return null
     }
 
     // Versão compacta para home/sidebar (usa banner gerado se disponível)
+    console.log('[SEASON BANNER] RENDER:', {
+        showFullVersion,
+        hasSidebarUrl: !!season.banner_sidebar_url,
+        sidebarUrl: season.banner_sidebar_url
+    })
+
     if (!showFullVersion) {
         // Se tem banner sidebar gerado, usa ele (proporção 700x250 = 2.8:1)
         if (season.banner_sidebar_url) {
+            console.log('[SEASON BANNER] ✅ Renderizando banner gerado!')
             return (
                 <Link href="/dashboard/rota-do-valente">
                     <Card className="relative border-0 overflow-hidden group cursor-pointer">

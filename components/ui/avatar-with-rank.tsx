@@ -51,7 +51,7 @@ const SIZE_CONFIG = {
     xs: {
         container: 'w-8 h-8',
         avatar: 32,
-        badge: 'xs' as const,
+        badge: 'sm' as const,  // Aumentado para melhor visibilidade
         badgeOffset: '-bottom-1 -right-1',
         text: 'text-xs',
         diamondSize: 'w-10 h-10'
@@ -59,23 +59,23 @@ const SIZE_CONFIG = {
     sm: {
         container: 'w-10 h-10',
         avatar: 40,
-        badge: 'xs' as const,
-        badgeOffset: '-bottom-1 -right-1',
+        badge: 'sm' as const,  // Mantido sm para boa visibilidade
+        badgeOffset: '-bottom-1.5 -right-1.5',
         text: 'text-sm',
         diamondSize: 'w-12 h-12'
     },
     md: {
         container: 'w-12 h-12',
         avatar: 48,
-        badge: 'sm' as const,
-        badgeOffset: '-bottom-1.5 -right-1.5',
+        badge: 'md' as const,  // Aumentado
+        badgeOffset: '-bottom-2 -right-2',
         text: 'text-sm',
         diamondSize: 'w-14 h-14'
     },
     lg: {
         container: 'w-16 h-16',
         avatar: 64,
-        badge: 'sm' as const,
+        badge: 'md' as const,
         badgeOffset: '-bottom-2 -right-2',
         text: 'text-base',
         diamondSize: 'w-20 h-20'
@@ -83,8 +83,8 @@ const SIZE_CONFIG = {
     xl: {
         container: 'w-24 h-24',
         avatar: 96,
-        badge: 'md' as const,
-        badgeOffset: '-bottom-2 -right-2',
+        badge: 'lg' as const,  // Aumentado para xl
+        badgeOffset: '-bottom-3 -right-3',
         text: 'text-lg',
         diamondSize: 'w-28 h-28'
     }
@@ -165,14 +165,20 @@ export function AvatarWithRank({
                 </div>
             </div>
 
-            {/* Badge de patente */}
-            <div className="absolute -bottom-1 -right-1 z-20">
+            {/* Badge de patente - CORRIGIDO para usar icon-only */}
+            <div className="absolute bottom-[2px] right-[2px] z-20">
                 <RankInsignia
                     rankId={rankId}
-                    rankName={user.rank_name}
-                    iconName={rankIconName}
                     size={config.badge}
-                    variant="avatar"
+                    variant="icon-only"
+                    className={cn(
+                        "border-white",
+                        size === 'xs' && "w-[18px] h-[18px] border-[1px]",
+                        size === 'sm' && "w-[26px] h-[26px] border-[1.5px]",
+                        size === 'md' && "w-[26px] h-[26px] border-[1.5px]",
+                        size === 'lg' && "w-[36px] h-[36px] border-[2px]",
+                        size === 'xl' && "w-[44px] h-[44px] border-[2px]"
+                    )}
                 />
             </div>
         </div>
@@ -210,14 +216,20 @@ export function AvatarWithRank({
                     )}
                 </div>
 
-                {/* Badge de Patente */}
+                {/* Badge de Patente - CORRIGIDO */}
                 <div className={cn("absolute z-10", config.badgeOffset)}>
                     <RankInsignia
                         rankId={rankId}
-                        rankName={user.rank_name}
-                        iconName={rankIconName}
                         size={config.badge}
-                        variant="avatar"
+                        variant="icon-only"
+                        className={cn(
+                            "border-white",
+                            size === 'xs' && "w-[18px] h-[18px] border-[1px]",
+                            size === 'sm' && "w-[24px] h-[24px] border-[1.5px]",
+                            size === 'md' && "w-[28px] h-[28px] border-[1.5px]",
+                            size === 'lg' && "w-[36px] h-[36px] border-[2px]",
+                            size === 'xl' && "w-[44px] h-[44px] border-[2px]"
+                        )}
                     />
                 </div>
             </div>

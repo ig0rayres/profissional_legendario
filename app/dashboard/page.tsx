@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
 import { ProfilePageTemplate } from '@/components/profile/profile-page-template'
 import { SharePostModal } from '@/components/social/share-post-modal'
+import { SeasonBannerCarouselV2 } from '@/components/season'
 import type { CompleteProfileData, RankData } from '@/lib/profile/types'
 
 export default function DashboardPage() {

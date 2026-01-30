@@ -785,7 +785,7 @@ export default function MessagesManager() {
                                             size="sm"
                                             variant="outline"
                                             onClick={sendTestEmail}
-                                            disabled={sendingTest || !title || !body}
+                                            disabled={sendingTest || !title.trim() || !body.trim() || !testEmail.trim()}
                                             className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
                                         >
                                             {sendingTest ? (

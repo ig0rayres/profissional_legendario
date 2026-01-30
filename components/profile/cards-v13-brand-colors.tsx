@@ -20,6 +20,7 @@ import { CreatePostModal } from '@/components/social/create-post-modal'
 import { CreatePostModalV2 } from '@/components/social/create-post-modal-v2'
 import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
+import { useAvatarConfig } from '@/hooks/use-avatar-config'
 
 
 /**
@@ -123,14 +124,14 @@ export function RotaDoValenteV13({
                         {/* Stats rápidos */}
                         <div className="flex gap-3">
                             <div className="text-center group/stat cursor-pointer">
-                                <div className="w-12 h-12 rounded-xl bg-[#D2691E]/10 border border-[#D2691E]/20 flex items-center justify-center mb-1 transform hover:scale-110 transition-transform">
+                                <div className="w-12 h-12 rounded-xl bg-[#D2691E]/10 border border-[#D2691E]/20 flex items-center justify-center mb-1 transform hover:scale-105 hover:shadow-md hover:border-[#D2691E]/30 transition-all duration-300 cursor-pointer group/stat">
                                     <Star className="w-5 h-5 text-[#D2691E] fill-[#D2691E]" />
                                 </div>
                                 <p className="text-xs font-bold text-[#2D3142]">{totalMedals}</p>
                                 <p className="text-[10px] text-gray-600">Medalhas</p>
                             </div>
                             <div className="text-center group/stat cursor-pointer">
-                                <div className="w-12 h-12 rounded-xl bg-[#1E4D40]/10 border border-[#1E4D40]/20 flex items-center justify-center mb-1 transform hover:scale-110 transition-transform">
+                                <div className="w-12 h-12 rounded-xl bg-[#1E4D40]/10 border border-[#1E4D40]/20 flex items-center justify-center mb-1 transform hover:scale-105 hover:shadow-md hover:border-[#1E4D40]/30 transition-all duration-300 cursor-pointer group/stat">
                                     <Flame className="w-5 h-5 text-[#1E4D40]" />
                                 </div>
                                 <p className="text-xs font-bold text-[#2D3142]">{vigor}%</p>
@@ -307,6 +308,9 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
     const [pendingRequests, setPendingRequests] = useState<any[]>([])
     const [loadingPending, setLoadingPending] = useState(false)
     const supabase = createClient()
+
+    // Carregar configurações de avatar do banco
+    const { sizes: avatarSizes } = useAvatarConfig('elo', 'desktop')
 
     useEffect(() => {
         // Se connections foram passadas como prop, não carrega
@@ -632,19 +636,30 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                                     className="group flex flex-col items-center text-center"
                                 >
                                     <div className="relative mb-2">
-                                        <LogoFrameAvatar
-                                            src={conn.avatar_url}
-                                            alt={conn.full_name}
-                                            size="sm"
-                                            className="w-12 h-12"
-                                        />
-                                        {/* Badge de patente no canto - usa RankInsignia */}
+                                        <div
+                                            className="relative"
+                                            style={avatarSizes ? {
+                                                width: `${avatarSizes.frameSize}px`,
+                                                height: `${avatarSizes.frameSize}px`,
+                                            } : undefined}
+                                        >
+                                            <LogoFrameAvatar
+                                                src={conn.avatar_url}
+                                                alt={conn.full_name}
+                                                size="sm"
+                                                className={avatarSizes ? 'w-full h-full' : 'w-12 h-12'}
+                                            />
+                                        </div>
+                                        {/* Badge de patente no canto - CORRIGIDO */}
                                         {conn.rank_id && (
-                                            <div className="absolute -bottom-1 -right-1">
+                                            <div
+                                                className="absolute bottom-[1px] right-[1px] z-[5]"
+                                            >
                                                 <RankInsignia
                                                     rankId={conn.rank_id}
                                                     size="xs"
-                                                    variant="badge"
+                                                    variant="icon-only"
+                                                    className="w-[28px] h-[28px] border-[1.5px] border-white"
                                                 />
                                             </div>
                                         )}
@@ -891,7 +906,7 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group relative z-50">
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group relative z-10">
             {/* Glass animation container - isolated with overflow-hidden */}
             <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -1129,6 +1144,7 @@ interface NaRotaFeedV13Props {
     userId: string
     userName: string
     userAvatar?: string | null
+    userRankId?: string
     showCreateButton?: boolean
     ratings: Array<{
         id: string
@@ -1148,7 +1164,7 @@ interface NaRotaFeedV13Props {
     }>
 }
 
-export function NaRotaFeedV13({ userId, userName, userAvatar, showCreateButton = false, ratings, portfolio, posts = [] }: NaRotaFeedV13Props) {
+export function NaRotaFeedV13({ userId, userName, userAvatar, userRankId, showCreateButton = false, ratings, portfolio, posts = [] }: NaRotaFeedV13Props) {
     const [createPostOpen, setCreatePostOpen] = useState(false)
 
     const allItems = [
@@ -1224,19 +1240,23 @@ export function NaRotaFeedV13({ userId, userName, userAvatar, showCreateButton =
                         <div key={idx} className="p-4 hover:bg-gray-50 transition-colors group/post">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden transform group-hover/post:scale-110 transition-transform">
-                                        {userAvatar ? (
-                                            <Image
-                                                src={userAvatar}
-                                                alt={userName}
-                                                width={40}
-                                                height={40}
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <span className="text-sm font-bold text-[#1E4D40]">
-                                                {userName.charAt(0)}
-                                            </span>
+                                    {/* Avatar com LogoFrame e Badge de Patente */}
+                                    <div className="relative">
+                                        <LogoFrameAvatar
+                                            src={userAvatar}
+                                            alt={userName}
+                                            size="xs"
+                                            className="w-10 h-10"
+                                        />
+                                        {userRankId && (
+                                            <div className="absolute bottom-[2px] right-[2px] z-[5]">
+                                                <RankInsignia
+                                                    rankId={userRankId}
+                                                    size="xs"
+                                                    variant="icon-only"
+                                                    className="w-[18px] h-[18px] border-[1px] border-white"
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                     <div>

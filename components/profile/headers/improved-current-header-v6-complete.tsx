@@ -7,7 +7,7 @@ import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
     Flame, Award, Shield, Instagram, MessageCircleIcon,
-    TrendingUp, Eye, Camera, Settings, Edit, Bell, Briefcase, CreditCard, Store
+    TrendingUp, Eye, Camera, Settings, Edit, Bell, Briefcase, CreditCard, Store, Mountain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileActionButtonsV6 } from '@/components/profile/profile-action-buttons-v6'
@@ -55,8 +55,8 @@ export default function ImprovedCurrentHeaderV6Complete({
                             fill
                             className="object-cover"
                         />
-                        {/* Overlay escuro com gradiente para legibilidade */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
+                        {/* Overlay escuro com gradiente para legibilidade - reduzido em 20% */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/24 to-black/48" />
                     </>
                 ) : (
                     // Se não tiver capa (ou for preset), deixa o fundo global aparecer (transparente/glass)
@@ -92,27 +92,26 @@ export default function ImprovedCurrentHeaderV6Complete({
                 <div className="flex items-start gap-2 md:gap-4 p-3 md:p-6">
 
                     {/* Avatar with Depth Effect */}
-                    {/* Avatar Diamond Frame Experiment */}
                     {/* Avatar with Logo Frame */}
-                    <div className="relative flex-shrink-0 ml-1 md:ml-4 mr-1 md:mr-6">
+                    <div className="relative flex-shrink-0 ml-1 md:ml-4 mr-1 md:mr-6 z-0 md:translate-y-[10px]">
                         <div className="relative group">
                             <LogoFrameAvatar
                                 src={profile.avatar_url}
                                 alt={profile.full_name}
                                 size="lg"
-                                className="w-[115px] h-[115px] md:w-[120px] md:h-[120px]"
+                                className="w-[116px] h-[116px] md:w-[175px] md:h-[175px]"
                             />
                         </div>
 
-                        {/* Rank Badge - Bottom right corner of avatar */}
+                        {/* Rank Badge - EXATAMENTE no canto inferior direito do frame losango */}
                         <div
-                            className="absolute bottom-4 right-2 md:bottom-6 md:right-6 z-30"
+                            className="absolute bottom-[8px] right-[8px] md:bottom-[18px] md:right-[18px] z-[5]"
                         >
                             <RankInsignia
                                 rankId={gamification?.current_rank_id || 'novato'}
-                                size="sm"
+                                size="lg"
                                 variant="icon-only"
-                                className="w-6 h-6 md:w-12 md:h-12 border-2 md:border-4 border-[#1A2421]"
+                                className="w-[36px] h-[36px] md:w-[50px] md:h-[50px] border-[1.5px] md:border-[2px] border-white"
                             />
                         </div>
                     </div>
@@ -149,7 +148,12 @@ export default function ImprovedCurrentHeaderV6Complete({
                             <div className="hidden md:block absolute top-12 right-6 z-20">
                                 <div className="bg-gradient-to-br from-[#D2691E]/60 to-[#A0522D]/60 border-2 border-[#D2691E]/15 rounded-xl px-5 py-3 shadow-xl backdrop-blur-sm">
                                     <div className="flex flex-col items-center gap-1">
-                                        <Shield className="w-8 h-8 text-white" />
+                                        <RankInsignia
+                                            rankId={gamification?.current_rank_id || 'novato'}
+                                            size="md"
+                                            variant="icon-only"
+                                            className="w-8 h-8 text-white"
+                                        />
                                         <div className="text-sm font-bold text-white capitalize">
                                             {gamification?.current_rank_id || 'Novato'}
                                         </div>
@@ -172,22 +176,22 @@ export default function ImprovedCurrentHeaderV6Complete({
                                     label: 'Medalhas',
                                     value: earnedMedals.length,
                                     icon: Award,
-                                    color: '#F59E0B', // Dourado
-                                    glow: 'shadow-yellow-500/20 hover:shadow-yellow-500/40' // Glow Dourado
+                                    color: '#F59E0B', // Amarelo
+                                    glow: 'shadow-yellow-500/20 hover:shadow-yellow-500/40'
                                 },
                                 {
                                     label: 'ID Rota',
                                     value: profile.rota_number || '#000001',
-                                    icon: null,
-                                    color: '#1E4D40', // Verde
-                                    glow: 'shadow-green-500/20 hover:shadow-green-500/40' // Glow Verde
+                                    icon: Mountain,
+                                    color: '#F59E0B', // Amarelo
+                                    glow: 'shadow-yellow-500/20 hover:shadow-yellow-500/40'
                                 },
                             ].map((stat, idx) => (
                                 <div
                                     key={idx}
                                     className={cn(
                                         "relative group flex items-center gap-1.5 md:gap-3 px-2 md:px-5 py-1 md:py-2.5 rounded-lg md:rounded-xl border border-white/5 transition-all duration-300 cursor-default overflow-hidden",
-                                        "bg-black/20 backdrop-blur-md hover:bg-black/30 hover:border-white/20 hover:-translate-y-1 hover:scale-105",
+                                        "bg-black/25 backdrop-blur-[3px] hover:bg-black/35 hover:border-white/20 hover:-translate-y-1 hover:scale-105",
                                         stat.glow,
                                         "shadow-lg animate-in fade-in zoom-in duration-700 fill-mode-backwards"
                                     )}
@@ -276,7 +280,7 @@ export default function ImprovedCurrentHeaderV6Complete({
                 </div>
 
                 {/* Bottom Section - Action Buttons */}
-                <div className="mt-auto px-6 py-4 border-t border-white/10" style={{ background: 'rgba(0, 0, 0, 0.2)', backdropFilter: 'blur(8px)' }}>
+                <div className="mt-auto px-6 py-4 border-t border-white/10" style={{ background: 'rgba(0, 0, 0, 0.2)', backdropFilter: 'blur(6.8px)' }}>
                     <div className="flex items-center justify-between">
                         {/* Action Buttons */}
                         {!isOwner ? (

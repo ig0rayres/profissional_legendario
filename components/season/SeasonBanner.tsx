@@ -150,6 +150,148 @@ export function SeasonBanner({
         }
     }
 
+    // ========== RENDERIZAÇÃO COMPACT (500x500) - Layout específico com carrossel ==========
+    if (variant === 'compact') {
+        const [currentPrizeIndex, setCurrentPrizeIndex] = useState(0)
+
+        // Ordenar prêmios por posição (1º, 2º, 3º)
+        const sortedPrizes = [...prizes].sort((a, b) => a.position - b.position)
+
+        // Auto-rotate prizes
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setCurrentPrizeIndex(prev => (prev + 1) % sortedPrizes.length)
+            }, 3000)
+            return () => clearInterval(interval)
+        }, [sortedPrizes.length])
+
+        const currentPrize = sortedPrizes[currentPrizeIndex]
+        const styles = getPositionStyles(currentPrize?.position || 1)
+
+        return (
+            <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className={`relative overflow-hidden rounded-2xl ${className}`}
+                style={{ aspectRatio: '4 / 5' }}
+                aria-label="Prêmios da temporada atual"
+            >
+                {/* Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#122e26] via-[#0d211b] to-[#05120e]" />
+                <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                    }}
+                />
+
+                {/* TOPO: Logo + Badge */}
+                <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
+                    <div className="bg-white rounded-md px-2 py-1 shadow-lg">
+                        <img
+                            src="/images/logo-rotabusiness.png"
+                            alt="Rota Business Club"
+                            className="h-5 w-auto object-contain"
+                        />
+                    </div>
+                    <Badge className="bg-[#cc5500] text-white border-0 px-2 py-1 text-[8px] font-bold tracking-wider uppercase shadow-lg">
+                        <Sparkles className="w-2.5 h-2.5 mr-1" />
+                        {['', 'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'][season.month]}/{season.year}
+                    </Badge>
+                </div>
+
+                <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 pt-20 pb-6">
+                    {/* Título */}
+                    <h2 className="font-black text-white text-lg uppercase tracking-tight text-center mb-0.5">
+                        PRÊMIOS DE <span className="text-[#cc5500]">{monthNames[season.month]}</span>
+                    </h2>
+                    <p className="text-gray-400 text-[10px] text-center mb-3">
+                        Acumule <span className="text-white font-bold">VIGOR</span> e conquiste
+                    </p>
+
+                    {/* Badge de posição */}
+                    <div className="flex flex-col items-center mb-2">
+                        <motion.div
+                            key={currentPrize?.position}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className={`${styles.badge} w-10 h-10 rounded-full flex items-center justify-center`}
+                        >
+                            {styles.icon}
+                        </motion.div>
+                        <p className={`text-xs font-bold uppercase mt-1 ${currentPrize?.position === 1 ? 'text-yellow-400' :
+                            currentPrize?.position === 2 ? 'text-gray-300' : 'text-amber-500'
+                            }`}>
+                            {styles.label}
+                        </p>
+                    </div>
+
+                    {/* Prêmio atual - Carrossel */}
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentPrize?.position}
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -50 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-40 h-40 relative"
+                        >
+                            <div className="w-full h-full rounded-xl overflow-hidden bg-zinc-700/80 flex items-center justify-center p-3">
+                                {currentPrize?.image_url ? (
+                                    <img
+                                        src={currentPrize.image_url}
+                                        alt={currentPrize.title}
+                                        className="max-w-full max-h-full object-contain"
+                                    />
+                                ) : (
+                                    <Trophy className="w-12 h-12 text-black/20" />
+                                )}
+                            </div>
+                            {currentPrize?.position === 1 && (
+                                <motion.div
+                                    animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="absolute -top-2 -right-2"
+                                >
+                                    <Sparkles className="w-5 h-5 text-yellow-400" />
+                                </motion.div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+
+                    {/* Nome do prêmio */}
+                    <motion.p
+                        key={currentPrize?.title}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-white/90 text-sm font-medium mt-3 text-center"
+                    >
+                        {currentPrize?.title}
+                    </motion.p>
+
+                    {/* Indicadores de carrossel */}
+                    <div className="flex gap-2 mt-4">
+                        {sortedPrizes.map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCurrentPrizeIndex(idx)}
+                                className={`w-2 h-2 rounded-full transition-all ${idx === currentPrizeIndex
+                                    ? 'bg-[#cc5500] w-4'
+                                    : 'bg-white/30 hover:bg-white/50'
+                                    }`}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Texto de engajamento */}
+                    <p className="text-gray-500 text-[9px] mt-3 text-center">
+                        💡 Complete missões e suba no ranking!
+                    </p>
+                </div>
+            </motion.section>
+        )
+    }
+
     return (
         <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -259,7 +401,7 @@ export function SeasonBanner({
                 )}
 
                 {/* Pódio de Prêmios */}
-                <div className="flex justify-center items-end gap-4 md:gap-8 mb-8">
+                <div className="flex justify-center items-end gap-6 md:gap-10 mb-8">
                     {podiumOrder.map((prize, index) => {
                         const styles = getPositionStyles(prize.position)
                         const delay = 0.5 + (index * 0.15)
@@ -295,8 +437,9 @@ export function SeasonBanner({
                                 <motion.div
                                     whileHover={{ scale: 1.05, y: -5 }}
                                     transition={{ type: 'spring', stiffness: 300 }}
-                                    className={`relative ${styles.scale} ${prize.position === 1 ? 'w-32 h-32 md:w-44 md:h-44' :
-                                        'w-24 h-24 md:w-32 md:h-32'
+                                    className={`relative ${styles.scale} ${prize.position === 1
+                                        ? 'w-36 h-36 md:w-52 md:h-52'
+                                        : 'w-32 h-32 md:w-40 md:h-40'
                                         }`}
                                 >
                                     {/* Container da imagem - fundo cinza */}
@@ -333,7 +476,7 @@ export function SeasonBanner({
 
                                 {/* Nome do prêmio editável (embaixo) */}
                                 {prize.title && prize.title !== `${prize.position}º Lugar` && (
-                                    <p className="text-white/80 text-xs mt-2 font-medium max-w-[120px] line-clamp-2 text-center">
+                                    <p className="text-white/80 text-xs mt-4 font-medium max-w-[120px] line-clamp-2 text-center">
                                         {prize.title}
                                     </p>
                                 )}

@@ -26,3 +26,15 @@ O projeto foi reorganizado! Veja `.agent/ESTRUTURA_PROJETO.md` para a documenta�
 - `/rafael-dba` - Arquiteto de Banco de Dados  
 - `/carlos-backend` - Backend Developer
 - `/marina-frontend` - Frontend Developer
+
+---
+
+## ⚠️ DOCUMENTOS CRÍTICOS
+
+Antes de trabalhar, **LEIA OBRIGATORIAMENTE**:
+
+📊 **[FONTE_DADOS_GAMIFICACAO.md](docs/FONTE_DADOS_GAMIFICACAO.md)** - Única fonte de verdade para VIGOR/XP
+
+🎯 **[AVATARES_E_BADGES.md](docs/AVATARES_E_BADGES.md)** - **DOCUMENTAÇÃO COMPLETA** de todos os avatares e badges de patente do sistema
+
+🖼️ **[PADRAO_AVATAR.md](docs/PADRAO_AVATAR.md)** - Padrão de avatares (frame quadrada, patente no canto direito)

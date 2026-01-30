@@ -12,7 +12,7 @@ import { MOCK_USER_GAMIFICATION, MOCK_RANKS } from '@/lib/data/mock'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { NotificationCenter } from '@/components/notifications/notification-center'
 import { CriticalNoticeModal } from '@/components/notifications/critical-notice-modal'
-import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
+import { DashboardHeaderAvatar } from '@/components/ui/dashboard-header-avatar'
 
 export function Header() {
     const [menuOpen, setMenuOpen] = useState(false)
@@ -91,40 +91,61 @@ export function Header() {
                         {user ? (
                             <div className="flex items-center gap-4 ml-4 pl-4 border-l border-primary/20">
                                 <div className="flex items-center gap-4">
-                                    {/* Avatar com Notificação */}
-                                    <div className="relative">
-                                        <LogoFrameAvatar
-                                            src={user.avatar_url}
-                                            alt={user.full_name}
-                                            size="sm"
-                                            className="w-16 h-16"
-                                        />
-                                        {/* Sino de Notificação sobre o frame inferior */}
-                                        <div className="absolute -bottom-2 -right-2">
-                                            <NotificationCenter />
-                                        </div>
-                                    </div>
-                                    <CriticalNoticeModal />
-
                                     {(() => {
                                         const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
-                                        const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)
-                                        // Mostrar nome e sobrenome (até 2 palavras)
-                                        const nameParts = user.full_name.split(' ')
-                                        const displayName = nameParts.length >= 2
-                                            ? `${nameParts[0]} ${nameParts[1]}`
-                                            : nameParts[0]
+                                        const rankId = gamif?.current_rank_id
 
-                                        return rank ? (
-                                            <div className="flex flex-col ml-2">
-                                                <span className="text-sm text-muted-foreground">
-                                                    Olá, <span className="text-primary font-bold">{displayName}</span>
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground ml-2">
-                                                Olá, <span className="text-primary font-bold">{displayName}</span>
-                                            </span>
+                                        return (
+                                            <>
+                                                {/* Avatar com Badge de Patente e Notificação */}
+                                                <div className="relative">
+                                                    <div
+                                                        onClick={() => {
+                                                            // Simular click no botão de notificações
+                                                            const notifButton = document.querySelector('[data-notification-trigger]') as HTMLButtonElement
+                                                            if (notifButton) notifButton.click()
+                                                        }}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        <DashboardHeaderAvatar
+                                                            user={{
+                                                                id: user.id,
+                                                                full_name: user.full_name,
+                                                                avatar_url: user.avatar_url,
+                                                                rank_id: rankId,
+                                                            }}
+                                                            mode="desktop"
+                                                        />
+                                                    </div>
+                                                    {/* Sino de Notificação sobre o badge */}
+                                                    <div className="absolute -bottom-2 -right-2 z-[40]">
+                                                        <NotificationCenter />
+                                                    </div>
+                                                </div>
+                                                <CriticalNoticeModal />
+
+                                                {(() => {
+                                                    const gamif = MOCK_USER_GAMIFICATION.find(g => g.user_id === user.id)
+                                                    const rank = MOCK_RANKS.find(r => r.id === gamif?.current_rank_id)
+                                                    // Mostrar nome e sobrenome (até 2 palavras)
+                                                    const nameParts = user.full_name.split(' ')
+                                                    const displayName = nameParts.length >= 2
+                                                        ? `${nameParts[0]} ${nameParts[1]}`
+                                                        : nameParts[0]
+
+                                                    return rank ? (
+                                                        <div className="flex flex-col ml-2">
+                                                            <span className="text-sm text-muted-foreground">
+                                                                Olá, <span className="text-primary font-bold">{displayName}</span>
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-sm text-muted-foreground ml-2">
+                                                            Olá, <span className="text-primary font-bold">{displayName}</span>
+                                                        </span>
+                                                    )
+                                                })()}
+                                            </>
                                         )
                                     })()}
                                 </div>

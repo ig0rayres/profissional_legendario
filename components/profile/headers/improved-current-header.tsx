@@ -193,23 +193,24 @@ export function ImprovedCurrentHeader({
                                     label: 'Medalhas',
                                     value: gamification.medals_count,
                                     icon: Award,
-                                    color: '#D2691E'
+                                    color: '#D2691E',
+                                    iconColor: '#D2691E'
                                 },
                                 {
                                     label: 'ID Rota',
                                     value: `#${profileData.rota_number || '000000'}`,
-                                    icon: null,
-                                    color: '#D2691E'
+                                    icon: Shield,
+                                    color: '#D2691E',
+                                    iconColor: '#D2691E'
                                 },
                             ].map((stat, idx) => (
                                 <div
                                     key={idx}
                                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10"
                                     style={{
-                                        background: 'rgba(45, 59, 45, 0.3)',
+                                        background: 'rgba(45, 59, 45, 0.2)',
                                         backdropFilter: 'blur(8px)',
-                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                                        opacity: 0.9
+                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                                     }}
                                 >
                                     {stat.icon && <stat.icon className="w-5 h-5 text-[#D2691E]" />}

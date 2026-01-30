@@ -363,13 +363,6 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <RankInsignia
-                                            rankId={getRankFromXP(currentSeason.total_xp)}
-                                            iconName={getRankIconFromDB(getRankFromXP(currentSeason.total_xp))}
-                                            size="xs"
-                                            variant="avatar"
-                                            className="w-6 h-6 !p-0.5"
-                                        />
                                         {(currentSeason.ranking_position || userRankingPosition) && (
                                             <div className="flex items-center gap-1 font-bold text-xs">
                                                 {(currentSeason.ranking_position || userRankingPosition) === 1 && <span className="text-base leading-none">🥇</span>}
@@ -487,27 +480,9 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
                                             </span>
                                         </div>
 
-                                        {/* Patente */}
+                                        {/* Patente - REMOVIDO */}
                                         <div className="flex items-center justify-center gap-1.5">
-                                            <div className={cn(
-                                                "transition-all duration-300 ease-out",
-                                                "group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(var(--primary),0.4)]"
-                                            )}>
-                                                <RankInsignia
-                                                    rankId={correctRankId}
-                                                    iconName={getRankIconFromDB(correctRankId)}
-                                                    size="xs"
-                                                    variant="avatar"
-                                                    className="w-6 h-6 !p-0.5"
-                                                />
-                                            </div>
-                                            <span className={cn(
-                                                "text-[11px] text-muted-foreground hidden sm:inline",
-                                                "transition-colors duration-200",
-                                                "group-hover:text-foreground"
-                                            )}>
-                                                {correctRankName}
-                                            </span>
+                                            <span className="text-[10px] text-muted-foreground/50">-</span>
                                         </div>
 
                                         {/* Ranking */}

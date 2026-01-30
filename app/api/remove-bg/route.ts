@@ -37,9 +37,31 @@ export async function POST(request: Request) {
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error('[REMOVE BG] API Error:', errorText)
+            console.error('[REMOVE BG] API Error:', response.status, errorText)
+
+            // Parse de erros comuns
+            let errorMessage = 'Remove.bg API error'
+            try {
+                const errorJson = JSON.parse(errorText)
+                if (errorJson.errors && errorJson.errors[0]) {
+                    errorMessage = errorJson.errors[0].title || errorJson.errors[0].detail || errorMessage
+                }
+            } catch (e) {
+                // Não é JSON válido, usar texto direto
+            }
+
+            // Verificar erros específicos
+            if (response.status === 402) {
+                errorMessage = 'Créditos da API Remove.bg esgotados'
+            } else if (response.status === 403) {
+                errorMessage = 'Chave da API Remove.bg inválida ou expirada'
+            } else if (response.status === 429) {
+                errorMessage = 'Muitas requisições. Aguarde um momento.'
+            }
+
             return NextResponse.json({
-                error: 'Remove.bg API error',
+                error: errorMessage,
+                status: response.status,
                 details: errorText
             }, { status: response.status })
         }

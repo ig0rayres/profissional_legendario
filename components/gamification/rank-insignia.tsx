@@ -51,7 +51,7 @@ export function RankInsignia({
 
     const containerClasses = {
         'avatar': 'text-white rounded-full p-1.5 shadow-md border-2 border-white',
-        'icon-only': '',
+        'icon-only': 'rounded-full', // Apenas circular, sem padding ou border extras
         'badge': 'text-white px-2 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-sm',
     }
 
@@ -69,6 +69,9 @@ export function RankInsignia({
         xl: { width: 64, height: 64 },
     }
 
+    // Verificar se className contém tamanho customizado
+    const hasCustomSize = className && (className.includes('w-') || className.includes('h-'))
+
     return (
         <div
             className={cn(
@@ -76,15 +79,16 @@ export function RankInsignia({
                 specificContainerClass,
                 className
             )}
-            style={{
+            style={hasCustomSize ? {
+                backgroundColor: RANK_GREEN_COLOR,
+            } : {
                 backgroundColor: RANK_GREEN_COLOR,
                 width: containerSizes[size].width,
                 height: containerSizes[size].height,
                 minWidth: containerSizes[size].width,
-                borderRadius: '50%'
             }}
         >
-            <IconComponent className={cn(sizeMap[size], "text-white")} strokeWidth={2.5} />
+            <IconComponent className={cn(hasCustomSize ? "w-1/2 h-1/2" : sizeMap[size], "text-white")} strokeWidth={2.5} />
             {showLabel && <span className="ml-1 uppercase font-bold text-[10px] sm:text-xs">{rankName || rankId}</span>}
         </div>
     )

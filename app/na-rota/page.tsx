@@ -31,6 +31,7 @@ import { PostCard } from '@/components/social/post-card'
 import { CreatePostModalV2 } from '@/components/social/create-post-modal-v2'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { MedalBadge } from '@/components/gamification/medal-badge'
+import { AvatarWithRank } from '@/components/ui/avatar-with-rank'
 
 // ============================================
 // Main Component
@@ -204,27 +205,22 @@ export default function NaRotaPage() {
                                                     }`}>
                                                     {index === 0 ? <Crown className="w-3.5 h-3.5" /> : index + 1}
                                                 </div>
-                                                <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 relative">
-                                                    {rankUser.avatar_url ? (
-                                                        <Image
-                                                            src={rankUser.avatar_url}
-                                                            alt={rankUser.full_name}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">
-                                                            {rankUser.full_name?.charAt(0)}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                {/* Avatar com Patente - PADRÃO ROTA BUSINESS (losango) */}
+                                                <AvatarWithRank
+                                                    user={{
+                                                        id: rankUser.id,
+                                                        full_name: rankUser.full_name,
+                                                        avatar_url: rankUser.avatar_url,
+                                                        rank_id: rankUser.rank_id || 'novato'
+                                                    }}
+                                                    size="sm"
+                                                    frameStyle="diamond"
+                                                    linkToProfile={false}
+                                                />
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-medium text-sm text-gray-900 truncate">{rankUser.full_name}</p>
                                                     <p className="text-xs text-gray-500">{rankUser.vigor.toLocaleString()} Vigor</p>
                                                 </div>
-                                                {rankUser.rank_id && (
-                                                    <RankInsignia rankId={rankUser.rank_id} size="xs" />
-                                                )}
                                             </Link>
                                         ))}
                                     </div>

@@ -32,33 +32,45 @@ export function NaRotaFeedV13({
     const supabase = createClient()
     const postsService = new PostsService(supabase)
 
+    const [userLoaded, setUserLoaded] = useState(false)
+
     useEffect(() => {
         loadCurrentUser()
     }, [])
 
     useEffect(() => {
-        if (currentUserId !== null) {
+        // Só carrega posts depois que tentou buscar o usuário
+        if (userLoaded) {
             loadPosts()
         }
-    }, [userId, feedType, currentUserId])
+    }, [userId, feedType, userLoaded])
 
     async function loadCurrentUser() {
-        const { data: { user } } = await supabase.auth.getUser()
-        setCurrentUserId(user?.id || null)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            setCurrentUserId(user?.id || null)
+        } catch (e) {
+            console.error('Erro ao buscar usuário:', e)
+            setCurrentUserId(null)
+        } finally {
+            setUserLoaded(true)
+        }
     }
 
     const loadPosts = useCallback(async () => {
         setLoading(true)
         try {
+            console.log('[NaRotaFeed] Carregando posts...', { feedType, userId, currentUserId })
             const loadedPosts = await postsService.loadPosts({
                 feedType,
                 userId,
                 currentUserId: currentUserId || undefined,
                 limit: 20
             })
+            console.log('[NaRotaFeed] Posts carregados:', loadedPosts.length)
             setPosts(loadedPosts)
         } catch (error) {
-            console.error('Error loading posts:', error)
+            console.error('[NaRotaFeed] Error loading posts:', error)
         } finally {
             setLoading(false)
         }

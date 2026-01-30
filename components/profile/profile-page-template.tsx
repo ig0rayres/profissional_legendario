@@ -20,7 +20,8 @@ import { MOCK_CATEGORIES } from '@/lib/data/mock'
 import { ProjectsCounterV13, ElosDaRotaV13, ConfraternityStatsV13 } from '@/components/profile/cards-v13-brand-colors'
 import { NaRotaFeedV13 } from '@/components/profile/na-rota-feed-v13-social'
 import { BattleHistory } from '@/components/gamification/battle-history'
-import { SeasonPromoBanner } from '@/components/seasons/SeasonPromoBanner'
+import { SeasonBannerCarouselV2 } from '@/components/season'
+
 
 
 interface ProfilePageTemplateProps {
@@ -119,10 +120,10 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                             targetUserName={profile.full_name}
                         />
 
-                        {/* Banner de Temporada */}
-                        <SeasonPromoBanner />
-
-                        {/* Histórico de Batalha (inclui atividades/pontos no dropdown) */}
+                        {/* Banner de Temporada - FALCON */}
+                        {isOwner && (
+                            <SeasonBannerCarouselV2 variant="sidebar" showCTA={false} />
+                        )}                        {/* Histórico de Batalha (inclui atividades/pontos no dropdown) */}
                         <BattleHistory userId={profile.id} />
 
                         {/* Elos da Rota - Quadro de Amigos */}

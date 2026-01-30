@@ -29,7 +29,8 @@ import {
     Trophy, Crown, Medal, Award, Calendar, Users, Loader2,
     RefreshCw, Edit, Check, Send, Gift, Clock, TrendingUp, Upload, Image as ImageIcon, Sparkles, Download, Wand2, Crop, Mail, ChevronDown
 } from 'lucide-react'
-import { SeasonBanner } from '@/components/season'
+import { SeasonBanner, SeasonBannerCarousel, SeasonBannerCarouselV2 } from '@/components/season'
+import { AvatarWithRank } from '@/components/ui/avatar-with-rank'
 import { toast } from 'sonner'
 import { ImageCropDialog } from './ImageCropDialog'
 
@@ -62,6 +63,7 @@ interface RankingUser {
     avatar_url: string | null
     slug: string
     patente: string
+    rank_id?: string
     xp_month: number
 }
 
@@ -194,8 +196,38 @@ export function SeasonsManager() {
 
         setPrizes(prizesData || [])
 
-        // SIMPLIFICADO: não buscar ranking aqui (já tem na outra página)
-        setRanking([])
+        // Buscar ranking - FONTE ÚNICA: user_gamification (ver docs/FONTE_DADOS_GAMIFICACAO.md)
+        const { data: gamificationData } = await supabase
+            .from('user_gamification')
+            .select('user_id, total_points, current_rank_id')
+            .gt('total_points', 0)
+            .order('total_points', { ascending: false })
+            .limit(50)
+
+        // Buscar perfis separadamente
+        const userIds = (gamificationData || []).map((g: any) => g.user_id)
+        const profileMap = new Map<string, any>()
+        if (userIds.length > 0) {
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url')
+                .in('id', userIds)
+            profiles?.forEach((p: any) => profileMap.set(p.id, p))
+        }
+
+        // Mapear para o formato esperado
+        const formattedRanking = (gamificationData || []).map((r: any, idx: number) => {
+            const profile = profileMap.get(r.user_id)
+            return {
+                user_id: r.user_id,
+                full_name: profile?.full_name || 'Usuário',
+                avatar_url: profile?.avatar_url,
+                xp_month: r.total_points,
+                rank_id: r.current_rank_id || 'novato',
+                position: idx + 1
+            }
+        })
+        setRanking(formattedRanking)
 
 
         // Vencedores (se finalizada)
@@ -870,11 +902,11 @@ export function SeasonsManager() {
                     </Card>
                     <Card className="border-green-500/20">
                         <CardContent className="pt-4">
-                            <div className="flex items-center gap-2 text-green-500 mb-1">
+                            <div className="flex items-center gap-2 text-white mb-1">
                                 <Users className="w-4 h-4" />
                                 <span className="text-xs">Participantes</span>
                             </div>
-                            <p className="text-xl font-bold text-green-500">{ranking.length}</p>
+                            <p className="text-xl font-bold text-white">{ranking.length}</p>
                         </CardContent>
                     </Card>
                     <Card className="border-primary/20">
@@ -921,8 +953,8 @@ export function SeasonsManager() {
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4 text-green-400" />
-                                        <span className="text-green-400">Preview do Banner (Como aparece no site)</span>
+                                        <Sparkles className="w-4 h-4 text-white" />
+                                        <span className="text-white">Preview do Banner (Como aparece no site)</span>
                                     </div>
                                     <div className="flex gap-2">
                                         <Button variant="outline" size="sm" onClick={sendSeasonEmails}>
@@ -940,15 +972,226 @@ export function SeasonsManager() {
                                     </div>
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-0 sm:p-4 bg-black/20">
-                                <div className="max-w-4xl mx-auto">
-                                    <SeasonBanner
-                                        key={`banner-${prizes.map(p => `${p.id}-${p.image_url}-${p.title}`).join('-')}`}
-                                        variant="hero"
-                                        customSeason={activeSeason}
-                                        customPrizes={prizes}
-                                        showCTA={false}
-                                    />
+                            <CardContent className="p-4 bg-black/20 space-y-6">
+                                {/* HERO (1400x500) */}
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                        <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-mono">ATLAS (Landing Page)</span>
+                                        Topo de páginas
+                                    </p>
+                                    <div className="max-w-4xl mx-auto">
+                                        <SeasonBanner
+                                            key={`banner-hero-${prizes.map(p => `${p.id}-${p.image_url}-${p.title}`).join('-')}`}
+                                            variant="hero"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* GRID 2x2 para os outros tamanhos */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* CARD (1000x350) */}
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-green-500/20 text-white px-2 py-0.5 rounded text-[10px] font-mono">TITAN (Destaque)</span>
+                                            Seções e cards
+                                        </p>
+                                        <SeasonBanner
+                                            key={`banner-card-${prizes.map(p => `${p.id}-${p.image_url}`).join('-')}`}
+                                            variant="card"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+
+                                    {/* SIDEBAR (700x250) */}
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded text-[10px] font-mono">SPARK (Sidebar)</span>
+                                            Dashboard do usuário
+                                        </p>
+                                        <SeasonBanner
+                                            key={`banner-sidebar-${prizes.map(p => `${p.id}-${p.image_url}`).join('-')}`}
+                                            variant="sidebar"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                            showCountdown={false}
+                                        />
+                                    </div>
+
+                                    {/* COMPACT (500x500) */}
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">CUBE (Quadrado)</span>
+                                            Redes sociais
+                                        </p>
+                                        <div className="max-w-[300px]">
+                                            <SeasonBanner
+                                                key={`banner-compact-${prizes.map(p => `${p.id}-${p.image_url}`).join('-')}`}
+                                                variant="compact"
+                                                customSeason={activeSeason}
+                                                customPrizes={prizes}
+                                                showCTA={false}
+                                                showCountdown={false}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* PREVIEW DOS BANNERS COM CARROSSEL (NOVA VERSÃO) */}
+                    {activeSeason && (
+                        <Card className="border-green-600/30 bg-gradient-to-b from-green-900/30 to-transparent overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-white" />
+                                    <span className="text-white">🆕 VERSÃO CARROSSEL (Teste)</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 bg-black/20 space-y-6">
+                                {/* HERO Carousel */}
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                        <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">ATLAS SLIDE (Carrossel)</span>
+                                        Com rotação automática
+                                    </p>
+                                    <div className="max-w-4xl mx-auto">
+                                        <SeasonBannerCarousel
+                                            variant="hero"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Grid 2x2 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">TITAN SLIDE (Carrossel)</span>
+                                        </p>
+                                        <SeasonBannerCarousel
+                                            variant="card"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">SPARK SLIDE (Carrossel)</span>
+                                        </p>
+                                        <SeasonBannerCarousel
+                                            variant="sidebar"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">CUBE SLIDE (Carrossel)</span>
+                                        </p>
+                                        <div className="max-w-[280px]">
+                                            <SeasonBannerCarousel
+                                                variant="compact"
+                                                customSeason={activeSeason}
+                                                customPrizes={prizes}
+                                                showCTA={false}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* PREVIEW DOS BANNERS V2 - Carrossel com proporções originais */}
+                    {activeSeason && (
+                        <Card className="border-green-600/30 bg-gradient-to-b from-green-900/30 to-transparent overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-white" />
+                                    <span className="text-white">🆕 VERSÃO CARROSSEL V2 (Proporções Originais)</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 bg-black/20 space-y-6">
+                                {/* HERO V2 */}
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                        <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">PHOENIX (Dashboard Grande)</span>
+                                        Proporção original mantida
+                                    </p>
+                                    <div className="max-w-4xl mx-auto">
+                                        <SeasonBannerCarouselV2
+                                            variant="hero"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Grid 2x2 V2 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">DRAGON (Dashboard Médio)</span>
+                                        </p>
+                                        <SeasonBannerCarouselV2
+                                            variant="card"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">FALCON (Sidebar Padrão)</span>
+                                            <span className="text-[10px] text-gray-500">← Preview na largura real da sidebar</span>
+                                        </p>
+                                        <div className="max-w-[350px]">
+                                            <SeasonBannerCarouselV2
+                                                variant="sidebar"
+                                                customSeason={activeSeason}
+                                                customPrizes={prizes}
+                                                showCTA={false}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">EAGLE (Sidebar Grande)</span>
+                                            +25% maior (para dashboard)
+                                        </p>
+                                        <SeasonBannerCarouselV2
+                                            variant="sidebar-lg"
+                                            customSeason={activeSeason}
+                                            customPrizes={prizes}
+                                            showCTA={false}
+                                        />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                            <span className="bg-[#0d3320] text-[#4ade80] px-2 py-0.5 rounded text-[10px] font-mono">ORION (Cards Laterais)</span>
+                                            Quadrado
+                                        </p>
+                                        <div className="max-w-[280px]">
+                                            <SeasonBannerCarouselV2
+                                                variant="compact"
+                                                customSeason={activeSeason}
+                                                customPrizes={prizes}
+                                                showCTA={false}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -1230,17 +1473,20 @@ export function SeasonsManager() {
                                                 <div className="w-8 flex items-center justify-center">
                                                     {getPositionIcon(index + 1)}
                                                 </div>
-                                                <Avatar className="w-10 h-10">
-                                                    <AvatarImage src={user.avatar_url || ''} />
-                                                    <AvatarFallback className="bg-primary/20 text-primary">
-                                                        {user.full_name?.charAt(0) || '?'}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                {/* Avatar com Patente - PADRÃO ROTA BUSINESS (losango) */}
+                                                <AvatarWithRank
+                                                    user={{
+                                                        id: user.user_id,
+                                                        full_name: user.full_name || 'Usuário',
+                                                        avatar_url: user.avatar_url,
+                                                        rank_id: user.rank_id || 'novato'
+                                                    }}
+                                                    size="md"
+                                                    frameStyle="diamond"
+                                                    linkToProfile={false}
+                                                />
                                                 <div>
                                                     <p className="font-medium">{user.full_name}</p>
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {user.patente || 'Recruta'}
-                                                    </Badge>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -1748,7 +1994,7 @@ export function SeasonsManager() {
                                                 size="sm"
                                                 onClick={enhanceImageWithAI}
                                                 disabled={!prizeImageUrl || enhancingImage}
-                                                className="border-purple-500/50 text-purple-500 hover:bg-purple-500/10"
+                                                className="border-green-600/50 text-purple-500 hover:bg-purple-500/10"
                                             >
                                                 {enhancingImage ? (
                                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -1928,7 +2174,7 @@ export function SeasonsManager() {
                     </DialogHeader>
                     <div className="space-y-3 py-4">
                         <div className="flex items-center gap-3">
-                            <Check className="w-5 h-5 text-green-500" />
+                            <Check className="w-5 h-5 text-white" />
                             <span>Registrar os Top 3 como vencedores</span>
                         </div>
                         <div className="flex items-center gap-3">
