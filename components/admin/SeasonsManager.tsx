@@ -219,12 +219,14 @@ export function SeasonsManager() {
         const formattedRanking = (gamificationData || []).map((r: any, idx: number) => {
             const profile = profileMap.get(r.user_id)
             return {
+                ranking_position: idx + 1,
                 user_id: r.user_id,
                 full_name: profile?.full_name || 'Usuário',
                 avatar_url: profile?.avatar_url,
+                slug: '',
+                patente: '',
                 xp_month: r.total_points,
-                rank_id: r.current_rank_id || 'novato',
-                position: idx + 1
+                rank_id: r.current_rank_id || 'novato'
             }
         })
         setRanking(formattedRanking)
