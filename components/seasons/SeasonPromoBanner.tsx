@@ -83,86 +83,135 @@ export function SeasonPromoBanner({ showFullVersion = false }: SeasonPromoBanner
         return null
     }
 
-    // Versão compacta para home/sidebar (mais chamativa!)
+    // Versão compacta para home/sidebar (seguindo conceito do banner admin!)
     if (!showFullVersion) {
         return (
             <Link href="/dashboard/rota-do-valente">
                 <Card className="relative border-0 overflow-hidden group cursor-pointer">
-                    {/* Background gradient animado */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-red-500 to-yellow-500 opacity-90" />
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10" />
+                    {/* Background gradient premium */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-800 via-green-700 to-green-900" />
+                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5" />
 
-                    {/* Partículas decorativas */}
-                    <div className="absolute top-4 right-4 opacity-20">
-                        <Star className="w-8 h-8 text-white animate-pulse" />
-                    </div>
-                    <div className="absolute bottom-8 left-4 opacity-20">
-                        <Flame className="w-6 h-6 text-white animate-pulse" style={{ animationDelay: '0.5s' }} />
+                    {/* Decoração sutil */}
+                    <div className="absolute top-2 right-2 opacity-10">
+                        <Trophy className="w-16 h-16 text-white" />
                     </div>
 
-                    {season.banner_url && (
-                        <div className="absolute inset-0">
-                            <img
-                                src={season.banner_url}
-                                alt="Temporada"
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
-                        </div>
-                    )}
-
-                    <CardContent className="relative pt-5 pb-5">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
+                    <CardContent className="relative pt-4 pb-4">
+                        {/* Header com logo e badge */}
+                        <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                                <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm">
-                                    <Trophy className="w-5 h-5 text-white" />
+                                <div className="w-8 h-8 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                                    <Trophy className="w-4 h-4 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white/80 text-xs font-medium">TEMPORADA</p>
-                                    <p className="text-white font-bold">{season.season_name}</p>
+                                    <p className="text-white/60 text-[10px] font-medium uppercase tracking-wider">Temporada</p>
+                                    <p className="text-white font-bold text-sm">{season.season_name}</p>
                                 </div>
                             </div>
-                            <Badge className="bg-white/20 backdrop-blur-sm text-white border-0 animate-pulse">
-                                <Zap className="w-3 h-3 mr-1" />
+                            <Badge className="bg-orange-500 hover:bg-orange-500 text-white border-0 text-[10px] px-2 py-0.5">
+                                <Clock className="w-3 h-3 mr-1" />
                                 {season.days_remaining} dias
                             </Badge>
                         </div>
 
-                        {/* Prêmios */}
-                        <div className="bg-black/30 backdrop-blur-sm rounded-xl p-3 mb-4">
-                            <p className="text-white/70 text-xs font-medium mb-2 flex items-center gap-1">
+                        {/* Título central */}
+                        <div className="text-center mb-3">
+                            <p className="text-white/60 text-[10px] flex items-center justify-center gap-1">
                                 <Gift className="w-3 h-3" />
                                 GANHE PRÊMIOS INCRÍVEIS
                             </p>
-                            <div className="flex gap-2">
-                                {prizes.map((prize) => (
-                                    <div key={prize.id} className="flex-1 text-center">
-                                        {prize.image_url ? (
-                                            <img
-                                                src={prize.image_url}
-                                                alt={prize.title}
-                                                className="w-12 h-12 rounded-lg object-cover mx-auto mb-1 ring-2 ring-white/30"
-                                            />
-                                        ) : (
-                                            <div className="text-2xl mb-1">{getPositionEmoji(prize.position)}</div>
-                                        )}
-                                        <p className="text-[10px] text-white/80 truncate font-medium">
-                                            {prize.title.replace(/🥇|🥈|🥉/g, '').trim()}
-                                        </p>
+                        </div>
+
+                        {/* Grid de Prêmios - Estilo Podium */}
+                        <div className="flex justify-center items-end gap-2 mb-3">
+                            {/* 2º Lugar (esquerda) */}
+                            {prizes.find(p => p.position === 2) && (
+                                <div className="flex flex-col items-center">
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden ring-2 ring-gray-400/50 bg-gray-700">
+                                            {prizes.find(p => p.position === 2)?.image_url ? (
+                                                <img
+                                                    src={prizes.find(p => p.position === 2)?.image_url!}
+                                                    alt="2º Lugar"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-xl">🥈</div>
+                                            )}
+                                        </div>
+                                        <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center text-[10px] font-bold text-white shadow">
+                                            2º
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
+                                    <p className="text-[8px] text-white/70 mt-1 text-center truncate max-w-[50px]">
+                                        {prizes.find(p => p.position === 2)?.title.replace(/🥈/g, '').trim() || '2º Lugar'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* 1º Lugar (centro - maior) */}
+                            {prizes.find(p => p.position === 1) && (
+                                <div className="flex flex-col items-center -translate-y-2">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-yellow-400/70 bg-yellow-900/50 shadow-lg shadow-yellow-500/20">
+                                            {prizes.find(p => p.position === 1)?.image_url ? (
+                                                <img
+                                                    src={prizes.find(p => p.position === 1)?.image_url!}
+                                                    alt="1º Lugar"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-2xl">🥇</div>
+                                            )}
+                                        </div>
+                                        <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                                            <Crown className="w-5 h-5 text-yellow-400 drop-shadow" />
+                                        </div>
+                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-yellow-500 rounded-full text-[8px] font-bold text-black shadow">
+                                            1º LUGAR
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] text-yellow-200 mt-2 text-center truncate max-w-[70px] font-medium">
+                                        {prizes.find(p => p.position === 1)?.title.replace(/🥇/g, '').trim() || '1º Lugar'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* 3º Lugar (direita) */}
+                            {prizes.find(p => p.position === 3) && (
+                                <div className="flex flex-col items-center">
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden ring-2 ring-amber-600/50 bg-amber-900/50">
+                                            {prizes.find(p => p.position === 3)?.image_url ? (
+                                                <img
+                                                    src={prizes.find(p => p.position === 3)?.image_url!}
+                                                    alt="3º Lugar"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-xl">🥉</div>
+                                            )}
+                                        </div>
+                                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-600 flex items-center justify-center text-[10px] font-bold text-white shadow">
+                                            3º
+                                        </div>
+                                    </div>
+                                    <p className="text-[8px] text-white/70 mt-1 text-center truncate max-w-[50px]">
+                                        {prizes.find(p => p.position === 3)?.title.replace(/🥉/g, '').trim() || '3º Lugar'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* CTA */}
-                        <div className="flex items-center justify-between">
-                            <p className="text-white/90 text-xs font-medium">
+                        <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                            <p className="text-white/70 text-[10px]">
                                 🔥 Ganhe vigor e conquiste!
                             </p>
-                            <div className="flex items-center gap-1 text-white font-bold text-sm group-hover:translate-x-1 transition-transform">
+                            <div className="flex items-center gap-1 text-orange-400 font-bold text-xs group-hover:translate-x-1 transition-transform">
                                 Participar
-                                <ArrowRight className="w-4 h-4" />
+                                <ArrowRight className="w-3 h-3" />
                             </div>
                         </div>
                     </CardContent>
@@ -243,10 +292,10 @@ export function SeasonPromoBanner({ showFullVersion = false }: SeasonPromoBanner
                             <div
                                 key={prize.id}
                                 className={`relative text-center p-4 md:p-6 rounded-2xl backdrop-blur-sm transition-transform hover:scale-105 ${prize.position === 1
-                                        ? 'bg-gradient-to-b from-yellow-500/40 to-yellow-600/20 border-2 border-yellow-400/50 shadow-lg shadow-yellow-500/20'
-                                        : prize.position === 2
-                                            ? 'bg-gradient-to-b from-gray-300/30 to-gray-400/10 border-2 border-gray-300/50'
-                                            : 'bg-gradient-to-b from-amber-600/30 to-amber-700/10 border-2 border-amber-500/50'
+                                    ? 'bg-gradient-to-b from-yellow-500/40 to-yellow-600/20 border-2 border-yellow-400/50 shadow-lg shadow-yellow-500/20'
+                                    : prize.position === 2
+                                        ? 'bg-gradient-to-b from-gray-300/30 to-gray-400/10 border-2 border-gray-300/50'
+                                        : 'bg-gradient-to-b from-amber-600/30 to-amber-700/10 border-2 border-amber-500/50'
                                     }`}
                             >
                                 {prize.position === 1 && (
