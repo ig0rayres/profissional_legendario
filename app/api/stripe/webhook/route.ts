@@ -260,12 +260,11 @@ async function handleMarketplaceAdPayment(supabase: any, session: Stripe.Checkou
     const { error: updateError } = await supabase
         .from('marketplace_ads')
         .update({
-            ad_tier_id: tierId,  // Corrigido: era tier_id, mas a coluna é ad_tier_id
+            ad_tier_id: tierId,
             status: 'active',
             payment_status: 'paid',
             published_at: new Date().toISOString(),
             expires_at: expiresAt.toISOString(),
-            stripe_payment_id: session.payment_intent as string,
         })
         .eq('id', adId)
         .eq('user_id', userId)
