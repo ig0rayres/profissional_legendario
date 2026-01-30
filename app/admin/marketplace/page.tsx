@@ -734,122 +734,147 @@ export default function MarketplaceAdminPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Básico */}
-                            <div className="glass p-6 rounded-lg border-2 border-primary/30 hover:border-primary/50 transition-all">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                        <ShoppingBag className="w-6 h-6 text-primary" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg text-primary">Básico</h3>
-                                        <p className="text-xs text-muted-foreground">Incluído nos planos</p>
-                                    </div>
-                                </div>
+                            {(() => {
+                                const basicTier = tiers.find(t => t.tier_level === 'basico')
+                                return (
+                                    <div className="glass p-6 rounded-lg border-2 border-primary/30 hover:border-primary/50 transition-all">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                                <ShoppingBag className="w-6 h-6 text-primary" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-primary">Básico</h3>
+                                                <p className="text-xs text-muted-foreground">Incluído nos planos ou R$ {basicTier?.price?.toFixed(2) || '29,90'}</p>
+                                            </div>
+                                        </div>
 
-                                <div className="space-y-3 mb-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Preço:</span>
-                                        <span className="font-bold text-green-600">GRÁTIS</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Max Fotos:</span>
-                                        <span className="font-semibold">5 fotos</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Duração:</span>
-                                        <span className="font-semibold">30 dias</span>
-                                    </div>
-                                </div>
+                                        <div className="space-y-3 mb-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Preço (sem slot):</span>
+                                                <span className="font-bold text-primary">R$ {basicTier?.price?.toFixed(2) || '29,90'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Max Fotos:</span>
+                                                <span className="font-semibold">{basicTier?.max_photos || 5} fotos</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Duração:</span>
+                                                <span className="font-semibold">{basicTier?.duration_days || 30} dias</span>
+                                            </div>
+                                        </div>
 
-                                <div className="pt-3 border-t border-primary/10">
-                                    <p className="text-xs text-muted-foreground">
-                                        ✅ Veterano: 2 anúncios<br />
-                                        ✅ Elite: 10 anúncios<br />
-                                        ✅ Lendário: Ilimitados
-                                    </p>
-                                </div>
-                            </div>
+                                        <div className="pt-3 border-t border-primary/10 mb-4">
+                                            <p className="text-xs text-muted-foreground">
+                                                ✅ Veterano: 2 anúncios grátis<br />
+                                                ✅ Elite: 10 anúncios grátis<br />
+                                                ✅ Lendário: Ilimitados grátis
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => {
+                                                if (basicTier) openEditTier(basicTier)
+                                            }}
+                                        >
+                                            <Edit2 className="w-3 h-3 mr-2" />
+                                            Editar Plano
+                                        </Button>
+                                    </div>
+                                )
+                            })()}
 
                             {/* Elite */}
-                            <div className="glass p-6 rounded-lg border-2 border-green-500/50 hover:border-green-500/70 transition-all">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                                        <Star className="w-6 h-6 text-green-500" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg text-green-600">Elite</h3>
-                                        <p className="text-xs text-muted-foreground">Destaque verde</p>
-                                    </div>
-                                </div>
+                            {(() => {
+                                const eliteTier = tiers.find(t => t.tier_level === 'elite')
+                                return (
+                                    <div className="glass p-6 rounded-lg border-2 border-green-500/50 hover:border-green-500/70 transition-all">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                                                <Star className="w-6 h-6 text-green-500" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-green-600">Elite</h3>
+                                                <p className="text-xs text-muted-foreground">Destaque verde</p>
+                                            </div>
+                                        </div>
 
-                                <div className="space-y-3 mb-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Preço:</span>
-                                        <span className="font-bold text-green-600">R$ 49,90</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Max Fotos:</span>
-                                        <span className="font-semibold">10 fotos</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Duração:</span>
-                                        <span className="font-semibold">45 dias</span>
-                                    </div>
-                                </div>
+                                        <div className="space-y-3 mb-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Preço:</span>
+                                                <span className="font-bold text-green-600">R$ {eliteTier?.price?.toFixed(2) || '49,90'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Max Fotos:</span>
+                                                <span className="font-semibold">{eliteTier?.max_photos || 10} fotos</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Duração:</span>
+                                                <span className="font-semibold">{eliteTier?.duration_days || 45} dias</span>
+                                            </div>
+                                        </div>
 
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={() => {
-                                        const tier = tiers.find(t => t.tier_level === 'elite')
-                                        if (tier) openEditTier(tier)
-                                    }}
-                                >
-                                    <Edit2 className="w-3 h-3 mr-2" />
-                                    Editar Plano
-                                </Button>
-                            </div>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => {
+                                                if (eliteTier) openEditTier(eliteTier)
+                                            }}
+                                        >
+                                            <Edit2 className="w-3 h-3 mr-2" />
+                                            Editar Plano
+                                        </Button>
+                                    </div>
+                                )
+                            })()}
 
                             {/* Lendário */}
-                            <div className="glass p-6 rounded-lg border-2 border-amber-500/50 hover:border-amber-500/70 transition-all glow-orange">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
-                                        <Crown className="w-6 h-6 text-amber-500" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg text-amber-600">Lendário</h3>
-                                        <p className="text-xs text-muted-foreground">Banner carrossel</p>
-                                    </div>
-                                </div>
+                            {(() => {
+                                const lendarioTier = tiers.find(t => t.tier_level === 'lendario')
+                                return (
+                                    <div className="glass p-6 rounded-lg border-2 border-amber-500/50 hover:border-amber-500/70 transition-all glow-orange">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                                <Crown className="w-6 h-6 text-amber-500" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-amber-600">Lendário</h3>
+                                                <p className="text-xs text-muted-foreground">Banner carrossel</p>
+                                            </div>
+                                        </div>
 
-                                <div className="space-y-3 mb-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Preço:</span>
-                                        <span className="font-bold text-amber-600">R$ 79,90</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Max Fotos:</span>
-                                        <span className="font-semibold">25 fotos</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Duração:</span>
-                                        <span className="font-semibold">60 dias</span>
-                                    </div>
-                                </div>
+                                        <div className="space-y-3 mb-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Preço:</span>
+                                                <span className="font-bold text-amber-600">R$ {lendarioTier?.price?.toFixed(2) || '79,90'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Max Fotos:</span>
+                                                <span className="font-semibold">{lendarioTier?.max_photos || 25} fotos</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Duração:</span>
+                                                <span className="font-semibold">{lendarioTier?.duration_days || 60} dias</span>
+                                            </div>
+                                        </div>
 
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
-                                    onClick={() => {
-                                        const tier = tiers.find(t => t.tier_level === 'lendario')
-                                        if (tier) openEditTier(tier)
-                                    }}
-                                >
-                                    <Edit2 className="w-3 h-3 mr-2" />
-                                    Editar Plano
-                                </Button>
-                            </div>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                                            onClick={() => {
+                                                if (lendarioTier) openEditTier(lendarioTier)
+                                            }}
+                                        >
+                                            <Edit2 className="w-3 h-3 mr-2" />
+                                            Editar Plano
+                                        </Button>
+                                    </div>
+                                )
+                            })()}
                         </div>
 
                         <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
