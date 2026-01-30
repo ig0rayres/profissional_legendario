@@ -293,7 +293,7 @@ export default function CreateListingPage() {
 
             if (isVehicle) {
                 vehicle_details = {
-                    year: parseInt(data.vehicle_year || '0'),
+                    year: parseInt(data.vehicle_year_fab || '0'),
                     make: data.vehicle_make || '',
                     model: data.vehicle_model || '',
                     km: parseInt(data.vehicle_km || '0'),
@@ -639,8 +639,8 @@ export default function CreateListingPage() {
                                                 onDrop={() => handleDrop(index)}
                                                 onDragEnd={handleDragEnd}
                                                 className={`relative aspect-square rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 ${index === 0
-                                                        ? 'ring-2 ring-primary ring-offset-2 col-span-2 row-span-2'
-                                                        : 'border border-primary/30'
+                                                    ? 'ring-2 ring-primary ring-offset-2 col-span-2 row-span-2'
+                                                    : 'border border-primary/30'
                                                     } ${draggedIndex === index ? 'opacity-50 scale-95' : ''
                                                     } ${dragOverIndex === index ? 'ring-2 ring-blue-500 scale-105' : ''
                                                     }`}
