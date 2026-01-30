@@ -64,6 +64,7 @@ export default function CreateListingPage() {
 
     const [userPlan, setUserPlan] = useState<{ tier: string, maxAds: number | null }>({ tier: 'recruta', maxAds: 0 })
     const [currentAdsCount, setCurrentAdsCount] = useState(0)
+    const [maxPhotosAllowed, setMaxPhotosAllowed] = useState(5) // Limite dinâmico baseado na categoria
 
     const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(formSchema)
@@ -77,6 +78,20 @@ export default function CreateListingPage() {
     // Tiers disponíveis para categoria selecionada
     const availableTiers = tiers.filter(t => t.category_id === selectedCategoryId)
     const selectedTier = tiers.find(t => t.id === selectedTierId)
+
+    // Atualizar limite de fotos quando categoria muda
+    useEffect(() => {
+        if (selectedCategory) {
+            if (selectedCategory.requires_tier) {
+                // Categoria com modalidade: permite até o máximo do Lendário (25 fotos)
+                const maxTierPhotos = Math.max(...tiers.map(t => t.max_photos || 5), 25)
+                setMaxPhotosAllowed(maxTierPhotos)
+            } else {
+                // Categoria sem modalidade: usa limite da própria categoria
+                setMaxPhotosAllowed(selectedCategory.max_photos || 5)
+            }
+        }
+    }, [selectedCategory, tiers])
 
     useEffect(() => {
         if (!user) {
@@ -145,22 +160,20 @@ export default function CreateListingPage() {
     const adPermission = canCreateAd(currentAdsCount, userPlan.maxAds)
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const MAX_PHOTOS = 5
-
         if (e.target.files) {
             const newFiles = Array.from(e.target.files)
             const currentCount = images.length
-            const remaining = MAX_PHOTOS - currentCount
+            const remaining = maxPhotosAllowed - currentCount
 
             if (remaining <= 0) {
-                toast.error(`Limite de ${MAX_PHOTOS} fotos atingido`)
+                toast.error(`Limite de ${maxPhotosAllowed} fotos atingido`)
                 return
             }
 
             const filesToAdd = newFiles.slice(0, remaining)
 
             if (filesToAdd.length < newFiles.length) {
-                toast.warning(`Apenas ${remaining} foto(s) adicionada(s). Limite: ${MAX_PHOTOS}`)
+                toast.warning(`Apenas ${remaining} foto(s) adicionada(s). Limite: ${maxPhotosAllowed}`)
             }
 
             setImages(prev => [...prev, ...filesToAdd])
@@ -598,16 +611,16 @@ export default function CreateListingPage() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <Label>Fotos</Label>
-                                <span className={`text-sm font-medium ${images.length >= 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                    {images.length}/5
+                                <span className={`text-sm font-medium ${images.length >= maxPhotosAllowed ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                    {images.length}/{maxPhotosAllowed}
                                 </span>
                             </div>
                             <div
-                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${images.length >= 5
+                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${images.length >= maxPhotosAllowed
                                     ? 'border-destructive/30 bg-destructive/5 cursor-not-allowed'
                                     : 'border-primary/30 hover:bg-primary/5 cursor-pointer'
                                     }`}
-                                onClick={() => images.length < 5 && document.getElementById('image-upload')?.click()}
+                                onClick={() => images.length < maxPhotosAllowed && document.getElementById('image-upload')?.click()}
                             >
                                 <input
                                     type="file"
@@ -616,11 +629,11 @@ export default function CreateListingPage() {
                                     multiple
                                     accept="image/*"
                                     onChange={handleImageChange}
-                                    disabled={images.length >= 5}
+                                    disabled={images.length >= maxPhotosAllowed}
                                 />
-                                <Upload className={`w-8 h-8 mx-auto mb-2 ${images.length >= 5 ? 'text-destructive/50' : 'text-primary/50'}`} />
+                                <Upload className={`w-8 h-8 mx-auto mb-2 ${images.length >= maxPhotosAllowed ? 'text-destructive/50' : 'text-primary/50'}`} />
                                 <p className="text-sm text-muted-foreground">
-                                    {images.length >= 5 ? 'Limite de fotos atingido' : 'Clique para adicionar fotos'}
+                                    {images.length >= maxPhotosAllowed ? 'Limite de fotos atingido' : 'Clique para adicionar fotos'}
                                 </p>
 
                             </div>

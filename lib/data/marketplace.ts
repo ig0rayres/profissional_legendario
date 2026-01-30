@@ -21,6 +21,7 @@ export interface MarketplaceCategory {
     is_active: boolean
     display_order: number
     requires_tier?: boolean
+    max_photos?: number // Limite de fotos para categorias sem modalidade
 }
 
 

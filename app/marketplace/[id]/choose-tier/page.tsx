@@ -160,22 +160,13 @@ export default function ChooseTierPage() {
 
         try {
             const isBasic = !tier || tier.tier_level === 'basico'
-            const isFree = !tier || tier.price === 0
 
-            // Verificar se pode criar anúncio básico
-            if (isBasic) {
-                if (userPlan.tier === 'recruta') {
-                    toast.error('Usuários Recruta não podem criar anúncios. Faça upgrade para Veterano!')
-                    setProcessing(false)
-                    return
-                }
+            // Verificar se tem slots grátis disponíveis para básico
+            const hasFreeSlotsAvailable = userPlan.tier !== 'recruta' &&
+                (userPlan.basic_ads_limit === null || currentBasicAds < userPlan.basic_ads_limit)
 
-                if (userPlan.basic_ads_limit !== null && currentBasicAds >= userPlan.basic_ads_limit) {
-                    toast.error(`Você atingiu o limite de ${userPlan.basic_ads_limit} anúncios básicos do seu plano`)
-                    setProcessing(false)
-                    return
-                }
-            }
+            // Básico é grátis SOMENTE se tem slots disponíveis
+            const isFree = isBasic && hasFreeSlotsAvailable && (!tier || tier.price === 0)
 
             // Atualizar anúncio
             const expiresAt = new Date()
@@ -203,7 +194,7 @@ export default function ChooseTierPage() {
 
             if (updateError) throw updateError
 
-            // Se for pago, redirecionar para Stripe
+            // Se for pago (qualquer tier, incluindo Básico sem slots), redirecionar para Stripe
             if (!isFree && tier) {
                 toast.info('Redirecionando para pagamento...')
                 const response = await fetch('/api/stripe/marketplace-checkout', {
@@ -251,8 +242,20 @@ export default function ChooseTierPage() {
     const eliteTier = tiers.find(t => t.tier_level === 'elite')
     const lendarioTier = tiers.find(t => t.tier_level === 'lendario')
 
-    const canUseBasic = userPlan.tier !== 'recruta' &&
+    // Quantidade de fotos do anúncio
+    const adPhotosCount = ad?.images?.length || 0
+
+    // Verificar se pode usar básico GRÁTIS (tem slots no plano)
+    const hasFreeSlotsAvailable = userPlan.tier !== 'recruta' &&
         (userPlan.basic_ads_limit === null || currentBasicAds < userPlan.basic_ads_limit)
+
+    // Verificar se cada tier suporta a quantidade de fotos
+    const basicSupportsPhotos = (basicTier?.max_photos || 5) >= adPhotosCount
+    const eliteSupportsPhotos = (eliteTier?.max_photos || 10) >= adPhotosCount
+    const lendarioSupportsPhotos = (lendarioTier?.max_photos || 25) >= adPhotosCount
+
+    // Básico pode ser usado se: suporta fotos E (tem slot grátis OU vai pagar)
+    const canUseBasic = basicSupportsPhotos
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -328,7 +331,9 @@ export default function ChooseTierPage() {
                                     </div>
                                     <div>
                                         <h3 className="text-2xl font-bold text-primary">Básico</h3>
-                                        <p className="text-sm text-muted-foreground">Incluído no plano</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {hasFreeSlotsAvailable ? 'Incluído no plano' : 'Pagamento único'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -339,13 +344,13 @@ export default function ChooseTierPage() {
                                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                                         <Check className="w-3 h-3 text-green-500" />
                                     </div>
-                                    <span className="text-base">5 fotos</span>
+                                    <span className="text-base">{basicTier?.max_photos || 5} fotos</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                                         <Check className="w-3 h-3 text-green-500" />
                                     </div>
-                                    <span className="text-base">30 dias online</span>
+                                    <span className="text-base">{basicTier?.duration_days || 30} dias online</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
@@ -355,21 +360,34 @@ export default function ChooseTierPage() {
                                 </div>
                             </div>
 
-                            {/* Price */}
+                            {/* Price - Dinâmico baseado em slots disponíveis */}
                             <div className="mb-6">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-bold text-green-600">GRÁTIS</span>
-                                </div>
-                                <p className="text-sm text-muted-foreground mt-1">Incluído no seu plano</p>
+                                {hasFreeSlotsAvailable ? (
+                                    <>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-4xl font-bold text-green-600">GRÁTIS</span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mt-1">Incluído no seu plano</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-4xl font-bold text-primary">R$ {basicTier?.price?.toFixed(2) || '29,90'}</span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mt-1">Pagamento único</p>
+                                    </>
+                                )}
                             </div>
 
-                            {/* Warning if can't use */}
-                            {!canUseBasic && (
+                            {/* Warning if can't use due to photos */}
+                            {!basicSupportsPhotos && (
                                 <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
                                     <p className="text-sm text-amber-600 font-medium">
-                                        {userPlan.tier === 'recruta'
-                                            ? '⚠️ Faça upgrade para Veterano para criar anúncios'
-                                            : '⚠️ Você atingiu o limite de anúncios básicos'}
+                                        ⚠️ O plano Básico permite apenas <strong>{basicTier?.max_photos || 5} fotos</strong>.
+                                        Para utilizar este plano, volte à tela anterior e remova algumas fotos.
+                                    </p>
+                                    <p className="text-xs text-amber-500 mt-1">
+                                        Seu anúncio tem {adPhotosCount} fotos
                                     </p>
                                 </div>
                             )}
@@ -382,16 +400,21 @@ export default function ChooseTierPage() {
                             >
                                 {processing ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
+                                ) : hasFreeSlotsAvailable ? (
                                     <>Publicar Grátis</>
+                                ) : (
+                                    <>Escolher Básico</>
                                 )}
                             </Button>
                         </div>
                     </div>
 
                     {/* Elite */}
-                    <div className="group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-                        <div className="relative h-full glass p-8 rounded-2xl border-2 border-green-500/50 hover:border-green-500/80 hover:shadow-2xl hover:shadow-green-500/30 hover:-translate-y-2 transition-all duration-300">
+                    <div className={`group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ${!eliteSupportsPhotos ? 'opacity-60' : ''}`}>
+                        <div className={`relative h-full glass p-8 rounded-2xl border-2 transition-all duration-300 ${eliteSupportsPhotos
+                            ? 'border-green-500/50 hover:border-green-500/80 hover:shadow-2xl hover:shadow-green-500/30 hover:-translate-y-2'
+                            : 'border-muted/30'
+                            }`}>
                             {/* Popular Badge */}
                             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                                 <Badge className="bg-gradient-to-r from-green-600 to-green-500 text-white px-4 py-1 text-sm font-semibold shadow-lg">
@@ -418,13 +441,13 @@ export default function ChooseTierPage() {
                                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                                         <Check className="w-3 h-3 text-green-500" />
                                     </div>
-                                    <span className="text-base font-semibold">10 fotos</span>
+                                    <span className="text-base font-semibold">{eliteTier?.max_photos || 10} fotos</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                                         <Check className="w-3 h-3 text-green-500" />
                                     </div>
-                                    <span className="text-base font-semibold">45 dias online</span>
+                                    <span className="text-base font-semibold">{eliteTier?.duration_days || 45} dias online</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
@@ -443,16 +466,29 @@ export default function ChooseTierPage() {
                             {/* Price */}
                             <div className="mb-6">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-bold text-green-600">R$ 49,90</span>
+                                    <span className="text-4xl font-bold text-green-600">R$ {eliteTier?.price?.toFixed(2) || '49,90'}</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1">Pagamento único</p>
                             </div>
+
+                            {/* Warning if can't use due to photos */}
+                            {!eliteSupportsPhotos && (
+                                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                                    <p className="text-sm text-amber-600 font-medium">
+                                        ⚠️ O plano Elite permite apenas <strong>{eliteTier?.max_photos || 10} fotos</strong>.
+                                        Para utilizar este plano, volte à tela anterior e remova algumas fotos.
+                                    </p>
+                                    <p className="text-xs text-amber-500 mt-1">
+                                        Seu anúncio tem {adPhotosCount} fotos
+                                    </p>
+                                </div>
+                            )}
 
                             {/* CTA Button */}
                             <Button
                                 className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 transition-all duration-300 shadow-lg hover:shadow-xl"
                                 onClick={() => selectTier(eliteTier || null)}
-                                disabled={processing}
+                                disabled={!eliteSupportsPhotos || processing}
                             >
                                 {processing ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -464,8 +500,11 @@ export default function ChooseTierPage() {
                     </div>
 
                     {/* Lendário */}
-                    <div className="group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
-                        <div className="relative h-full glass p-8 rounded-2xl border-2 border-amber-500/50 hover:border-amber-500/80 hover:shadow-2xl hover:shadow-amber-500/30 hover:-translate-y-2 transition-all duration-300 glow-orange">
+                    <div className={`group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400 ${!lendarioSupportsPhotos ? 'opacity-60' : ''}`}>
+                        <div className={`relative h-full glass p-8 rounded-2xl border-2 transition-all duration-300 ${lendarioSupportsPhotos
+                            ? 'border-amber-500/50 hover:border-amber-500/80 hover:shadow-2xl hover:shadow-amber-500/30 hover:-translate-y-2 glow-orange'
+                            : 'border-muted/30'
+                            }`}>
                             {/* Premium Badge */}
                             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                                 <Badge className="bg-gradient-to-r from-amber-600 to-amber-500 text-white px-4 py-1 text-sm font-semibold shadow-lg">
@@ -492,13 +531,13 @@ export default function ChooseTierPage() {
                                     <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                                         <Check className="w-3 h-3 text-amber-500" />
                                     </div>
-                                    <span className="text-base font-semibold">25 fotos</span>
+                                    <span className="text-base font-semibold">{lendarioTier?.max_photos || 25} fotos</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                                         <Check className="w-3 h-3 text-amber-500" />
                                     </div>
-                                    <span className="text-base font-semibold">60 dias online</span>
+                                    <span className="text-base font-semibold">{lendarioTier?.duration_days || 60} dias online</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -517,16 +556,26 @@ export default function ChooseTierPage() {
                             {/* Price */}
                             <div className="mb-6">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-bold text-amber-600">R$ 79,90</span>
+                                    <span className="text-4xl font-bold text-amber-600">R$ {lendarioTier?.price?.toFixed(2) || '79,90'}</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1">Pagamento único</p>
                             </div>
+
+                            {/* Warning if can't use due to photos (raro, mas possível se aumentar limite) */}
+                            {!lendarioSupportsPhotos && (
+                                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                                    <p className="text-sm text-amber-600 font-medium">
+                                        ⚠️ O plano Lendário permite apenas <strong>{lendarioTier?.max_photos || 25} fotos</strong>.
+                                        Seu anúncio tem {adPhotosCount} fotos.
+                                    </p>
+                                </div>
+                            )}
 
                             {/* CTA Button */}
                             <Button
                                 className="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl"
                                 onClick={() => selectTier(lendarioTier || null)}
-                                disabled={processing}
+                                disabled={!lendarioSupportsPhotos || processing}
                             >
                                 {processing ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
