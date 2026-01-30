@@ -137,6 +137,10 @@ export default function MessagesManager() {
     // Dialog de confirmação
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
+    // Email de teste
+    const [testEmail, setTestEmail] = useState('')
+    const [sendingTest, setSendingTest] = useState(false)
+
     // ============================================
     // CARREGAR DADOS INICIAIS
     // ============================================
@@ -408,6 +412,52 @@ export default function MessagesManager() {
     // ============================================
     // ENVIO DE MENSAGENS
     // ============================================
+
+    async function sendTestEmail() {
+        if (!testEmail.trim()) {
+            toast.error('Digite um email para teste')
+            return
+        }
+
+        if (!title.trim() || !body.trim()) {
+            toast.error('Preencha título e mensagem antes de testar')
+            return
+        }
+
+        setSendingTest(true)
+        toast.loading('Enviando email de teste...')
+
+        try {
+            const res = await fetch('/api/admin/send-bulk-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipients: [{ email: testEmail, name: 'Teste Admin' }],
+                    subject: `[TESTE] ${title}`,
+                    body: body
+                })
+            })
+
+            const data = await res.json()
+            toast.dismiss()
+
+            if (data.success && data.emailsSent > 0) {
+                toast.success(`Email de teste enviado para ${testEmail}!`)
+            } else if (data.error) {
+                toast.error(`Erro: ${data.error}`)
+                console.error('[TESTE EMAIL]', data)
+            } else {
+                toast.error('Falha ao enviar email de teste')
+                console.error('[TESTE EMAIL]', data)
+            }
+        } catch (error: any) {
+            toast.dismiss()
+            toast.error(`Erro: ${error.message}`)
+            console.error('[TESTE EMAIL]', error)
+        }
+
+        setSendingTest(false)
+    }
 
     async function handleSend() {
         if (!title.trim() || !body.trim()) {
@@ -713,6 +763,44 @@ export default function MessagesManager() {
                                             </div>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {/* Teste de Email */}
+                            {selectedChannel === 'email' && (
+                                <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                                    <p className="text-xs text-amber-600 font-semibold mb-2 flex items-center gap-1">
+                                        <Mail className="w-3 h-3" />
+                                        🧪 Testar Envio de Email
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            type="email"
+                                            placeholder="Digite seu email para teste..."
+                                            value={testEmail}
+                                            onChange={(e) => setTestEmail(e.target.value)}
+                                            className="flex-1 text-sm"
+                                        />
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={sendTestEmail}
+                                            disabled={sendingTest || !title || !body}
+                                            className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                                        >
+                                            {sendingTest ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Send className="w-3 h-3 mr-1" />
+                                                    Testar
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        Envia uma cópia marcada como [TESTE] para o email acima
+                                    </p>
                                 </div>
                             )}
                         </CardContent>
