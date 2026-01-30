@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { MarketplaceCard } from '@/components/marketplace/marketplace-card'
+import { LegendaryBanner } from '@/components/marketplace/legendary-banner'
 import { useAuth } from '@/lib/auth/context'
 import { createClient } from '@/lib/supabase/client'
 import { MarketplaceAd, MarketplaceCategory } from '@/lib/data/marketplace'
@@ -195,6 +196,11 @@ export default function MarketplacePage() {
 
                     {/* Main Grid */}
                     <div className="flex-1">
+                        {/* Banner Lendário */}
+                        {!selectedCategory && !searchTerm && (
+                            <LegendaryBanner ads={ads} />
+                        )}
+
                         {filteredAds.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {filteredAds.map((ad) => (
