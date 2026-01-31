@@ -7,7 +7,7 @@ export async function POST(
     { params }: { params: { projectId: string } }
 ) {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
 
         // Verificar autenticação
         const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -50,7 +50,7 @@ export async function POST(
         // Verificar se profissional é elegível (mesma categoria)
         const { data: profile } = await supabase
             .from('profiles')
-            .select('categories, pista')
+            .select('categories, pista, full_name')
             .eq('id', user.id)
             .single()
 
