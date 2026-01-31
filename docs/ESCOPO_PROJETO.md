@@ -79,12 +79,20 @@ A plataforma usa metáforas militares e de aventura:
 
 ### Limites por Plano
 
+> **IMPORTANTE:** Todos os limites abaixo são gerenciados dinamicamente através do painel admin (`/admin/financeiro → Planos`). Qualquer alteração feita no admin é refletida AUTOMATICAMENTE em todos os cards de planos (home, /planos, etc) sem necessidade de alterar código.
+
 | Recurso | Recruta | Veterano | Elite | Lendário |
 |---------|---------|----------|-------|----------|
 | Elos Máximos | 10 | 100 | ∞ Ilimitado | ∞ Ilimitado |
 | Confrarias/Mês | 0 | 4 | 10 | ∞ Ilimitado |
 | Anúncios Marketplace | 0 | 2 | 10 | ∞ Ilimitado |
+| **Max Categorias** | 3 | 5 | 10 | ∞ Ilimitado |
 | Destaque no Ranking | ❌ | ❌ | ✅ | ✅ |
+
+**Convenções de Valores:**
+- **`-1`** = Ilimitado (exibe ∞ nas interfaces)
+- **`0`** = Sem acesso (usuário não pode usar a funcionalidade)
+- **Valores positivos** = Limite numérico específico
 
 ### Features por Plano
 

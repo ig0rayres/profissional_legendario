@@ -1,6 +1,6 @@
 # 🧠 CONTEXTO DO PROJETO - ROTA BUSINESS CLUB
 
-*Última atualização: 29/01/2026 - 22:39*
+*Última atualização: 31/01/2026 - 15:00*
 
 > **INSTRUÇÃO:** No início de cada sessão, peça para o assistente ler este arquivo:
 > `"leia o arquivo CONTEXTO_PROJETO.md"`
@@ -28,49 +28,96 @@
 
 ---
 
-## 🚨 PONTO DE RETOMADA - 29/01/2026
+## 🚨 PONTO DE RETOMADA - 31/01/2026
 
-### **ÚLTIMA SESSÃO: 29/01/2026 - 22:00 às 22:39**
+### **ÚLTIMA SESSÃO: 31/01/2026 - 14:35 às 15:00**
 
 ### **O QUE FOI FEITO HOJE:**
 
-#### ✅ Marketplace - Webhook Stripe Corrigido
-1. **Correção do campo** - `tier_id` → `ad_tier_id` no webhook
-2. **Removido campo inexistente** - `stripe_payment_id` que não existe na tabela
+#### ✅ **SISTEMA DE PLANOS 100% DINÂMICO** 🎯
 
-#### ✅ Marketplace - Chat Integrado
-1. **Botão "Entrar em Contato"** - Agora abre o chat diretamente na página do anúncio
-2. **Evento `openChat`** - Disparado com o userId do vendedor
-3. **Sem redirecionamento** - Melhor UX mantendo usuário na página
+**Duração:** ~25min  
+**Status:** ✅ COMPLETO E PRONTO PARA DEPLOY
 
-#### ✅ Marketplace - Banner Lendário
-1. **Componente `LegendaryBanner`** - Carrossel épico para anúncios Lendários
-2. **Bordas douradas animadas** - Efeito premium
-3. **Navegação automática** - 5s por slide, pause no hover
-4. **Integrado na home** - Aparece quando não há filtros ativos
+##### 1. **Novos Campos no plan_config:**
 
-#### ✅ Sistema de Temporadas - Banners Integrados
-1. **4 novas colunas** - `banner_hero_url`, `banner_card_url`, `banner_sidebar_url`, `banner_square_url`
-2. **API atualizada** - `compose-image` salva URLs automaticamente na temporada
-3. **SeasonPromoBanner atualizado** - Usa `banner_sidebar_url` quando disponível
-4. **Fallback inteligente** - Mostra layout de pódio se não houver banner
+**max_categories (INTEGER):**
+- ✅ Migration: `20260131_add_max_categories_to_plans.sql`
+- ✅ Valores padrão: Recruta=3, Veterano=10, Elite=25, Lendário=-1 (ilimitado)
+- ✅ Checkbox "Ilimitado" no admin
+- ✅ Card visual na visualização
 
-### **COMMITS DE HOJE:**
+**description (TEXT):**
+- ✅ Migration: `20260131_add_description_to_plans.sql`
+- ✅ Campo editável no admin (criação e edição)
+- ✅ Removido `TIER_DESCRIPTIONS` hardcoded dos componentes
+- ✅ Home e página /planos agora usam `plan.description` do banco
+
+##### 2. **UX Aprimorada - Checkboxes "Ilimitado":**
+
+**Antes:** Digitar `-1` manualmente  
+**Agora:** ☑ Checkbox intuitivo
+
+**Campos atualizados:**
+- ✅ Elos Máximos → Checkbox + input condicional
+- ✅ Confrarias/Mês → Checkbox + input condicional
+- ✅ Anúncios Marketplace → Checkbox + input condicional
+- ✅ Max Categorias → Checkbox + input condicional
+
+**Lógica:**
+- Marcado → Salva `-1`, esconde input
+- Desmarcado → Mostra input numérico (padrão)
+- Visualização → `-1` mostra "∞ Ilimitado"
+
+##### 3. **Remoção de Redundância:**
+
+**Removido:** Campo `can_send_confraternity` (boolean redundante)
+
+**Lógica automática implementada:**
+```typescript
+max_confraternities_month === 0  → NÃO pode enviar
+max_confraternities_month === -1 → Ilimitado
+max_confraternities_month > 0    → Limitado
 ```
-7255df13 - feat(seasons): integrar banners do admin ao painel do usuário
-41a226ac - feat(seasons): redesenhar mini-banner de temporada estilo podium
-de5746f0 - feat(marketplace): banner carrossel épico para anúncios Lendários
-1374f20d - fix(marketplace): corrigir chat para abrir diretamente na página do anúncio
-```
 
-### **MIGRATIONS EXECUTADAS:**
+**Arquivos atualizados:**
+- ✅ Interface `Plan` (removido campo)
+- ✅ PlanManager (removido toggle)
+- ✅ `helpers.ts` (lógica automática)
+
+##### 4. **helpers.ts: De Hardcoded para Dinâmico:**
+
+**Antes:** `PLAN_LIMITS` const hardcoded  
+**Agora:** `getUserPlanLimits()` busca de `plan_config`
+
+**Benefício:** Admin altera → Reflete automaticamente sem código
+
+##### 5. **Frontend 100% Dinâmico:**
+
+**Componentes verificados:**
+- ✅ `/components/sections/plans-section.tsx` → Dinâmico
+- ✅ `/app/planos/page.tsx` → Dinâmico
+- ✅ Removido todos os hardcoded `TIER_DESCRIPTIONS`
+
+##### 6. **Documentação Atualizada:**
+
+**Arquivos criados:**
+- ✅ `docs/sessions/SESSION_2026-01-31_PLANOS_DINAMICOS.md` - Resumo completo
+- ✅ `docs/sessions/GESTAO_PLANOS_DINAMICA_2026-01-31.md` - Detalhes técnicos
+- ✅ `docs/CHECKLIST_PLANOS_DINAMICOS.md` - Checklist visual
+- ✅ `docs/ESCOPO_PROJETO.md` - Atualizado com max_categories
+
+### **MIGRATIONS CRIADAS:**
 ```sql
--- Banners de temporada
-ALTER TABLE seasons ADD COLUMN IF NOT EXISTS banner_hero_url TEXT;
-ALTER TABLE seasons ADD COLUMN IF NOT EXISTS banner_card_url TEXT;
-ALTER TABLE seasons ADD COLUMN IF NOT EXISTS banner_sidebar_url TEXT;
-ALTER TABLE seasons ADD COLUMN IF NOT EXISTS banner_square_url TEXT;
+-- 20260131_add_max_categories_to_plans.sql
+-- 20260131_add_description_to_plans.sql
 ```
+
+### **RESULTADO:**
+✅ **ZERO HARDCODE** → Tudo configurável no admin  
+✅ **UX INTUITIVA** → Checkboxes claros  
+✅ **LÓGICA UNIFICADA** → Sem redundância  
+✅ **AUTO-ATUALIZAÇÃO** → Cards refletem mudanças instantaneamente
 
 ---
 
@@ -81,6 +128,10 @@ ALTER TABLE seasons ADD COLUMN IF NOT EXISTS banner_square_url TEXT;
 | `.agent/context/CONTEXTO_PROJETO.md` | Este arquivo (ponto de retomada) |
 | `.agent/context/AGENTS.md` | Personas dos agentes (Carlos, Marina, Lucas, Rafael) |
 | `.agent/EXECUTAR_SQL_SUPABASE.md` | **⚠️ COMO EXECUTAR SQL DIRETO NO BANCO** |
+| **`docs/PROJETOS_APRESENTACAO_NEGOCIO.md`** | 📊 Apresentação módulo projetos (pitch/stakeholders) |
+| **`docs/PROJETOS_DOCUMENTACAO_TECNICA.md`** | 🔧 Documentação técnica (banco, APIs, integrações) |
+| **`docs/PROJETOS_PLANO_TESTES.md`** | ✅ Plano de testes passo a passo (URLs,validações) |
+| **`docs/PROJETOS_MODULO_COMPLETO.md`** | 📋 Visão geral completa do módulo |
 
 ---
 
@@ -103,11 +154,22 @@ ALTER TABLE seasons ADD COLUMN IF NOT EXISTS banner_square_url TEXT;
 
 ## 🔜 PRÓXIMOS PASSOS SUGERIDOS
 
-1. **Testar banners de temporada** - Gerar no admin e verificar no dashboard
-2. **Testar marketplace** - Criar anúncio Lendário e ver banner no topo
-3. **Testar chat** - Verificar se "Entrar em Contato" abre o chat corretamente
-4. **Grid Elite** - Implementar destaque para anúncios Elite (próximo passo)
-5. **Melhorias UX** - Animações e responsividade mobile
+### **PRIORIDADE 1 - Testar Módulo de Projetos (31/01/2026):**
+1. **Executar plano de testes** - Seguir `docs/PROJETOS_PLANO_TESTES.md` passo a passo
+2. **Validar fluxo end-to-end** - Cliente cria → Profissional propõe → Cliente aceita
+3. **Corrigir bugs** - Instalar componentes shadcn faltantes, ajustar erros
+4. **Validar notificações** - Tempo real funcionando
+5. **Testar CRON job** - Distribuição automática
+
+### **PRIORIDADE 2 - Finalizar Módulo de Projetos:**
+1. **Upload de arquivos** - Integrar Supabase Storage
+2. **Email real** - Configurar SendGrid ou Resend
+3. **Interfaces extras** - Modal enviar proposta integrado, dashboard profissional
+
+### **PRIORIDADE 3 - Outros Módulos:**
+1. **Marketplace** - Grid Elite para anúncios premium
+2. **Temporadas** - Testar banners gerados
+3. **Melhorias UX** - Animações, responsividade mobile
 
 ---
 

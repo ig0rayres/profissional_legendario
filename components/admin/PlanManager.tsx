@@ -10,20 +10,21 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { formatCurrency } from '@/lib/api/financial'
 import { clearPlanCache } from '@/lib/services/plan-service'
-import { Save, Edit, Check, X, Zap, Link2, Users, ShoppingBag, Infinity, CreditCard } from 'lucide-react'
+import { Save, Edit, Check, X, Zap, Link2, Users, ShoppingBag, Infinity, CreditCard, Tags } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Plan {
     id: string
     tier: string
     name: string
+    description?: string  // Descrição curta do plano
     price: number
     features: string[]
     xp_multiplier: number
     max_elos: number | null
     max_confraternities_month: number
-    can_send_confraternity: boolean
     max_marketplace_ads: number
+    max_categories: number // Limite de categorias
     can_send_elo: boolean
     is_active: boolean
     display_order: number
@@ -66,13 +67,14 @@ export function PlanManager() {
         setEditingId(plan.id)
         setEditForm({
             name: plan.name,
+            description: plan.description,
             price: plan.price,
             features: plan.features,
             xp_multiplier: plan.xp_multiplier,
             max_elos: plan.max_elos,
             max_confraternities_month: plan.max_confraternities_month,
-            can_send_confraternity: plan.can_send_confraternity,
             max_marketplace_ads: plan.max_marketplace_ads,
+            max_categories: plan.max_categories,
             is_active: plan.is_active,
             stripe_product_id: plan.stripe_product_id,
             stripe_price_id: plan.stripe_price_id
@@ -90,13 +92,14 @@ export function PlanManager() {
                 .from('plan_config')
                 .update({
                     name: editForm.name,
+                    description: editForm.description,
                     price: editForm.price,
                     features: editForm.features,
                     xp_multiplier: editForm.xp_multiplier,
                     max_elos: editForm.max_elos,
                     max_confraternities_month: editForm.max_confraternities_month,
-                    can_send_confraternity: editForm.can_send_confraternity,
                     max_marketplace_ads: editForm.max_marketplace_ads,
+                    max_categories: editForm.max_categories,
                     is_active: editForm.is_active,
                     stripe_product_id: editForm.stripe_product_id || null,
                     stripe_price_id: editForm.stripe_price_id || null,
@@ -160,8 +163,8 @@ export function PlanManager() {
         xp_multiplier: 1,
         max_elos: null,
         max_confraternities_month: 0,
-        can_send_confraternity: false,
         max_marketplace_ads: 0,
+        max_categories: 3,
         can_send_elo: false,
         is_active: true,
         display_order: 0
@@ -182,13 +185,14 @@ export function PlanManager() {
                 .insert({
                     tier: newPlan.tier?.toLowerCase(),
                     name: newPlan.name,
+                    description: newPlan.description || '',
                     price: newPlan.price || 0,
                     features: featuresText.split('\n').filter(f => f.trim()),
                     xp_multiplier: newPlan.xp_multiplier || 1,
                     max_elos: newPlan.max_elos,
                     max_confraternities_month: newPlan.max_confraternities_month || 0,
-                    can_send_confraternity: newPlan.can_send_confraternity || false,
                     max_marketplace_ads: newPlan.max_marketplace_ads || 0,
+                    max_categories: newPlan.max_categories || 3,
                     can_send_elo: newPlan.can_send_elo || false,
                     is_active: newPlan.is_active ?? true,
                     display_order: maxOrder + 1,
@@ -212,8 +216,8 @@ export function PlanManager() {
                 xp_multiplier: 1,
                 max_elos: null,
                 max_confraternities_month: 0,
-                can_send_confraternity: false,
                 max_marketplace_ads: 0,
+                max_categories: 3,
                 can_send_elo: false,
                 is_active: true,
                 display_order: 0
@@ -270,6 +274,14 @@ export function PlanManager() {
                             />
                         </div>
                         <div>
+                            <Label>Descrição</Label>
+                            <Input
+                                placeholder="ex: O topo absoluto. Lendas nunca são esquecidas."
+                                value={newPlan.description || ''}
+                                onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
+                            />
+                        </div>
+                        <div>
                             <Label>Preço (R$)</Label>
                             <Input
                                 type="number"
@@ -281,7 +293,7 @@ export function PlanManager() {
                     </div>
 
                     {/* Limites com opção Ilimitado */}
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-5 gap-4">
                         <div>
                             <Label className="flex items-center gap-1">
                                 <Zap className="w-4 h-4 text-yellow-500" />
@@ -300,48 +312,97 @@ export function PlanManager() {
                                 <Link2 className="w-4 h-4 text-blue-500" />
                                 Elos Máximos
                             </Label>
-                            <Input
-                                type="number"
-                                placeholder="Vazio = Ilimitado"
-                                value={newPlan.max_elos ?? ''}
-                                onChange={(e) => setNewPlan({ ...newPlan, max_elos: e.target.value ? parseInt(e.target.value) : null })}
-                            />
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={newPlan.max_elos === -1}
+                                        onCheckedChange={(checked) => setNewPlan({ ...newPlan, max_elos: checked ? -1 : 10 })}
+                                    />
+                                    <span className="text-sm">Ilimitado</span>
+                                </div>
+                                {newPlan.max_elos !== -1 && (
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={newPlan.max_elos ?? 0}
+                                        onChange={(e) => setNewPlan({ ...newPlan, max_elos: parseInt(e.target.value) || 0 })}
+                                    />
+                                )}
+                            </div>
                         </div>
                         <div>
                             <Label className="flex items-center gap-1">
                                 <Users className="w-4 h-4 text-green-500" />
                                 Confrarias/Mês
                             </Label>
-                            <Input
-                                type="number"
-                                placeholder="Vazio = Ilimitado"
-                                value={newPlan.max_confraternities_month ?? ''}
-                                onChange={(e) => setNewPlan({ ...newPlan, max_confraternities_month: e.target.value ? parseInt(e.target.value) : null })}
-                            />
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={newPlan.max_confraternities_month === -1}
+                                        onCheckedChange={(checked) => setNewPlan({ ...newPlan, max_confraternities_month: checked ? -1 : 1 })}
+                                    />
+                                    <span className="text-sm">Ilimitado</span>
+                                </div>
+                                {newPlan.max_confraternities_month !== -1 && (
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={newPlan.max_confraternities_month ?? 0}
+                                        onChange={(e) => setNewPlan({ ...newPlan, max_confraternities_month: parseInt(e.target.value) || 0 })}
+                                    />
+                                )}
+                            </div>
                         </div>
                         <div>
                             <Label className="flex items-center gap-1">
                                 <ShoppingBag className="w-4 h-4 text-purple-500" />
                                 Anúncios Mkt
                             </Label>
-                            <Input
-                                type="number"
-                                placeholder="Vazio = Ilimitado"
-                                value={newPlan.max_marketplace_ads ?? ''}
-                                onChange={(e) => setNewPlan({ ...newPlan, max_marketplace_ads: e.target.value ? parseInt(e.target.value) : null })}
-                            />
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={newPlan.max_marketplace_ads === -1}
+                                        onCheckedChange={(checked) => setNewPlan({ ...newPlan, max_marketplace_ads: checked ? -1 : 1 })}
+                                    />
+                                    <span className="text-sm">Ilimitado</span>
+                                </div>
+                                {newPlan.max_marketplace_ads !== -1 && (
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={newPlan.max_marketplace_ads ?? 0}
+                                        onChange={(e) => setNewPlan({ ...newPlan, max_marketplace_ads: parseInt(e.target.value) || 0 })}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                        <div>
+                            <Label className="flex items-center gap-1">
+                                <Tags className="w-4 h-4 text-orange-500" />
+                                Max Categorias
+                            </Label>
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={newPlan.max_categories === -1}
+                                        onCheckedChange={(checked) => setNewPlan({ ...newPlan, max_categories: checked ? -1 : 3 })}
+                                    />
+                                    <span className="text-sm">Ilimitado</span>
+                                </div>
+                                {newPlan.max_categories !== -1 && (
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={newPlan.max_categories || 3}
+                                        onChange={(e) => setNewPlan({ ...newPlan, max_categories: parseInt(e.target.value) || 3 })}
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     {/* Toggles */}
                     <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                checked={newPlan.can_send_confraternity || false}
-                                onCheckedChange={(checked) => setNewPlan({ ...newPlan, can_send_confraternity: checked })}
-                            />
-                            <Label>Pode criar confraria</Label>
-                        </div>
                         <div className="flex items-center gap-2">
                             <Switch
                                 checked={newPlan.can_send_elo || false}
@@ -460,8 +521,8 @@ export function PlanManager() {
                         {isEditing ? (
                             /* Modo Edição */
                             <div className="grid gap-6">
-                                {/* Linha 1: Nome e Preço */}
-                                <div className="grid grid-cols-2 gap-4">
+                                {/* Linha 1: Nome, Descrição e Preço */}
+                                <div className="grid grid-cols-3 gap-4">
                                     <div>
                                         <Label>Nome do Plano</Label>
                                         <Input
@@ -469,6 +530,16 @@ export function PlanManager() {
                                             onChange={(e) =>
                                                 setEditForm({ ...editForm, name: e.target.value })
                                             }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Descrição</Label>
+                                        <Input
+                                            value={editForm.description || ''}
+                                            onChange={(e) =>
+                                                setEditForm({ ...editForm, description: e.target.value })
+                                            }
+                                            placeholder="Descrição curta do plano"
                                         />
                                     </div>
                                     <div>
@@ -488,7 +559,7 @@ export function PlanManager() {
                                 </div>
 
                                 {/* Linha 2: Limites */}
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-5 gap-4">
                                     <div>
                                         <Label className="flex items-center gap-1">
                                             <Zap className="w-4 h-4 text-yellow-500" />
@@ -513,64 +584,132 @@ export function PlanManager() {
                                             <Link2 className="w-4 h-4 text-blue-500" />
                                             Elos Máximos
                                         </Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="Vazio = Ilimitado"
-                                            value={editForm.max_elos ?? ''}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    max_elos: e.target.value ? parseInt(e.target.value) : null
-                                                })
-                                            }
-                                        />
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Switch
+                                                    checked={editForm.max_elos === -1}
+                                                    onCheckedChange={(checked) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_elos: checked ? -1 : 10
+                                                        })
+                                                    }
+                                                />
+                                                <span className="text-sm">Ilimitado</span>
+                                            </div>
+                                            {editForm.max_elos !== -1 && (
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    value={editForm.max_elos ?? 0}
+                                                    onChange={(e) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_elos: parseInt(e.target.value) || 0
+                                                        })
+                                                    }
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                     <div>
                                         <Label className="flex items-center gap-1">
                                             <Users className="w-4 h-4 text-green-500" />
                                             Confrarias/Mês
                                         </Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="Vazio = Ilimitado"
-                                            value={editForm.max_confraternities_month ?? ''}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    max_confraternities_month: e.target.value ? parseInt(e.target.value) : null
-                                                })
-                                            }
-                                        />
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Switch
+                                                    checked={editForm.max_confraternities_month === -1}
+                                                    onCheckedChange={(checked) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_confraternities_month: checked ? -1 : 1
+                                                        })
+                                                    }
+                                                />
+                                                <span className="text-sm">Ilimitado</span>
+                                            </div>
+                                            {editForm.max_confraternities_month !== -1 && (
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    value={editForm.max_confraternities_month ?? 0}
+                                                    onChange={(e) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_confraternities_month: parseInt(e.target.value) || 0
+                                                        })
+                                                    }
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                     <div>
                                         <Label className="flex items-center gap-1">
                                             <ShoppingBag className="w-4 h-4 text-purple-500" />
                                             Anúncios Mkt
                                         </Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="Vazio = Ilimitado"
-                                            value={editForm.max_marketplace_ads ?? ''}
-                                            onChange={(e) =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    max_marketplace_ads: e.target.value ? parseInt(e.target.value) : null
-                                                })
-                                            }
-                                        />
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Switch
+                                                    checked={editForm.max_marketplace_ads === -1}
+                                                    onCheckedChange={(checked) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_marketplace_ads: checked ? -1 : 1
+                                                        })
+                                                    }
+                                                />
+                                                <span className="text-sm">Ilimitado</span>
+                                            </div>
+                                            {editForm.max_marketplace_ads !== -1 && (
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    value={editForm.max_marketplace_ads ?? 0}
+                                                    onChange={(e) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_marketplace_ads: parseInt(e.target.value) || 0
+                                                        })
+                                                    }
+                                                />
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-
-                                {/* Linha 3: Toggles */}
-                                <div className="flex items-center gap-6">
-                                    <div className="flex items-center gap-2">
-                                        <Switch
-                                            checked={editForm.can_send_confraternity || false}
-                                            onCheckedChange={(checked) =>
-                                                setEditForm({ ...editForm, can_send_confraternity: checked })
-                                            }
-                                        />
-                                        <Label>Pode enviar confraria</Label>
+                                    <div>
+                                        <Label className="flex items-center gap-1">
+                                            <Tags className="w-4 h-4 text-orange-500" />
+                                            Max Categorias
+                                        </Label>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Switch
+                                                    checked={editForm.max_categories === -1}
+                                                    onCheckedChange={(checked) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_categories: checked ? -1 : 3
+                                                        })
+                                                    }
+                                                />
+                                                <span className="text-sm">Ilimitado</span>
+                                            </div>
+                                            {editForm.max_categories !== -1 && (
+                                                <Input
+                                                    type="number"
+                                                    min="1"
+                                                    value={editForm.max_categories || 3}
+                                                    onChange={(e) =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            max_categories: parseInt(e.target.value) || 3
+                                                        })
+                                                    }
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -644,7 +783,7 @@ export function PlanManager() {
                                 </div>
 
                                 {/* Cards de Limites */}
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-5 gap-4">
                                     <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                                         <div className="flex items-center gap-2 text-yellow-600 mb-1">
                                             <Zap className="w-4 h-4" />
@@ -658,10 +797,10 @@ export function PlanManager() {
                                             <span className="text-xs font-medium">Elos Máximos</span>
                                         </div>
                                         <p className="text-xl font-bold flex items-center gap-1">
-                                            {plan.max_elos === null ? (
+                                            {plan.max_elos === -1 ? (
                                                 <><Infinity className="w-5 h-5" /> Ilimitado</>
                                             ) : (
-                                                plan.max_elos
+                                                plan.max_elos || 0
                                             )}
                                         </p>
                                     </div>
@@ -671,10 +810,10 @@ export function PlanManager() {
                                             <span className="text-xs font-medium">Confrarias/Mês</span>
                                         </div>
                                         <p className="text-xl font-bold flex items-center gap-1">
-                                            {plan.max_confraternities_month === null || plan.max_confraternities_month === 0 ? (
+                                            {plan.max_confraternities_month === -1 ? (
                                                 <><Infinity className="w-5 h-5" /> Ilimitado</>
                                             ) : (
-                                                plan.max_confraternities_month
+                                                plan.max_confraternities_month || 0
                                             )}
                                         </p>
                                     </div>
@@ -684,10 +823,23 @@ export function PlanManager() {
                                             <span className="text-xs font-medium">Anúncios Mkt</span>
                                         </div>
                                         <p className="text-xl font-bold flex items-center gap-1">
-                                            {plan.max_marketplace_ads === null || plan.max_marketplace_ads === 0 ? (
+                                            {plan.max_marketplace_ads === -1 ? (
                                                 <><Infinity className="w-5 h-5" /> Ilimitado</>
                                             ) : (
-                                                plan.max_marketplace_ads
+                                                plan.max_marketplace_ads || 0
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                                        <div className="flex items-center gap-2 text-orange-600 mb-1">
+                                            <Tags className="w-4 h-4" />
+                                            <span className="text-xs font-medium">Max Categorias</span>
+                                        </div>
+                                        <p className="text-xl font-bold flex items-center gap-1">
+                                            {plan.max_categories === -1 ? (
+                                                <><Infinity className="w-5 h-5" /> Ilimitado</>
+                                            ) : (
+                                                plan.max_categories || 3
                                             )}
                                         </p>
                                     </div>

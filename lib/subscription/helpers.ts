@@ -29,40 +29,69 @@ export interface UserSubscription {
 
 export interface PlanLimits {
     confraternities_per_month: number
-    can_send_confraternity: boolean
     can_send_elo: boolean
-    xp_multiplier: number // Multiplicador de XP
+    xp_multiplier: number
+    max_elos: number | null
+    max_marketplace_ads: number
+    max_categories: number
 }
 
-// Limites e benefícios de cada plano - CENTRALIZADOS
-export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
-    recruta: {
-        confraternities_per_month: 0,
-        can_send_confraternity: false,
-        can_send_elo: true,
-        xp_multiplier: 1 // XP normal
-    },
-    veterano: {
-        confraternities_per_month: 4,
-        can_send_confraternity: true,
-        can_send_elo: true,
-        xp_multiplier: 1.5 // XP x1.5
-    },
-    elite: {
-        confraternities_per_month: 10,
-        can_send_confraternity: true,
-        can_send_elo: true,
-        xp_multiplier: 3 // XP x3
+/**
+ * Busca os limites do plano do usuário diretamente da plan_config
+ * @param userId ID do usuário
+ * @returns Limites do plano
+ */
+export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
+    const supabase = createClient()
+
+    // Buscar subscription ativa
+    const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('plan_id')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single()
+
+    const planTier = subscription?.plan_id || 'recruta'
+
+    // Buscar configuração do plano
+    const { data: planConfig } = await supabase
+        .from('plan_config')
+        .select('*')
+        .eq('tier', planTier)
+        .eq('is_active', true)
+        .single()
+
+    // Fallback para recruta se não encontrar
+    if (!planConfig) {
+        return {
+            confraternities_per_month: 0,
+            can_send_elo: true,
+            xp_multiplier: 1,
+            max_elos: 10,
+            max_marketplace_ads: 0,
+            max_categories: 3
+        }
+    }
+
+    return {
+        confraternities_per_month: planConfig.max_confraternities_month,
+        can_send_elo: planConfig.can_send_elo,
+        xp_multiplier: planConfig.xp_multiplier,
+        max_elos: planConfig.max_elos,
+        max_marketplace_ads: planConfig.max_marketplace_ads,
+        max_categories: planConfig.max_categories
     }
 }
 
 /**
  * Obter multiplicador de XP do plano
  * @param plan ID do plano
- * @returns Multiplicador (1, 2 ou 3)
+ * @returns Multiplicador
  */
-export function getXpMultiplier(plan: PlanId): number {
-    return PLAN_LIMITS[plan]?.xp_multiplier || 1
+export async function getXpMultiplier(userId: string): Promise<number> {
+    const limits = await getUserPlanLimits(userId)
+    return limits.xp_multiplier || 1
 }
 
 /**
@@ -74,7 +103,7 @@ export async function getUserPlan(userId: string): Promise<PlanId> {
     const supabase = createClient()
 
     const { data } = await supabase
-        .from('subscriptions')  // TABELA CORRETA
+        .from('subscriptions')
         .select('plan_id')
         .eq('user_id', userId)
         .eq('status', 'active')
@@ -84,27 +113,26 @@ export async function getUserPlan(userId: string): Promise<PlanId> {
 }
 
 /**
- * Busca os limites do plano do usuário
- * @param userId ID do usuário
- * @returns Limites do plano
- */
-export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
-    const plan = await getUserPlan(userId)
-    return PLAN_LIMITS[plan]
-}
-
-/**
  * Verifica se o usuário pode enviar convite de confraria
+ * LÓGICA: max_confraternities_month > 0 ou -1 = pode enviar
  * @param userId ID do usuário
  * @returns true se pode enviar
  */
 export async function canSendConfraternity(userId: string): Promise<{ can: boolean, used: number, max: number, plan: PlanId }> {
     const supabase = createClient()
     const plan = await getUserPlan(userId)
-    const limits = PLAN_LIMITS[plan]
+    const limits = await getUserPlanLimits(userId)
 
-    if (!limits.can_send_confraternity) {
+    const maxConfraternities = limits.confraternities_per_month
+
+    // Se for 0, não pode enviar
+    if (maxConfraternities === 0) {
         return { can: false, used: 0, max: 0, plan }
+    }
+
+    // Se for -1, é ilimitado
+    if (maxConfraternities === -1) {
+        return { can: true, used: 0, max: -1, plan }
     }
 
     // Contar convites enviados este mês
@@ -119,10 +147,9 @@ export async function canSendConfraternity(userId: string): Promise<{ can: boole
         .gte('created_at', startOfMonth.toISOString())
 
     const used = count || 0
-    const max = limits.confraternities_per_month
-    const can = used < max
+    const can = used < maxConfraternities
 
-    return { can, used, max, plan }
+    return { can, used, max: maxConfraternities, plan }
 }
 
 /**

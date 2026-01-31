@@ -11,6 +11,7 @@ interface PlanConfig {
     id: string
     tier: string
     name: string
+    description?: string  // Descrição do banco
     price: number
     features: string[]
     is_active: boolean
@@ -49,14 +50,6 @@ const TIER_CONFIG: Record<string, { icon: typeof Shield, popular: boolean, cta: 
     }
 }
 
-// Descrições por tier
-const TIER_DESCRIPTIONS: Record<string, string> = {
-    recruta: 'O início da sua jornada na guilda.',
-    veterano: 'Para quem já provou seu valor no campo.',
-    elite: 'A força máxima da elite de negócios.',
-    lendario: 'O topo absoluto. Lendas nunca são esquecidas.'
-}
-
 export function PlansSection() {
     const [plans, setPlans] = useState<PlanConfig[]>([])
     const [loading, setLoading] = useState(true)
@@ -80,9 +73,9 @@ export function PlansSection() {
             console.error('Error loading plans:', error)
             // Fallback para valores padrão se banco falhar
             setPlans([
-                { id: '1', tier: 'recruta', name: 'Recruta', price: 0, features: ['Perfil Básico', 'Listagem na busca', '1 Especialidade', 'Acesso à comunidade'], is_active: true, display_order: 1 },
-                { id: '2', tier: 'veterano', name: 'Veterano', price: 47, features: ['Perfil Completo', 'Destaque na busca', 'Até 3 Especialidades', 'Selo de Verificado'], is_active: true, display_order: 2 },
-                { id: '3', tier: 'elite', name: 'Elite', price: 147, features: ['Tudo do plano Veterano', 'Destaque Premium', 'Especialidades Ilimitadas', 'Selo Elite Dourado'], is_active: true, display_order: 3 }
+                { id: '1', tier: 'recruta', name: 'Recruta', description: 'O início da sua jornada na guilda.', price: 0, features: ['Perfil Básico', 'Listagem na busca', '1 Especialidade', 'Acesso à comunidade'], is_active: true, display_order: 1 },
+                { id: '2', tier: 'veterano', name: 'Veterano', description: 'Para quem já provou seu valor no campo.', price: 47, features: ['Perfil Completo', 'Destaque na busca', 'Até 3 Especialidades', 'Selo de Verificado'], is_active: true, display_order: 2 },
+                { id: '3', tier: 'elite', name: 'Elite', description: 'A força máxima da elite de negócios.', price: 147, features: ['Tudo do plano Veterano', 'Destaque Premium', 'Especialidades Ilimitadas', 'Selo Elite Dourado'], is_active: true, display_order: 3 }
             ])
         } finally {
             setLoading(false)
@@ -117,7 +110,6 @@ export function PlansSection() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1400px] mx-auto items-stretch">
                         {plans.map((plan) => {
                             const config = TIER_CONFIG[plan.tier] || TIER_CONFIG.recruta
-                            const description = TIER_DESCRIPTIONS[plan.tier] || ''
                             const Icon = config.icon
                             const isElite = plan.tier === 'elite'
 
@@ -163,7 +155,7 @@ export function PlansSection() {
                                             {plan.name}
                                         </CardTitle>
                                         <CardDescription className="text-base">
-                                            {description}
+                                            {plan.description || ''}
                                         </CardDescription>
                                     </CardHeader>
 

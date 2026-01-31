@@ -11,6 +11,7 @@ interface PlanConfig {
     id: string
     tier: string
     name: string
+    description?: string  // Descrição do banco
     price: number
     features: string[]
     is_active: boolean
@@ -40,14 +41,6 @@ const TIER_CONFIG: Record<string, { icon: typeof Shield, popular: boolean, gradi
         popular: false,
         gradient: 'from-yellow-500/20 to-amber-500/20'
     }
-}
-
-// Descrições por tier
-const TIER_DESCRIPTIONS: Record<string, string> = {
-    recruta: 'O início da sua jornada na guilda.',
-    veterano: 'Para quem já provou seu valor no campo.',
-    elite: 'A força máxima da elite de negócios.',
-    lendario: 'O topo absoluto. Lendas nunca são esquecidas.'
 }
 
 export default function PlansPage() {
@@ -229,7 +222,7 @@ export default function PlansPage() {
                                         </div>
                                         <div>
                                             <CardTitle className={`text-2xl ${isElite ? 'text-[#D2691E]' : ''}`}>{plan.name}</CardTitle>
-                                            <CardDescription>{TIER_DESCRIPTIONS[plan.tier]}</CardDescription>
+                                            <CardDescription>{plan.description || ''}</CardDescription>
                                         </div>
                                     </div>
 
