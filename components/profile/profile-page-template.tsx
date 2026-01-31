@@ -17,7 +17,8 @@ import * as LucideIcons from 'lucide-react'
 import { MOCK_CATEGORIES } from '@/lib/data/mock'
 
 // CARDS V13 - Novos componentes com estilo atualizado
-import { ProjectsCounterV13, ElosDaRotaV13, ConfraternityStatsV13 } from '@/components/profile/cards-v13-brand-colors'
+import { ElosDaRotaV13, ConfraternityStatsV13 } from '@/components/profile/cards-v13-brand-colors'
+import { ProjectsCounterRealtime } from '@/components/profile/projects-counter-realtime'
 import { NaRotaFeedV13 } from '@/components/profile/na-rota-feed-v13-social'
 import { BattleHistory } from '@/components/gamification/battle-history'
 import { SeasonBannerCarouselV2 } from '@/components/season'
@@ -112,12 +113,11 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Projects Counter */}
-                        <ProjectsCounterV13
+                        {/* Projects Counter com Notificações em Tempo Real */}
+                        <ProjectsCounterRealtime
+                            userId={profile.id}
                             completedCount={profileData.projectsCompleted || 0}
                             inProgressCount={profileData.projectsInProgress || 0}
-                            targetUserId={profile.id}
-                            targetUserName={profile.full_name}
                         />
 
                         {/* Banner de Temporada - FALCON */}

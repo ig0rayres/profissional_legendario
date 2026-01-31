@@ -4,9 +4,6 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-// ID do usuário sistema
-const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
-
 // Função para criar cliente admin (chamada dentro da request, não no build)
 function getSupabaseAdmin() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -34,6 +31,23 @@ export async function POST(request: NextRequest) {
 
         // Criar cliente admin dentro da request
         const supabaseAdmin = getSupabaseAdmin()
+
+        // Buscar ID do usuário do sistema (Rota Business)
+        const { data: systemUser } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('slug', 'rotabusiness')
+            .single()
+
+        if (!systemUser) {
+            console.error('[API system-message] Usuário do sistema (rotabusiness) não encontrado!')
+            return NextResponse.json(
+                { error: 'Usuário do sistema não encontrado' },
+                { status: 500 }
+            )
+        }
+
+        const SYSTEM_USER_ID = systemUser.id
 
         // Buscar ou criar conversa com o sistema
         let conversationId: string | null = null

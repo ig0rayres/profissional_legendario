@@ -81,33 +81,57 @@ export default function CreateProjectPage() {
     const onSubmit = async (data: ProjectFormData) => {
         setIsSubmitting(true)
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        try {
+            // Upload de arquivos (se houver)
+            const attachmentUrls: string[] = []
+            if (files.length > 0) {
+                // TODO: Implementar upload real para storage
+                console.log('Files to upload:', files)
+            }
 
-        const projectData = {
-            ...data,
-            // If user is logged in, use their data. If guest, use form data.
-            author: user ? {
-                id: user.id,
-                name: user.full_name,
-                email: user.email
-            } : {
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                is_guest: true
-            },
-            files
+            // Preparar dados do projeto
+            const projectPayload = {
+                title: data.title,
+                description: data.description,
+                category: data.category,
+                estimated_budget: parseFloat(data.budget.replace(/[^\d.]/g, '')) || null,
+                deadline: data.deadline || null,
+                location: null,
+                priority: 'normal',
+                attachments: attachmentUrls,
+                // Dados do solicitante
+                requester_name: data.name || user?.full_name || '',
+                requester_email: data.email || user?.email || '',
+                requester_phone: data.phone || '',
+            }
+
+            // Chamar API
+            const response = await fetch('/api/projects/create-public', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(projectPayload)
+            })
+
+            if (!response.ok) {
+                throw new Error('Erro ao criar projeto')
+            }
+
+            const result = await response.json()
+            console.log('Projeto criado:', result)
+
+            setIsSuccess(true)
+
+            // Redirecionar após 2s
+            setTimeout(() => {
+                router.push(user ? '/dashboard' : '/')
+            }, 2000)
+
+        } catch (error) {
+            console.error('Erro ao submeter projeto:', error)
+            alert('Erro ao criar projeto. Tente novamente.')
+        } finally {
+            setIsSubmitting(false)
         }
-
-        console.log('Project Submission:', projectData)
-        setIsSuccess(true)
-        setIsSubmitting(false)
-
-        // Redirect after showing success message
-        setTimeout(() => {
-            router.push('/dashboard')
-        }, 2000)
     }
 
     if (loading) {
@@ -129,8 +153,8 @@ export default function CreateProjectPage() {
                         </h2>
                         <p className="text-muted-foreground">
                             {user
-                                ? "Seu projeto foi publicado com sucesso. Em breve um membro do Rota Business entrará em contato."
-                                : "Recebemos seu projeto! Criamos uma conta provisória para você acompanhar as propostas no seu email."
+                                ? "Seu projeto foi publicado! Os melhores profissionais da sua categoria receberão notificações e poderão enviar propostas."
+                                : "Projeto recebido! Profissionais qualificados serão notificados e enviarão propostas. Você receberá um email com link para acompanhar."
                             }
                         </p>
                         <Button

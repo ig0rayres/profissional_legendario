@@ -29,6 +29,7 @@ import Link from 'next/link'
 import { generateSlug } from '@/lib/profile/utils'
 import * as LucideIcons from 'lucide-react'
 import { ImageCropDialog } from '@/components/ui/image-crop-dialog'
+import { CategorySearch } from '@/components/categories/CategorySearch'
 
 interface ProfileFormData {
     full_name: string
@@ -96,6 +97,7 @@ export default function EditarPerfilPage() {
     }
     const [availablePistas, setAvailablePistas] = useState<Pista[]>([])
     const [selectedPistaId, setSelectedPistaId] = useState<string | null>(null)
+    const [userMaxCategories, setUserMaxCategories] = useState<number>(3) // Limite de categorias por plano
 
     // Password change
     const [showPasswordForm, setShowPasswordForm] = useState(false)
@@ -146,7 +148,7 @@ export default function EditarPerfilPage() {
         // Carregar perfil
         const { data: profile, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('*, plan_config!inner(max_categories)')
             .eq('id', user.id)
             .single()
 
@@ -165,6 +167,12 @@ export default function EditarPerfilPage() {
             setAvatarUrl(profile.avatar_url)
             setCoverUrl(profile.cover_url)
             setSelectedPistaId(profile.pista_id || null)
+
+            // Carregar limite de categorias do plano
+            const planConfig = Array.isArray(profile.plan_config)
+                ? profile.plan_config[0]
+                : profile.plan_config
+            setUserMaxCategories(planConfig?.max_categories || 3)
         }
 
         // Carregar categorias do usuário
@@ -780,61 +788,15 @@ export default function EditarPerfilPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {availableCategories.length === 0 ? (
-                                <div className="text-center py-6 text-muted-foreground">
-                                    <Tag className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                                    <p className="text-sm">Nenhuma categoria disponível</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="flex flex-wrap gap-2">
-                                        {availableCategories.map((category) => (
-                                            <button
-                                                key={category.id}
-                                                type="button"
-                                                onClick={() => toggleCategory(category.id)}
-                                                className={`
-                                                    flex items-center gap-2 px-3 py-2 rounded-lg border transition-all
-                                                    ${selectedCategories.includes(category.id)
-                                                        ? 'bg-primary/20 border-primary text-primary'
-                                                        : 'bg-muted/30 border-muted-foreground/20 text-muted-foreground hover:border-primary/50'
-                                                    }
-                                                `}
-                                            >
-                                                <span style={{ color: category.color }}>
-                                                    {getCategoryIcon(category.icon)}
-                                                </span>
-                                                <span className="text-sm font-medium">{category.name}</span>
-                                                {selectedCategories.includes(category.id) && (
-                                                    <X className="w-3 h-3" />
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {selectedCategories.length > 0 && (
-                                        <div className="pt-3 border-t border-white/10">
-                                            <p className="text-xs text-muted-foreground mb-2">
-                                                Selecionadas ({selectedCategories.length}):
-                                            </p>
-                                            <div className="flex flex-wrap gap-1">
-                                                {selectedCategories.map(catId => {
-                                                    const cat = availableCategories.find(c => c.id === catId)
-                                                    return cat ? (
-                                                        <Badge
-                                                            key={cat.id}
-                                                            variant="secondary"
-                                                            style={{ backgroundColor: cat.color + '20', color: cat.color }}
-                                                        >
-                                                            {cat.name}
-                                                        </Badge>
-                                                    ) : null
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            <CategorySearch
+                                selectedCategories={availableCategories.filter(cat =>
+                                    selectedCategories.includes(cat.id)
+                                )}
+                                onSelect={(category) => toggleCategory(category.id)}
+                                onRemove={(categoryId) => toggleCategory(categoryId)}
+                                maxCategories={userMaxCategories}
+                                placeholder="Busque suas áreas de atuação..."
+                            />
                         </CardContent>
                     </Card>
 
