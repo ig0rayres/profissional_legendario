@@ -188,7 +188,15 @@ export default function RegisterPage() {
                 data.pista,
                 selectedPlan,  // Usando estado local
                 data.rotaNumber
-            ) as unknown as { user: any; needsCheckout: boolean; planId: string }
+            )
+
+            // Verificar se o resultado é válido
+            if (!result || typeof result !== 'object') {
+                console.error('[Register] signUp retornou resultado inválido:', result)
+                setError('Erro ao criar conta. Tente novamente.')
+                setIsLoading(false)
+                return
+            }
 
             // Registrar indicação (se veio de link de indicação)
             try {
@@ -204,9 +212,10 @@ export default function RegisterPage() {
             }
 
             // Redirecionar baseado no tipo de plano
-            if (result.needsCheckout) {
+            const typedResult = result as { user: any; needsCheckout: boolean; planId: string }
+            if (typedResult.needsCheckout) {
                 // Plano pago - redirecionar para checkout
-                router.push(`/checkout?plan=${result.planId}`)
+                router.push(`/checkout?plan=${typedResult.planId}`)
             } else {
                 // Plano grátis - ir direto pro dashboard
                 router.push('/dashboard')
