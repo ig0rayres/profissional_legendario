@@ -66,32 +66,21 @@ export default function RegisterPage() {
         loadPistas()
     }, [])
 
-    // Carregar planos do banco de dados
+    // Carregar planos via API (bypass de RLS para usuários anônimos)
     useEffect(() => {
         async function loadPlans() {
             setLoadingPlans(true)
-            const { data, error } = await supabase
-                .from('plan_config')
-                .select('tier, name, monthly_price, benefits, display_order')
-                .eq('is_active', true)
-                .order('display_order')
-
-            if (data) {
-                // Mapear para o formato esperado pelo componente
-                const mappedPlans = data.map(plan => ({
-                    id: plan.tier,
-                    name: plan.name,
-                    monthly_price: plan.monthly_price,
-                    features: plan.benefits || [],
-                    display_order: plan.display_order
-                }))
-                setPlans(mappedPlans)
-            }
-
-            if (error) {
+            try {
+                const response = await fetch('/api/plans')
+                if (response.ok) {
+                    const data = await response.json()
+                    setPlans(data)
+                } else {
+                    console.error('Erro ao carregar planos:', response.statusText)
+                }
+            } catch (error) {
                 console.error('Erro ao carregar planos:', error)
             }
-
             setLoadingPlans(false)
         }
         loadPlans()
@@ -363,7 +352,7 @@ export default function RegisterPage() {
                             disabled={isLoading}
                         />
 
-                        {/* Campo ID (preenchido automaticamente pelo OCR) */}
+                        {/* Campo ID (preenchido APENAS pelo OCR da gorra - não editável) */}
                         <div className="mt-3">
                             <label htmlFor="rotaNumber" className="text-sm font-medium flex items-center gap-2">
                                 ID Rota Business
@@ -376,13 +365,13 @@ export default function RegisterPage() {
                                 {...register('rotaNumber')}
                                 error={errors.rotaNumber?.message}
                                 disabled={isLoading}
-                                readOnly={idVerified}
-                                className={idVerified ? 'border-green-500 bg-green-500/10 cursor-not-allowed' : ''}
+                                readOnly={true}
+                                className={`cursor-not-allowed ${idVerified ? 'border-green-500 bg-green-500/10' : 'bg-gray-100'}`}
                             />
                             <p className="text-xs text-muted-foreground mt-1">
                                 {idVerified
                                     ? '✅ ID verificado pela foto da gorra'
-                                    : 'Tire uma foto da aba da sua gorra para verificar seu ID'
+                                    : '📷 Tire uma foto da aba da sua gorra para preencher automaticamente'
                                 }
                             </p>
                         </div>
