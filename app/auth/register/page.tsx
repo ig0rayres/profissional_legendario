@@ -45,6 +45,7 @@ export default function RegisterPage() {
     const [loadingPistas, setLoadingPistas] = useState(true)
     const [plans, setPlans] = useState<Plan[]>([])
     const [loadingPlans, setLoadingPlans] = useState(true)
+    const [selectedPlan, setSelectedPlan] = useState<string>('')  // Estado local para plano
 
     // Carregar pistas do banco de dados
     useEffect(() => {
@@ -133,10 +134,7 @@ export default function RegisterPage() {
         }
     })
 
-    // Inicializar selectedPlan separadamente para evitar erro de tipo
-    useEffect(() => {
-        (setValue as any)('selectedPlan', '')
-    }, [setValue])
+
 
     // Observar mudanças e salvar no sessionStorage (exceto selectedPlan para evitar conflito de tipos)
     const formValues = watch()
@@ -186,17 +184,22 @@ export default function RegisterPage() {
                 return
             }
 
-            // Type assertion para acessar selectedPlan
-            const formData = data as any
+            // Validar plano selecionado
+            if (!selectedPlan) {
+                setError('Você deve selecionar um plano')
+                setIsLoading(false)
+                return
+            }
+
             const result = await signUp(
-                formData.email,
-                formData.password,
-                formData.fullName,
-                formData.cpf,
-                formData.pista,
-                formData.selectedPlan,
-                formData.rotaNumber
-            ) as any
+                data.email,
+                data.password,
+                data.fullName,
+                data.cpf,
+                data.pista,
+                selectedPlan,  // Usando estado local
+                data.rotaNumber
+            ) as { user: any; needsCheckout: boolean; planId: string }
 
             // Registrar indicação (se veio de link de indicação)
             try {
@@ -392,12 +395,12 @@ export default function RegisterPage() {
                         </label>
                         <PlanSelector
                             plans={plans}
-                            value={watch('selectedPlan')}
-                            onChange={(planId) => setValue('selectedPlan', planId)}
+                            value={selectedPlan}
+                            onChange={setSelectedPlan}
                             disabled={isLoading || loadingPlans}
                         />
-                        {errors.selectedPlan && (
-                            <p className="text-sm text-destructive">{errors.selectedPlan.message}</p>
+                        {!selectedPlan && (
+                            <p className="text-sm text-muted-foreground">Selecione um plano para continuar</p>
                         )}
                         {loadingPlans && (
                             <p className="text-sm text-muted-foreground text-center">Carregando planos...</p>
