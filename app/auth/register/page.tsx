@@ -135,7 +135,7 @@ export default function RegisterPage() {
     })
 
     // Observar mudanças e salvar no sessionStorage
-    const formValues = watch()
+    const formValues = watch() as RegisterFormData
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const dataToSave = {
