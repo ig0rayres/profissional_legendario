@@ -186,15 +186,16 @@ export default function RegisterPage() {
                 return
             }
 
-            // Criar usuário com plano selecionado
+            // Type assertion para acessar selectedPlan
+            const formData = data as any
             const result = await signUp(
-                data.email,
-                data.password,
-                data.fullName,
-                data.cpf,
-                data.pista,
-                data.selectedPlan,
-                data.rotaNumber
+                formData.email,
+                formData.password,
+                formData.fullName,
+                formData.cpf,
+                formData.pista,
+                formData.selectedPlan,
+                formData.rotaNumber
             )
 
             // Registrar indicação (se veio de link de indicação)
