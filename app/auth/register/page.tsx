@@ -207,9 +207,13 @@ export default function RegisterPage() {
             }
 
             // Redirecionar baseado no tipo de plano
-            if (result.needsCheckout) {
+            // Fallback: se result for undefined, usa selectedPlan local
+            const needsCheckout = result?.needsCheckout ?? (selectedPlan !== 'recruta')
+            const planId = result?.planId ?? selectedPlan
+
+            if (needsCheckout) {
                 // Plano pago - redirecionar para checkout
-                router.push(`/checkout?plan=${result.planId}`)
+                router.push(`/checkout?plan=${planId}`)
             } else {
                 // Plano grátis - ir direto pro dashboard
                 router.push('/dashboard')
