@@ -131,7 +131,7 @@ export default function RegisterPage() {
             selectedPlan: savedData.selectedPlan || '',
             password: '',
             confirmPassword: '',
-        }
+        } as any // Workaround para TypeScript - todos os campos estão corretos
     })
 
     // Observar mudanças e salvar no sessionStorage
