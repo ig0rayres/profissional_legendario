@@ -196,7 +196,7 @@ export default function RegisterPage() {
                 formData.pista,
                 formData.selectedPlan,
                 formData.rotaNumber
-            )
+            ) as any
 
             // Registrar indicação (se veio de link de indicação)
             try {
