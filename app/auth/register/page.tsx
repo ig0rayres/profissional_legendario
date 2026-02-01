@@ -135,7 +135,7 @@ export default function RegisterPage() {
 
     // Inicializar selectedPlan separadamente para evitar erro de tipo
     useEffect(() => {
-        setValue('selectedPlan', '')
+        (setValue as any)('selectedPlan', '')
     }, [setValue])
 
     // Observar mudanças e salvar no sessionStorage (exceto selectedPlan para evitar conflito de tipos)
