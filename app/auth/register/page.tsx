@@ -128,14 +128,14 @@ export default function RegisterPage() {
             cpf: savedData.cpf || '',
             pista: savedData.pista || '',
             rotaNumber: savedData.rotaNumber || '',
-            selectedPlan: savedData.selectedPlan || '',
+            selectedPlan: '', // Sempre vazio - usuário deve selecionar
             password: '',
             confirmPassword: '',
-        } as any // Workaround para TypeScript - todos os campos estão corretos
+        }
     })
 
-    // Observar mudanças e salvar no sessionStorage
-    const formValues = watch() as RegisterFormData
+    // Observar mudanças e salvar no sessionStorage (exceto selectedPlan para evitar conflito de tipos)
+    const formValues = watch()
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const dataToSave = {
@@ -144,11 +144,10 @@ export default function RegisterPage() {
                 cpf: formValues.cpf,
                 pista: formValues.pista,
                 rotaNumber: formValues.rotaNumber,
-                selectedPlan: formValues.selectedPlan,
             }
             sessionStorage.setItem('registerFormData', JSON.stringify(dataToSave))
         }
-    }, [formValues.fullName, formValues.email, formValues.cpf, formValues.pista, formValues.rotaNumber, formValues.selectedPlan])
+    }, [formValues.fullName, formValues.email, formValues.cpf, formValues.pista, formValues.rotaNumber])
 
     // Restaurar pista selecionada
     useEffect(() => {
