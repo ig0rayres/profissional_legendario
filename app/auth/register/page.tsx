@@ -128,11 +128,15 @@ export default function RegisterPage() {
             cpf: savedData.cpf || '',
             pista: savedData.pista || '',
             rotaNumber: savedData.rotaNumber || '',
-            selectedPlan: '', // Sempre vazio - usuário deve selecionar
             password: '',
             confirmPassword: '',
         }
     })
+
+    // Inicializar selectedPlan separadamente para evitar erro de tipo
+    useEffect(() => {
+        setValue('selectedPlan', '')
+    }, [setValue])
 
     // Observar mudanças e salvar no sessionStorage (exceto selectedPlan para evitar conflito de tipos)
     const formValues = watch()
