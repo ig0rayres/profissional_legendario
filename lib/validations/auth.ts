@@ -75,6 +75,9 @@ export const registerSchema = z.object({
     rotaNumber: z
         .string()
         .min(1, 'ID Rota Business é obrigatório'),
+    selectedPlan: z
+        .string()
+        .min(1, 'Você deve selecionar um plano'),
 }).refine((data) => data.password === data.confirmPassword, {
     message: 'As senhas não coincidem',
     path: ['confirmPassword'],

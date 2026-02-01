@@ -28,9 +28,27 @@
 
 ---
 
-## 🚨 PONTO DE RETOMADA - 31/01/2026
+## 🚨 PONTO DE RETOMADA - 01/02/2026
 
-### **ÚLTIMA SESSÃO: 31/01/2026 - 14:35 às 15:00**
+### **ÚLTIMA SESSÃO: 01/02/2026 - ~13:00**
+
+---
+
+### ⚠️ ALTERAÇÕES TEMPORÁRIAS - REVERTER ANTES DE PRODUÇÃO
+
+> **LEIA:** `docs/sessions/REVERTER_ROTA_UNICO.md`
+
+**O que foi desabilitado:**
+1. **Validação de rota_number único** no frontend (`app/auth/register/page.tsx`)
+2. Código comentado para permitir testes de cadastro
+
+**Commit:** `72f8016d`
+
+**Para reverter:** Seguir checklist em `docs/sessions/REVERTER_ROTA_UNICO.md`
+
+---
+
+### **SESSÃO ANTERIOR: 31/01/2026 - 14:35 às 15:00**
 
 ### **O QUE FOI FEITO HOJE:**
 

@@ -18,7 +18,7 @@ interface AuthContextType {
     user: User | null
     loading: boolean
     signIn: (email: string, password: string) => Promise<{ id: string; email: string | undefined; role: string; full_name: string } | null>
-    signUp: (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => Promise<void>
+    signUp: (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => Promise<{ user: any; needsCheckout: boolean; planId: string }>
     signOut: () => Promise<void>
 }
 
@@ -163,7 +163,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const signUp = async (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => {
-        const { error } = await supabase.auth.signUp({
+        // 1. Criar usuário no Auth
+        const { data: authData, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -178,6 +179,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         })
         if (error) throw new Error(error.message)
+
+        // 2. Se usuário foi criado com sucesso e plano é Recruta (gratuito)
+        if (authData.user && plan === 'recruta') {
+            try {
+                // Criar subscription grátis automaticamente
+                const { error: subError } = await supabase
+                    .from('subscriptions')
+                    .insert({
+                        user_id: authData.user.id,
+                        plan_id: plan,
+                        status: 'active',
+                        started_at: new Date().toISOString()
+                    })
+
+                if (subError) {
+                    console.error('[SignUp] Erro ao criar subscription grátis:', subError)
+                    // Não falha o cadastro se subscription falhar
+                }
+            } catch (err) {
+                console.error('[SignUp] Exceção ao criar subscription:', err)
+            }
+        }
+
+        // 3. Retornar informações para redirecionamento
+        return {
+            user: authData.user,
+            needsCheckout: plan !== 'recruta',
+            planId: plan
+        }
     }
 
     const signOut = async () => {

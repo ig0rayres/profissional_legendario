@@ -206,17 +206,18 @@ export default function RegisterPage() {
                 sessionStorage.removeItem('registerFormData')
             }
 
-            // Redirecionar baseado no tipo de plano
-            // Fallback: se result for undefined, usa selectedPlan local
+            // NOVO FLUXO:
+            // - Plano PAGO → Checkout direto (valida email depois)
+            // - Plano GRÁTIS → Página de verificação de email
             const needsCheckout = result?.needsCheckout ?? (selectedPlan !== 'recruta')
             const planId = result?.planId ?? selectedPlan
 
             if (needsCheckout) {
-                // Plano pago - redirecionar para checkout
+                // Plano pago - vai DIRETO pro checkout (sem validar email)
                 router.push(`/checkout?plan=${planId}`)
             } else {
-                // Plano grátis - ir direto pro dashboard
-                router.push('/dashboard')
+                // Plano grátis - precisa validar email primeiro
+                router.push('/auth/verify-email')
             }
             router.refresh()
         } catch (err: any) {
