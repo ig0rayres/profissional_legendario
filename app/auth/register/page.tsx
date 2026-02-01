@@ -155,10 +155,12 @@ export default function RegisterPage() {
     }, [])
 
     const onSubmit = async (data: RegisterFormData) => {
+        console.log('🚀 [Register] onSubmit CHAMADO!', { data, selectedPlan })
         setIsLoading(true)
         setError(null)
 
         try {
+            console.log('🔄 [Register] Iniciando processo de cadastro...')
             // ⚠️ MODO TESTE: Verificação de duplicatas DESABILITADA temporariamente
             // TODO: Reativar após testes (descomentar o código abaixo)
             /*
@@ -211,9 +213,19 @@ export default function RegisterPage() {
             // - Plano GRÁTIS → Página de verificação de email
             const needsCheckout = result?.needsCheckout ?? (selectedPlan !== 'recruta')
             const planId = result?.planId ?? selectedPlan
+            const userId = result?.user?.id
 
-            if (needsCheckout) {
+            if (needsCheckout && userId) {
                 // Plano pago - vai DIRETO pro checkout (sem validar email)
+                // Passa userId e email para criar sessão mesmo sem auth completa
+                const checkoutParams = new URLSearchParams({
+                    plan: planId,
+                    uid: userId,
+                    email: data.email
+                })
+                router.push(`/checkout?${checkoutParams.toString()}`)
+            } else if (needsCheckout) {
+                // Fallback se não tiver userId (não deveria acontecer)
                 router.push(`/checkout?plan=${planId}`)
             } else {
                 // Plano grátis - precisa validar email primeiro
@@ -221,10 +233,15 @@ export default function RegisterPage() {
             }
             router.refresh()
         } catch (err: any) {
-            // Se o erro não for de duplicação, mostrar erro genérico
-            if (err.message && !err.message.includes('duplicate key')) {
-                setError(err.message || 'Ocorreu um erro ao criar sua conta. Tente novamente.')
+            console.error('[Register] Erro no cadastro:', err)
+            // Traduzir mensagens de erro comuns
+            let errorMessage = err.message || 'Ocorreu um erro ao criar sua conta. Tente novamente.'
+            if (err.message?.includes('duplicate key') || err.message?.includes('already registered')) {
+                errorMessage = 'Este email já está cadastrado. Use outro email ou faça login.'
+            } else if (err.message?.includes('Password')) {
+                errorMessage = 'A senha deve ter pelo menos 6 caracteres.'
             }
+            setError(errorMessage)
         } finally {
             setIsLoading(false)
         }

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(request: NextRequest) {
     try {
-        const { planId } = await request.json()
+        const { planId, userId: bodyUserId, email: bodyEmail } = await request.json()
 
         if (!planId) {
             return NextResponse.json(
@@ -21,16 +21,22 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Verificar autenticação
+        // Verificar autenticação OU usar userId/email do body (para novos registros)
         const supabase = await createClient()
         const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-        if (authError || !user) {
+        // Usar userId do auth ou do body (para usuários recém-registrados)
+        const userId = user?.id || bodyUserId
+        const userEmail = user?.email || bodyEmail
+
+        if (!userId || !userEmail) {
             return NextResponse.json(
-                { error: 'Usuário não autenticado' },
+                { error: 'Usuário não identificado. Faça login ou registre-se novamente.' },
                 { status: 401 }
             )
         }
+
+        console.log('[Stripe] Creating checkout for user:', userId, 'email:', userEmail)
 
         // Buscar plano no banco - tentar por ID primeiro, depois por tier
         let plan = null
@@ -77,7 +83,7 @@ export async function POST(request: NextRequest) {
         const { data: profile } = await supabase
             .from('profiles')
             .select('full_name, email')
-            .eq('id', user.id)
+            .eq('id', userId)
             .single()
 
         const stripe = getStripe()
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
         const { data: subscription } = await supabase
             .from('subscriptions')
             .select('stripe_customer_id')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .maybeSingle()
 
         let customerId = subscription?.stripe_customer_id
@@ -94,10 +100,10 @@ export async function POST(request: NextRequest) {
         // Se não tem customer, criar um
         if (!customerId) {
             const customer = await stripe.customers.create({
-                email: user.email,
-                name: profile?.full_name || user.email,
+                email: userEmail,
+                name: profile?.full_name || userEmail,
                 metadata: {
-                    supabase_user_id: user.id
+                    supabase_user_id: userId
                 }
             })
             customerId = customer.id
@@ -126,13 +132,13 @@ export async function POST(request: NextRequest) {
             cancel_url: `${baseUrl}/checkout/cancel`,
             subscription_data: {
                 metadata: {
-                    supabase_user_id: user.id,
+                    supabase_user_id: userId,
                     plan_id: plan.id,  // Usar o UUID do plano, não o planId que pode ser tier
                     plan_tier: plan.tier
                 }
             },
             metadata: {
-                supabase_user_id: user.id,
+                supabase_user_id: userId,
                 plan_id: plan.id  // Usar o UUID do plano
             },
             allow_promotion_codes: true,
@@ -140,7 +146,7 @@ export async function POST(request: NextRequest) {
             locale: 'pt-BR',
         })
 
-        console.log('[Stripe] Checkout session created:', session.id, 'for user:', user.id, 'plan:', plan.id, 'tier:', plan.tier)
+        console.log('[Stripe] Checkout session created:', session.id, 'for user:', userId, 'plan:', plan.id, 'tier:', plan.tier)
 
         return NextResponse.json({
             sessionId: session.id,

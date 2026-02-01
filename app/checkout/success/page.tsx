@@ -13,9 +13,43 @@ function CheckoutSuccessContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const sessionId = searchParams.get('session_id')
 
     useEffect(() => {
+        // Verificar e ativar subscription via API
+        async function activateSubscription() {
+            if (!sessionId) {
+                setLoading(false)
+                return
+            }
+
+            try {
+                console.log('[Checkout Success] Ativando subscription para session:', sessionId)
+
+                const response = await fetch('/api/stripe/verify-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                })
+
+                const data = await response.json()
+
+                if (!response.ok) {
+                    console.error('[Checkout Success] Erro ao ativar:', data.error)
+                    // Não mostrar erro ao usuário, ainda assim celebrar
+                } else {
+                    console.log('[Checkout Success] Subscription ativada:', data)
+                }
+            } catch (err) {
+                console.error('[Checkout Success] Erro:', err)
+            }
+
+            setLoading(false)
+        }
+
+        activateSubscription()
+
         // Disparar confetti ao carregar
         const duration = 3 * 1000
         const animationEnd = Date.now() + duration
@@ -49,18 +83,15 @@ function CheckoutSuccessContent() {
             })
         }, 250)
 
-        // Simular carregamento
-        setTimeout(() => setLoading(false), 1500)
-
         return () => clearInterval(interval)
-    }, [])
+    }, [sessionId])
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <div className="text-center space-y-4">
                     <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-                    <p className="text-muted-foreground">Processando seu pagamento...</p>
+                    <p className="text-muted-foreground">Ativando sua assinatura...</p>
                 </div>
             </div>
         )

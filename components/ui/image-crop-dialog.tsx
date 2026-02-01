@@ -131,32 +131,32 @@ export function ImageCropDialog({
         const cropAreaX = (containerRect.width - cropSize) / 2
         const cropAreaY = (300 - cropHeight) / 2 // 300 is container height
 
-        // Calculate which part of the image is in the crop area
-        const imageX = position.x
-        const imageY = position.y
-        const scaledWidth = image.naturalWidth * scale
-        const scaledHeight = image.naturalHeight * scale
+        // Para o losango (aspectRatio === 1), precisamos de uma área maior para capturar as pontas
+        // O losango visual rotacionado 45° ocupa sqrt(2) vezes mais espaço
+        const zoomFactor = aspectRatio === 1 ? 1.42 : 1
 
-        // Source coordinates in natural image pixels
-        // AJUSTE PARA LOSANGO: Multiplicar por 2 (margem segura) para garantir que pegamos as pontas do losango
-        // O losango visual ocupa mais espaço que o quadrado axis-aligned.
-        // Se pegarmos apenas o quadrado, cortamos as pontas (parece zoom).
-        const zoomFactor = aspectRatio === 1 ? 1.7 : 1 // 1.7 garante que o losango caiba com folga
+        // Calcular que parte da imagem está na área de crop
+        // position.x e position.y são as coordenadas CSS da imagem no container
+        // A área de crop está centrada no container
 
-        const originalSrcWidth = cropSize / scale
-        const originalSrcHeight = cropHeight / scale
+        // Tamanho da área de crop em pixels da imagem original
+        const srcWidth = (cropSize / scale) * zoomFactor
+        const srcHeight = (cropHeight / scale) * zoomFactor
 
-        const srcWidth = originalSrcWidth * zoomFactor
-        const srcHeight = originalSrcHeight * zoomFactor
+        // Offset extra para centralizar com o zoomFactor
+        const offsetX = ((cropSize / scale) * (zoomFactor - 1)) / 2
+        const offsetY = ((cropHeight / scale) * (zoomFactor - 1)) / 2
 
-        // Recalcular X/Y para centralizar o novo quadrado maior
-        // Centro original
-        const centerX = ((cropAreaX - imageX) / scale) + (originalSrcWidth / 2)
-        const centerY = ((cropAreaY - imageY) / scale) + (originalSrcHeight / 2)
+        // Posição inicial no source (imagem original)
+        // cropAreaX - position.x = distância do canto esquerdo da imagem até o crop
+        const srcX = (cropAreaX - position.x) / scale - offsetX
+        const srcY = (cropAreaY - position.y) / scale - offsetY
 
-        // Novo X/Y baseado no centro
-        const srcX = (centerX - srcWidth / 2) * (image.naturalWidth / image.naturalWidth) // Fator 1 mantido por compatibilidade
-        const srcY = (centerY - srcHeight / 2) * (image.naturalHeight / image.naturalHeight)
+        console.log('[Crop Debug]', {
+            position, scale, cropAreaX, cropAreaY,
+            srcX, srcY, srcWidth, srcHeight,
+            imgNatural: { w: image.naturalWidth, h: image.naturalHeight }
+        })
 
         ctx.drawImage(
             image,

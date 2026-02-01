@@ -55,12 +55,20 @@ export async function GET() {
         // 5. Subscription & Plano
         const { data: subscription } = await supabase
             .from('subscriptions')
-            .select(`
-                *,
-                plan_tiers(*)
-            `)
+            .select('*')
             .eq('user_id', user.id)
             .single()
+
+        // Buscar dados do plano separadamente usando o tier
+        let planConfig = null
+        if (subscription?.plan_id) {
+            const { data: plan } = await supabase
+                .from('plan_config')
+                .select('*')
+                .eq('tier', subscription.plan_id)
+                .single()
+            planConfig = plan
+        }
 
         // 6. Estatísticas de Confraria
         const { data: confraternityStats } = await supabase
@@ -128,7 +136,8 @@ export async function GET() {
         const profileData = {
             profile,
             gamification,
-            subscription,
+            subscription: subscription ? { ...subscription, plan: planConfig } : null,
+            planConfig,
             allMedals: allMedals || [],
             earnedMedals: userMedals || [],
             allProezas: allProezas || [],

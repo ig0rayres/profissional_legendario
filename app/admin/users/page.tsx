@@ -204,18 +204,28 @@ export default function UsersPage() {
     async function handleVerification(userId: string, status: 'verified' | 'rejected') {
         setProcessing(userId)
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ verification_status: status })
-                .eq('id', userId)
+            console.log('[Verification] Atualizando usuário via API:', userId, 'para:', status)
 
-            if (error) throw error
+            // Usar API Route com service role para bypassar RLS
+            const response = await fetch('/api/admin/verify-user', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, status })
+            })
+
+            const data = await response.json()
+            console.log('[Verification] Resposta API:', data)
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro ao atualizar status')
+            }
 
             setUsers(users.map(u =>
                 u.id === userId ? { ...u, verification_status: status } : u
             ))
-        } catch (error) {
-            alert('Erro ao atualizar status')
+        } catch (error: any) {
+            console.error('[Verification] ERRO:', error)
+            alert('Erro ao atualizar status: ' + (error?.message || error))
         } finally {
             setProcessing(null)
         }
@@ -288,9 +298,15 @@ export default function UsersPage() {
     }
 
     async function handleLoginAs(userId: string, userEmail: string) {
-        if (!confirm(`Logar como ${userEmail}?\n\nVocê será deslogado como admin e logado como este usuário.\nA senha do usuário NÃO será alterada.`)) {
-            return
-        }
+        console.log('🔵 handleLoginAs CHAMADO:', { userId, userEmail })
+
+        // TEMPORÁRIO: Removido confirm para debug
+        // if (!confirm(`Logar como ${userEmail}?\n\nVocê será deslogado como admin e logado como este usuário.\nA senha do usuário NÃO será alterada.`)) {
+        //     console.log('🔵 Usuário cancelou o confirm')
+        //     return
+        // }
+
+        console.log('🔵 Iniciando processo de impersonate...')
 
         setProcessing(userId)
         try {
@@ -538,10 +554,15 @@ export default function UsersPage() {
                                                     Editar
                                                 </Button>
                                                 <Button
+                                                    type="button"
                                                     size="sm"
                                                     variant="outline"
                                                     className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                    onClick={() => handleLoginAs(user.id, user.email)}
+                                                    onClick={(e) => {
+                                                        e.preventDefault()
+                                                        e.stopPropagation()
+                                                        handleLoginAs(user.id, user.email)
+                                                    }}
                                                     disabled={processing === user.id}
                                                     title={`Logar como ${user.full_name}`}
                                                 >

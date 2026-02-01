@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useCallback } from 'react'
+import Cropper from 'react-easy-crop'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { ZoomIn, ZoomOut, RotateCcw, Check, X, Move, Loader2 } from 'lucide-react'
+import { ZoomIn, ZoomOut, RotateCcw, Check, X, Move, Loader2, Wand2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface ImageCropDialogProps {
     isOpen: boolean
@@ -14,131 +16,144 @@ interface ImageCropDialogProps {
     aspectRatio?: number
 }
 
+interface CroppedAreaPixels {
+    x: number
+    y: number
+    width: number
+    height: number
+}
+
 export function ImageCropDialog({
     isOpen,
     onClose,
     imageUrl,
     onCropComplete,
 }: ImageCropDialogProps) {
-    const [scale, setScale] = useState(1)
-    const [position, setPosition] = useState({ x: 0, y: 0 })
-    const [isDragging, setIsDragging] = useState(false)
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-    const [localImageUrl, setLocalImageUrl] = useState<string>('')
-    const [loading, setLoading] = useState(true)
-    const imgRef = useRef<HTMLImageElement>(null)
+    const [crop, setCrop] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<CroppedAreaPixels | null>(null)
+    const [loading, setLoading] = useState(false)
+    const [removingBg, setRemovingBg] = useState(false)
+    const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null)
 
-    const CROP_SIZE = 250
+    // Imagem atual (original ou processada)
+    const currentImageUrl = processedImageUrl || imageUrl
 
-    // Carregar imagem como base64 para evitar CORS
-    useEffect(() => {
-        if (isOpen && imageUrl) {
-            setLoading(true)
-            setScale(1)
-            setPosition({ x: 0, y: 0 })
+    const onCropCompleteCallback = useCallback(
+        (_croppedArea: any, croppedAreaPixels: CroppedAreaPixels) => {
+            setCroppedAreaPixels(croppedAreaPixels)
+        },
+        []
+    )
 
-            // Se já é base64 ou blob, usar direto
-            if (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')) {
-                setLocalImageUrl(imageUrl)
-                setLoading(false)
-                return
-            }
-
-            // Fetch imagem e converter para base64
-            fetch(imageUrl)
-                .then(res => res.blob())
-                .then(blob => {
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                        setLocalImageUrl(reader.result as string)
-                        setLoading(false)
-                    }
-                    reader.readAsDataURL(blob)
-                })
-                .catch(err => {
-                    console.error('Erro ao carregar imagem:', err)
-                    // Fallback: usar URL direta
-                    setLocalImageUrl(imageUrl)
-                    setLoading(false)
-                })
-        }
-    }, [isOpen, imageUrl])
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        e.preventDefault()
-        setIsDragging(true)
-        setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y })
+    const resetCrop = () => {
+        setCrop({ x: 0, y: 0 })
+        setZoom(1)
+        setProcessedImageUrl(null)
     }
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isDragging) return
-        setPosition({
-            x: e.clientX - dragStart.x,
-            y: e.clientY - dragStart.y
+    // Função para criar imagem cropada
+    const createCroppedImage = async (): Promise<string | null> => {
+        if (!croppedAreaPixels) return null
+
+        const image = new Image()
+        image.crossOrigin = 'anonymous'
+
+        return new Promise((resolve) => {
+            image.onload = () => {
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                if (!ctx) {
+                    resolve(null)
+                    return
+                }
+
+                // Output size fixo
+                const outputSize = 400
+                canvas.width = outputSize
+                canvas.height = outputSize
+
+                ctx.drawImage(
+                    image,
+                    croppedAreaPixels.x,
+                    croppedAreaPixels.y,
+                    croppedAreaPixels.width,
+                    croppedAreaPixels.height,
+                    0,
+                    0,
+                    outputSize,
+                    outputSize
+                )
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        resolve(URL.createObjectURL(blob))
+                    } else {
+                        resolve(null)
+                    }
+                }, 'image/png', 1)
+            }
+
+            image.onerror = () => {
+                resolve(null)
+            }
+
+            image.src = currentImageUrl
         })
     }
 
-    const handleMouseUp = () => {
-        setIsDragging(false)
-    }
-
-    const handleConfirm = () => {
-        if (!imgRef.current) {
-            onClose()
-            return
-        }
-
+    const handleConfirm = async () => {
+        setLoading(true)
         try {
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-            if (!ctx) {
-                onClose()
-                return
+            const croppedUrl = await createCroppedImage()
+            if (croppedUrl) {
+                onCropComplete(croppedUrl)
             }
-
-            const img = imgRef.current
-            const outputSize = 400
-            canvas.width = outputSize
-            canvas.height = outputSize
-
-            // Calcular posição da imagem no canvas
-            const scaleRatio = img.naturalWidth / img.width
-            const cropSizeNatural = (CROP_SIZE / scale) * scaleRatio
-
-            // Centro do crop na imagem natural
-            const centerX = (img.naturalWidth / 2) - (position.x * scaleRatio / scale)
-            const centerY = (img.naturalHeight / 2) - (position.y * scaleRatio / scale)
-
-            const sourceX = centerX - cropSizeNatural / 2
-            const sourceY = centerY - cropSizeNatural / 2
-
-            ctx.drawImage(
-                img,
-                Math.max(0, sourceX),
-                Math.max(0, sourceY),
-                cropSizeNatural,
-                cropSizeNatural,
-                0,
-                0,
-                outputSize,
-                outputSize
-            )
-
-            canvas.toBlob((blob) => {
-                if (blob) {
-                    onCropComplete(URL.createObjectURL(blob))
-                }
-                onClose()
-            }, 'image/png', 1)
+            onClose()
         } catch (err) {
             console.error('Erro ao cortar:', err)
-            onClose()
+            toast.error('Erro ao cortar imagem')
+        } finally {
+            setLoading(false)
         }
     }
 
-    const resetCrop = () => {
-        setScale(1)
-        setPosition({ x: 0, y: 0 })
+    // Remover fundo com IA
+    const handleRemoveBackground = async () => {
+        setRemovingBg(true)
+        const bgToast = toast.loading('🤖 Removendo fundo com IA...')
+
+        try {
+            // Buscar imagem atual
+            const response = await fetch(currentImageUrl)
+            const blob = await response.blob()
+            const file = new File([blob], 'image.png', { type: 'image/png' })
+
+            const formData = new FormData()
+            formData.append('image', file)
+
+            const apiResponse = await fetch('/api/remove-bg', {
+                method: 'POST',
+                body: formData
+            })
+
+            const data = await apiResponse.json()
+
+            if (data.success && data.imageBase64) {
+                setProcessedImageUrl(data.imageBase64)
+                toast.dismiss(bgToast)
+                toast.success('Fundo removido!')
+            } else {
+                toast.dismiss(bgToast)
+                toast.error(data.error || 'Erro ao remover fundo')
+            }
+        } catch (err) {
+            console.error('Erro ao remover fundo:', err)
+            toast.dismiss(bgToast)
+            toast.error('Erro ao remover fundo')
+        } finally {
+            setRemovingBg(false)
+        }
     }
 
     return (
@@ -156,74 +171,78 @@ export function ImageCropDialog({
                         Arraste para reposicionar • Use o slider para zoom
                     </p>
 
-                    {/* Container de Crop */}
-                    <div
-                        className="relative mx-auto bg-zinc-800 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing"
-                        style={{ width: CROP_SIZE, height: CROP_SIZE }}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                    >
-                        {loading ? (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 animate-spin text-white/50" />
-                            </div>
-                        ) : (
-                            <img
-                                ref={imgRef}
-                                src={localImageUrl}
-                                alt="Crop"
-                                draggable={false}
-                                style={{
-                                    position: 'absolute',
-                                    left: '50%',
-                                    top: '50%',
-                                    transform: `translate(-50%, -50%) translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                                    maxWidth: 'none',
-                                    maxHeight: CROP_SIZE,
-                                    pointerEvents: 'none',
-                                    userSelect: 'none'
-                                }}
-                            />
-                        )}
-
-                        {/* Frame overlay */}
-                        <div className="absolute inset-0 pointer-events-none border-2 border-white/40 rounded-lg">
-                            <div className="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-white" />
-                            <div className="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-white" />
-                            <div className="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-white" />
-                            <div className="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-white" />
-                        </div>
+                    {/* Container de Crop com react-easy-crop */}
+                    <div className="relative mx-auto bg-zinc-800 rounded-lg overflow-hidden" style={{ width: 300, height: 300 }}>
+                        <Cropper
+                            image={currentImageUrl}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={1}
+                            onCropChange={setCrop}
+                            onZoomChange={setZoom}
+                            onCropComplete={onCropCompleteCallback}
+                            cropShape="rect"
+                            showGrid={false}
+                            restrictPosition={false}
+                            style={{
+                                containerStyle: {
+                                    borderRadius: '8px'
+                                }
+                            }}
+                        />
                     </div>
 
-                    {/* Zoom */}
+                    {/* Zoom Slider */}
                     <div className="flex items-center gap-4 px-2">
                         <ZoomOut className="w-4 h-4 text-muted-foreground" />
                         <Slider
-                            value={[scale * 100]}
-                            onValueChange={(value) => setScale(value[0] / 100)}
+                            value={[zoom * 100]}
+                            onValueChange={(value) => setZoom(value[0] / 100)}
                             min={50}
-                            max={250}
+                            max={300}
                             step={10}
                             className="flex-1"
                         />
                         <ZoomIn className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground w-12">{Math.round(scale * 100)}%</span>
+                        <span className="text-sm text-muted-foreground w-12">{Math.round(zoom * 100)}%</span>
                     </div>
+
+                    {/* Botão Remover Fundo */}
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled={removingBg || loading}
+                        onClick={handleRemoveBackground}
+                    >
+                        {removingBg ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Processando...
+                            </>
+                        ) : (
+                            <>
+                                <Wand2 className="w-4 h-4 mr-2" />
+                                Remover Fundo (IA)
+                            </>
+                        )}
+                    </Button>
                 </div>
 
                 <DialogFooter className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={resetCrop}>
+                    <Button variant="outline" size="sm" onClick={resetCrop} disabled={loading}>
                         <RotateCcw className="w-4 h-4 mr-1" />
                         Resetar
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={onClose}>
+                    <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>
                         <X className="w-4 h-4 mr-1" />
                         Cancelar
                     </Button>
-                    <Button size="sm" onClick={handleConfirm} disabled={loading}>
-                        <Check className="w-4 h-4 mr-1" />
+                    <Button size="sm" onClick={handleConfirm} disabled={loading || removingBg}>
+                        {loading ? (
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        ) : (
+                            <Check className="w-4 h-4 mr-1" />
+                        )}
                         Aplicar
                     </Button>
                 </DialogFooter>
