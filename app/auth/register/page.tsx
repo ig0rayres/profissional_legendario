@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { GorraOCR } from '@/components/auth/gorra-ocr'
+import { PlanSelector } from '@/components/auth/PlanSelector'
 
 // Tipo para pistas do banco de dados
 interface Pista {
@@ -21,6 +22,14 @@ interface Pista {
     name: string
     city: string
     state: string
+}
+
+interface Plan {
+    id: string
+    name: string
+    monthly_price: number
+    features: string[]
+    display_order: number
 }
 
 export default function RegisterPage() {
@@ -34,6 +43,8 @@ export default function RegisterPage() {
     const [idVerified, setIdVerified] = useState(false)
     const [pistas, setPistas] = useState<Pista[]>([])
     const [loadingPistas, setLoadingPistas] = useState(true)
+    const [plans, setPlans] = useState<Plan[]>([])
+    const [loadingPlans, setLoadingPlans] = useState(true)
 
     // Carregar pistas do banco de dados
     useEffect(() => {
@@ -52,6 +63,37 @@ export default function RegisterPage() {
             setLoadingPistas(false)
         }
         loadPistas()
+    }, [])
+
+    // Carregar planos do banco de dados
+    useEffect(() => {
+        async function loadPlans() {
+            setLoadingPlans(true)
+            const { data, error } = await supabase
+                .from('plan_config')
+                .select('tier, name, monthly_price, benefits, display_order')
+                .eq('is_active', true)
+                .order('display_order')
+
+            if (data) {
+                // Mapear para o formato esperado pelo componente
+                const mappedPlans = data.map(plan => ({
+                    id: plan.tier,
+                    name: plan.name,
+                    monthly_price: plan.monthly_price,
+                    features: plan.benefits || [],
+                    display_order: plan.display_order
+                }))
+                setPlans(mappedPlans)
+            }
+
+            if (error) {
+                console.error('Erro ao carregar planos:', error)
+            }
+
+            setLoadingPlans(false)
+        }
+        loadPlans()
     }, [])
 
     // Restaurar dados do formulário do sessionStorage
@@ -86,6 +128,7 @@ export default function RegisterPage() {
             cpf: savedData.cpf || '',
             pista: savedData.pista || '',
             rotaNumber: savedData.rotaNumber || '',
+            selectedPlan: savedData.selectedPlan || '',
         }
     })
 
@@ -99,10 +142,11 @@ export default function RegisterPage() {
                 cpf: formValues.cpf,
                 pista: formValues.pista,
                 rotaNumber: formValues.rotaNumber,
+                selectedPlan: formValues.selectedPlan,
             }
             sessionStorage.setItem('registerFormData', JSON.stringify(dataToSave))
         }
-    }, [formValues.fullName, formValues.email, formValues.cpf, formValues.pista, formValues.rotaNumber])
+    }, [formValues.fullName, formValues.email, formValues.cpf, formValues.pista, formValues.rotaNumber, formValues.selectedPlan])
 
     // Restaurar pista selecionada
     useEffect(() => {
@@ -137,8 +181,16 @@ export default function RegisterPage() {
                 return
             }
 
-            // Pass rotaNumber (now required)
-            await signUp(data.email, data.password, data.fullName, data.cpf, data.pista, 'recruta', data.rotaNumber)
+            // Criar usuário com plano selecionado
+            const result = await signUp(
+                data.email,
+                data.password,
+                data.fullName,
+                data.cpf,
+                data.pista,
+                data.selectedPlan,
+                data.rotaNumber
+            )
 
             // Registrar indicação (se veio de link de indicação)
             try {
@@ -153,7 +205,14 @@ export default function RegisterPage() {
                 sessionStorage.removeItem('registerFormData')
             }
 
-            router.push('/dashboard')
+            // Redirecionar baseado no tipo de plano
+            if (result.needsCheckout) {
+                // Plano pago - redirecionar para checkout
+                router.push(`/checkout?plan=${result.planId}`)
+            } else {
+                // Plano grátis - ir direto pro dashboard
+                router.push('/dashboard')
+            }
             router.refresh()
         } catch (err: any) {
             // Se o erro não for de duplicação, mostrar erro genérico
@@ -318,6 +377,25 @@ export default function RegisterPage() {
                                 }
                             </p>
                         </div>
+                    </div>
+
+                    {/* Seleção de Plano */}
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium">
+                            Escolha seu Plano *
+                        </label>
+                        <PlanSelector
+                            plans={plans}
+                            value={watch('selectedPlan')}
+                            onChange={(planId) => setValue('selectedPlan', planId)}
+                            disabled={isLoading || loadingPlans}
+                        />
+                        {errors.selectedPlan && (
+                            <p className="text-sm text-destructive">{errors.selectedPlan.message}</p>
+                        )}
+                        {loadingPlans && (
+                            <p className="text-sm text-muted-foreground text-center">Carregando planos...</p>
+                        )}
                     </div>
 
                     <div className="space-y-2">
