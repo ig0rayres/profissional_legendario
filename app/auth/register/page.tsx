@@ -188,7 +188,7 @@ export default function RegisterPage() {
                 data.pista,
                 selectedPlan,  // Usando estado local
                 data.rotaNumber
-            )
+            ) as { user: any; needsCheckout: boolean; planId: string }
 
             // Registrar indicação (se veio de link de indicação)
             try {
