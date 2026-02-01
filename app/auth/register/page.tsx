@@ -159,7 +159,9 @@ export default function RegisterPage() {
         setError(null)
 
         try {
-            // Verificar se o rota_number já existe
+            // ⚠️ MODO TESTE: Verificação de duplicatas DESABILITADA temporariamente
+            // TODO: Reativar após testes (descomentar o código abaixo)
+            /*
             const supabase = await import('@/lib/supabase/client').then(m => m.createClient())
             const { data: existingUser, error: checkError } = await supabase
                 .from('profiles')
@@ -172,6 +174,7 @@ export default function RegisterPage() {
                 setIsLoading(false)
                 return
             }
+            */
 
             // Validar plano selecionado
             if (!selectedPlan) {
