@@ -129,6 +129,8 @@ export default function RegisterPage() {
             pista: savedData.pista || '',
             rotaNumber: savedData.rotaNumber || '',
             selectedPlan: savedData.selectedPlan || '',
+            password: '',
+            confirmPassword: '',
         }
     })
 
