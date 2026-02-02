@@ -166,10 +166,21 @@ export default function RotaValenteAdminPage() {
         setLoadingRanking(true)
 
         try {
-            // Buscar gamification sem joins complexos
+            // Buscar profiles separadamente (EXCLUINDO CONTAS DO SISTEMA)
+            const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url, is_system_account')
+                .eq('is_system_account', false)  // ✅ Excluir admin e sistema
+
+            const systemAccountIds = new Set(
+                profilesData?.map(p => p.id) || []
+            )
+
+            // Buscar gamification APENAS de usuários reais (não sistema)
             const { data: gamifData, error } = await supabase
                 .from('user_gamification')
                 .select('id, user_id, total_points, monthly_vigor, current_rank_id')
+                .in('user_id', Array.from(systemAccountIds))  // ✅ Filtrar
                 .order('total_points', { ascending: false })
                 .limit(100)
 
