@@ -97,7 +97,7 @@ export default function RotaDoValenteDashboardPage() {
             supabase.from('proezas').select('*').eq('is_active', true).order('display_order'),
             supabase.from('user_proezas').select('*, proezas(*)').eq('user_id', userId).eq('season_month', seasonMonth),
             supabase.from('points_history').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
-            supabase.from('subscriptions').select('plan_id').eq('user_id', userId).eq('status', 'active').maybeSingle()
+            supabase.from('subscriptions').select('plan_id').eq('user_id', userId).eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle()
         ])
 
         // Gamification
