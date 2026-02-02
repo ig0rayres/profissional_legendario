@@ -32,7 +32,7 @@ export function ImageCropDialog({
 }: ImageCropDialogProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const imgRef = useRef<HTMLImageElement>(null)
-    const [scale, setScale] = useState(1)
+    const [scale, setScale] = useState(0.5) // Inicia com 50% para melhor visualização
     const [position, setPosition] = useState({ x: 0, y: 0 })
     const [isDragging, setIsDragging] = useState(false)
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
@@ -46,7 +46,7 @@ export function ImageCropDialog({
     // Reset state when dialog opens/closes or image changes
     useEffect(() => {
         if (open) {
-            setScale(1)
+            setScale(0.5) // Inicia com 50% para melhor visualização
             setPosition({ x: 0, y: 0 })
             setImageLoaded(false)
         }
