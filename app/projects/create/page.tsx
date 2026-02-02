@@ -16,7 +16,6 @@ import { Flame, ArrowLeft, Briefcase, DollarSign, Calendar, CheckCircle, Upload,
 
 import { useAuth } from '@/lib/auth/context'
 import { User, Mail, Phone } from 'lucide-react'
-import { PROJECT_CATEGORIES } from '@/lib/data/categories'
 import { SelectGroup, SelectLabel } from '@/components/ui/select'
 import { CategorySearch, type ServiceCategory } from '@/components/categories/CategorySearch'
 

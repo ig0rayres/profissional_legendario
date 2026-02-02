@@ -339,23 +339,23 @@ export async function checkBadgeCriteria(
 ): Promise<{ shouldAward: boolean; reason?: string }> {
     const supabase = createClient()
 
-    // Get badge criteria
-    const { data: badge } = await supabase
-        .from('badges')
+    // Get medal criteria
+    const { data: medal } = await supabase
+        .from('medals')
         .select('criteria_type')
-        .eq('id', badgeId)
+        .eq('medal_id', badgeId)
         .single()
 
-    if (!badge) {
-        return { shouldAward: false, reason: 'Badge not found' }
+    if (!medal) {
+        return { shouldAward: false, reason: 'Medal not found' }
     }
 
-    // Check if user already has badge
+    // Check if user already has medal
     const { data: existing } = await supabase
-        .from('user_badges')
-        .select('badge_id')
+        .from('user_medals')
+        .select('medal_id')
         .eq('user_id', userId)
-        .eq('badge_id', badgeId)
+        .eq('medal_id', badgeId)
         .single()
 
     if (existing) {
