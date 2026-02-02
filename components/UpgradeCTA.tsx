@@ -47,8 +47,9 @@ export function UpgradeCTA({ variant = 'card', className = '' }: UpgradeCTAProps
         }
     }
 
-    // Não mostrar se já é Elite
-    if (loading || currentTier === 'elite') {
+    // Não mostrar se já é Elite ou Lendário
+    // Upgrade só aparece para: recruta e veterano
+    if (loading || currentTier === 'elite' || currentTier === 'lendario') {
         return null
     }
 
