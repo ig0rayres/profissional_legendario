@@ -167,34 +167,6 @@ export async function GET(request: NextRequest) {
                 .update({ status: 'active' })
                 .eq('id', nextSeason.id)
 
-            // ✅ GERAR BANNERS AUTOMATICAMENTE
-            console.log('[CRON] 🎨 Gerando banners da temporada...')
-            try {
-                const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://rotabusinessclub.com.br'
-                const bannerResponse = await fetch(`${appUrl}/api/seasons/compose-image`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${process.env.CRON_SECRET}`
-                    },
-                    body: JSON.stringify({
-                        seasonId: nextSeason.id,
-                        seasonName: nextSeason.name,
-                        month: nextSeason.month,
-                        year: nextSeason.year
-                    })
-                })
-
-                if (bannerResponse.ok) {
-                    const bannerData = await bannerResponse.json()
-                    console.log('[CRON] ✅ Banners gerados:', bannerData.urls)
-                } else {
-                    console.log('[CRON] ⚠️ Erro ao gerar banners:', await bannerResponse.text())
-                }
-            } catch (error) {
-                console.log('[CRON] ⚠️ Erro ao chamar API de banners:', error)
-            }
-
             // ✅ CRIAR PRÓXIMA TEMPORADA AUTOMATICAMENTE (mês seguinte)
             const { data: nextSeasonCreated } = await supabase.rpc('create_next_season')
 
