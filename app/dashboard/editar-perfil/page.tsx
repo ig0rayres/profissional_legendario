@@ -180,13 +180,22 @@ export default function EditarPerfilPage() {
 
         // Popular formulário com dados do perfil
         if (profile) {
+            // Se tem pista_id, buscar a cidade da pista
+            let pistaCity = profile.pista || ''
+            if (profile.pista_id) {
+                const foundPista = availablePistas.find(p => p.id === profile.pista_id)
+                if (foundPista) {
+                    pistaCity = foundPista.city
+                }
+            }
+
             setFormData({
                 full_name: profile.full_name || '',
                 bio: profile.bio || '',
                 phone: profile.phone || '',
                 whatsapp: profile.whatsapp || '',
                 instagram: profile.instagram || '',
-                pista: profile.pista || '',
+                pista: pistaCity,
                 rota_number: profile.rota_number || '',
                 slug: profile.slug || '',
                 specialties: []
@@ -750,7 +759,7 @@ export default function EditarPerfilPage() {
                                         setSelectedPistaId(value || null)
                                         const pista = availablePistas.find(p => p.id === value)
                                         if (pista) {
-                                            setFormData(prev => ({ ...prev, pista: pista.name }))
+                                            setFormData(prev => ({ ...prev, pista: pista.city }))
                                         }
                                     }}
                                 >
