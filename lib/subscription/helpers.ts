@@ -5,20 +5,16 @@
  * 
  * Estrutura da tabela:
  * - user_id: UUID (FK para profiles)
- * - plan_id: 'recruta' | 'veterano' | 'elite'
+ * - plan_id: 'recruta' | 'veterano' | 'elite' | 'lendario'
  * - status: 'active' | 'canceled' | etc
  * - started_at, current_period_end, cancel_at, created_at, updated_at
  * 
- * Limites por plano:
- * - Recruta: 0 convites de confraria (só recebe)
- * - Veterano: 4 convites de confraria por mês
- * - Elite: 10 convites de confraria por mês
+ * FONTE DE VERDADE: plan_config (painel admin)
  */
 
 import { createClient } from '@/lib/supabase/client'
-import { PLAN_LIMITS } from '@/lib/constants/plan-limits'
 
-export type PlanId = 'recruta' | 'veterano' | 'elite'
+export type PlanId = 'recruta' | 'veterano' | 'elite' | 'lendario'
 
 export interface UserSubscription {
     user_id: string
@@ -55,9 +51,34 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
 
     const planTier = subscription?.plan_id || 'recruta'
 
-    // FONTE ÚNICA DE VERDADE - plan-limits.ts (CENTRALIZADO!)
-    const tierKey = (planTier as 'recruta' | 'soldado' | 'especialista' | 'elite') || 'recruta'
-    const limits = PLAN_LIMITS[tierKey] || PLAN_LIMITS.recruta
+    // FONTE ÚNICA DE VERDADE - plan_config (painel admin)
+    const { data: planConfig } = await supabase
+        .from('plan_config')
+        .select('*')
+        .eq('tier', planTier)
+        .single()
+
+    if (!planConfig) {
+        // Fallback para recruta
+        return {
+            max_categories: 2,
+            max_marketplace_ads: 0,
+            max_elos: 10,
+            confraternities_per_month: 0,
+            can_send_elo: false,
+            xp_multiplier: 1.0
+        }
+    }
+
+    // -1 = ilimitado
+    const limits: PlanLimits = {
+        max_categories: planConfig.max_categories === -1 ? 999 : planConfig.max_categories,
+        max_marketplace_ads: planConfig.max_marketplace_ads === -1 ? 999 : planConfig.max_marketplace_ads,
+        max_elos: planConfig.max_elos === -1 ? 999 : planConfig.max_elos,
+        confraternities_per_month: planConfig.max_confraternities_month === -1 ? 999 : planConfig.max_confraternities_month,
+        can_send_elo: planConfig.can_send_elo,
+        xp_multiplier: Number(planConfig.xp_multiplier)
+    }
 
     console.log(`[getUserPlanLimits] User ${userId} | Plan: ${planTier} | Categories: ${limits.max_categories}`)
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getPlanLimits } from '@/lib/constants/plan-limits'
 
 // GET - Buscar categorias do usuário autenticado
 export async function GET() {
@@ -86,7 +85,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Buscar subscription do usuário (NÃO plan_config que está quebrado!)
+        // Buscar subscription do usuário
         const { data: subscription, error: subError } = await supabase
             .from('subscriptions')
             .select('plan_id')
@@ -101,22 +100,22 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Determinar max_categories baseado no plano (hardcoded confiável)
-        const planLimits: Record<string, number> = {
-            'recruta': 1,
-            'soldado': 3,
-            'especialista': 5,
-            'elite': 10
-        }
+        // BUSCAR DE PLAN_CONFIG (painel admin - fonte única)
+        const { data: planConfig } = await supabase
+            .from('plan_config')
+            .select('max_categories')
+            .eq('tier', subscription?.plan_id || 'recruta')
+            .single()
 
-        const maxCategories = subscription?.plan_id
-            ? (planLimits[subscription.plan_id] || 1)
-            : 1 // Default para usuários sem plano
+        // -1 = ilimitado
+        const maxCategories = planConfig?.max_categories === -1
+            ? 999
+            : (planConfig?.max_categories || 2)
 
         console.log(`[API Categories] User ${user.id} | Plan: ${subscription?.plan_id} | Max: ${maxCategories}`)
 
         // Validar limite
-        if (maxCategories !== -1 && categoryIds.length > maxCategories) {
+        if (maxCategories !== 999 && categoryIds.length > maxCategories) {
             return NextResponse.json(
                 {
                     error: 'Limite de categorias excedido',

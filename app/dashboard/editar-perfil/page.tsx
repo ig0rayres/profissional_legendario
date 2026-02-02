@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
-import { getPlanLimits } from '@/lib/constants/plan-limits'
 import { createClient } from '@/lib/supabase/client'
 import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -161,16 +160,23 @@ export default function EditarPerfilPage() {
             return
         }
 
-        // Buscar subscription separadamente
+        // Buscar subscription e limites (FONTE: plan_config do painel admin)
         const { data: subscription } = await supabase
             .from('subscriptions')
             .select('*')
             .eq('user_id', user.id)
             .single()
 
-        // FONTE ÚNICA DE VERDADE - plan-limits.ts
-        const limits = getPlanLimits(subscription?.plan_id)
-        setUserMaxCategories(limits.max_categories)
+        // BUSCAR DE PLAN_CONFIG (centralized)
+        const { data: planConfig } = await supabase
+            .from('plan_config')
+            .select('max_categories')
+            .eq('tier', subscription?.plan_id || 'recruta')
+            .single()
+
+        // -1 = ilimitado → usar 999 no frontend
+        const maxCategories = planConfig?.max_categories === -1 ? 999 : (planConfig?.max_categories || 2)
+        setUserMaxCategories(maxCategories)
 
         // Popular formulário com dados do perfil
         if (profile) {
