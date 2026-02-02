@@ -68,15 +68,17 @@ export function PlansSection() {
                 .order('display_order')
 
             if (error) throw error
-            setPlans(data || [])
+
+            if (!data || data.length === 0) {
+                console.error('Nenhum plano ativo encontrado em plan_config')
+                setPlans([])
+            } else {
+                setPlans(data)
+            }
         } catch (error) {
-            console.error('Error loading plans:', error)
-            // Fallback para valores padrão se banco falhar
-            setPlans([
-                { id: '1', tier: 'recruta', name: 'Recruta', description: 'O início da sua jornada na guilda.', price: 0, features: ['Perfil Básico', 'Listagem na busca', '1 Especialidade', 'Acesso à comunidade'], is_active: true, display_order: 1 },
-                { id: '2', tier: 'veterano', name: 'Veterano', description: 'Para quem já provou seu valor no campo.', price: 47, features: ['Perfil Completo', 'Destaque na busca', 'Até 3 Especialidades', 'Selo de Verificado'], is_active: true, display_order: 2 },
-                { id: '3', tier: 'elite', name: 'Elite', description: 'A força máxima da elite de negócios.', price: 147, features: ['Tudo do plano Veterano', 'Destaque Premium', 'Especialidades Ilimitadas', 'Selo Elite Dourado'], is_active: true, display_order: 3 }
-            ])
+            console.error('Error loading plans from plan_config:', error)
+            // NÃO USAR FALLBACK - plan_config é fonte única de verdade
+            setPlans([])
         } finally {
             setLoading(false)
         }
