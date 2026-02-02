@@ -427,11 +427,14 @@ export default function EditarPerfilPage() {
             setSuccess(true)
 
             // 🎖️ Verificar medalha "Alistamento Concluído" (perfil 100% completo)
+            console.log('[EDITAR PERFIL] 🎖️ Iniciando verificação de medalha...')
             try {
                 const { checkProfileCompletion } = await import('@/lib/api/profile')
+                console.log('[EDITAR PERFIL] 🎖️ Função importada, chamando checkProfileCompletion...')
                 await checkProfileCompletion(user.id)
+                console.log('[EDITAR PERFIL] 🎖️ checkProfileCompletion concluído!')
             } catch (badgeError) {
-                console.error('Erro ao verificar medalha de perfil:', badgeError)
+                console.error('[EDITAR PERFIL] ❌ Erro ao verificar medalha:', badgeError)
             }
 
             // Redirecionar para dashboard após 1.5 segundos
