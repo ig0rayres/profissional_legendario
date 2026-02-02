@@ -118,16 +118,22 @@ export default function ChooseTierPage() {
                 .single()
 
             const tier = profileData?.subscription_tier || 'recruta'
-            const limits: Record<string, number | null> = {
-                recruta: 0,
-                veterano: 2,
-                elite: 10,
-                lendario: null // ilimitado
+
+            // BUSCAR LIMITES DE PLAN_CONFIG (painel admin)
+            const { data: planConfig } = await supabase
+                .from('plan_config')
+                .select('max_marketplace_ads')
+                .eq('tier', tier)
+                .single()
+
+            let basic_ads_limit: number | null = 0
+            if (planConfig) {
+                basic_ads_limit = planConfig.max_marketplace_ads === -1 ? null : planConfig.max_marketplace_ads
             }
 
             setUserPlan({
                 tier,
-                basic_ads_limit: limits[tier]
+                basic_ads_limit
             })
 
             // Contar anúncios básicos ativos

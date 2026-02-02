@@ -166,8 +166,16 @@ export default function SolicitarConfrariaPage() {
             return
         }
 
-        // Veterano/Elite podem enviar
-        const maxInvites = plan === 'veterano' ? 4 : 10
+        // Veterano/Elite/Lendario podem enviar - BUSCAR DE PLAN_CONFIG
+        const { data: planConfig } = await supabase
+            .from('plan_config')
+            .select('max_confraternities_month')
+            .eq('tier', plan)
+            .single()
+
+        const maxInvites = planConfig?.max_confraternities_month === -1
+            ? 999
+            : (planConfig?.max_confraternities_month || 0)
 
         // Contar convites ACEITOS este mês
         const startOfMonth = new Date()

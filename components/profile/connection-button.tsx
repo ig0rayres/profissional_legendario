@@ -14,13 +14,6 @@ interface ConnectionButtonProps {
     targetUserName: string
 }
 
-// Limites por plano
-const PLAN_LIMITS: Record<string, { max: number, label: string }> = {
-    'recruta': { max: 10, label: 'Recruta' },
-    'veterano': { max: 100, label: 'Veterano' },
-    'elite': { max: 999, label: 'Elite (Ilimitado)' }
-}
-
 export function ConnectionButton({ targetUserId, targetUserName }: ConnectionButtonProps) {
     const { user } = useAuth()
     const [loading, setLoading] = useState(false)
@@ -83,7 +76,7 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
         if (!user) return
 
         try {
-            // Buscar plano do usuário DIRETAMENTE da tabela subscriptions
+            // Buscar plano do usuário
             const { data: subscription } = await supabase
                 .from('subscriptions')
                 .select('plan_id')
@@ -94,8 +87,15 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
             const planId = subscription?.plan_id || 'recruta'
             setUserPlan(planId)
 
-            const planLimit = PLAN_LIMITS[planId] || PLAN_LIMITS['recruta']
-            setConnectionsMax(planLimit.max)
+            // BUSCAR DE PLAN_CONFIG (fonte única)
+            const { data: planConfig } = await supabase
+                .from('plan_config')
+                .select('max_elos')
+                .eq('tier', planId)
+                .single()
+
+            const maxElos = planConfig?.max_elos === -1 ? 999 : (planConfig?.max_elos || 10)
+            setConnectionsMax(maxElos)
 
             // Contar conexões existentes
             const { count } = await supabase
@@ -106,7 +106,7 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
 
             const used = count || 0
             setConnectionsUsed(used)
-            setCanAdd(used < planLimit.max)
+            setCanAdd(used < maxElos)
         } catch (err) {
             console.warn('[ConnectionButton] checkLimits failed:', err)
             setCanAdd(true)
@@ -424,7 +424,6 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
                             <p className="text-sm text-slate-600">
                                 Você tem: <span className="font-bold text-primary">{connectionsUsed}</span>
                                 <span className="text-slate-600">/{connectionsMax === 999 ? '∞' : connectionsMax}</span>
-                                <span className="ml-1 text-xs text-slate-500">({PLAN_LIMITS[userPlan]?.label || 'Recruta'})</span>
                             </p>
                         </div>
                     </div>

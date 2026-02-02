@@ -75,8 +75,16 @@ export function ConfraternityButton({ targetUserId, targetUserName }: Confratern
             return
         }
 
-        // Verificar limites para Veterano/Elite
-        const maxInvites = plan === 'veterano' ? 4 : 10
+        // Verificar limites para Veterano/Elite/Lendario - BUSCAR DE PLAN_CONFIG
+        const { data: planConfig } = await supabase
+            .from('plan_config')
+            .select('max_confraternities_month')
+            .eq('tier', plan)
+            .single()
+
+        const maxInvites = planConfig?.max_confraternities_month === -1
+            ? 999
+            : (planConfig?.max_confraternities_month || 0)
 
         // Contar convites ACEITOS este mês (não enviados)
         const startOfMonth = new Date()
