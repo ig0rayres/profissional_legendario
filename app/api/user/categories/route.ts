@@ -85,35 +85,34 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Buscar plano do usuário para verificar max_categories
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('current_plan_id, plan_config!inner(max_categories)')
-            .eq('id', user.id)
+        // Buscar subscription do usuário (NÃO plan_config que está quebrado!)
+        const { data: subscription, error: subError } = await supabase
+            .from('subscriptions')
+            .select('plan_id')
+            .eq('user_id', user.id)
             .single()
 
-        if (profileError) {
-            console.error('Erro ao buscar plano do usuário:', profileError)
+        if (subError) {
+            console.error('Erro ao buscar subscription do usuário:', subError)
             return NextResponse.json(
                 { error: 'Erro ao verificar plano' },
                 { status: 500 }
             )
         }
 
-        // plan_config vem como array do join
-        const planConfig = Array.isArray(profile.plan_config)
-            ? profile.plan_config[0]
-            : profile.plan_config
-
-        // Validar que encontrou configuração do plano
-        if (!planConfig?.max_categories) {
-            console.error(`[API Categories] Plan config não encontrado ou sem max_categories para user ${user.id}`)
-            return NextResponse.json({
-                error: 'Configuração de plano não encontrada. Entre em contato com o suporte.'
-            }, { status: 500 })
+        // Determinar max_categories baseado no plano (hardcoded confiável)
+        const planLimits: Record<string, number> = {
+            'recruta': 1,
+            'soldado': 3,
+            'especialista': 5,
+            'elite': 10
         }
 
-        const maxCategories = planConfig.max_categories
+        const maxCategories = subscription?.plan_id
+            ? (planLimits[subscription.plan_id] || 1)
+            : 1 // Default para usuários sem plano
+
+        console.log(`[API Categories] User ${user.id} | Plan: ${subscription?.plan_id} | Max: ${maxCategories}`)
 
         // Validar limite
         if (maxCategories !== -1 && categoryIds.length > maxCategories) {
