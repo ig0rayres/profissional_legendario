@@ -603,9 +603,9 @@ export default function UsersPage() {
                                                     </Button>
                                                 )}
                                                 {/* Não mostrar botão de excluir para usuários do sistema */}
-                                                {user.email !== 'sistema@rotabusiness.club' &&
-                                                    user.email !== 'admin@rotaclub.com' &&
-                                                    user.full_name !== 'Rota Business Club' && (
+                                                {user.email !== 'sistema@rotabusinessclub.com.br' &&
+                                                    user.email !== 'admin@rotabusinessclub.com.br' &&
+                                                    user.full_name !== 'Rota Business' && (
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
