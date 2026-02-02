@@ -62,14 +62,29 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             .order('id')
 
         // 5. Subscription & Plano
-        const { data: subscription } = await supabase
+        // NOTA: plan_tiers é uma VIEW, não tabela! JOIN automático do Supabase falha
+        // Solução: Buscar separadamente e fazer merge manual
+        const { data: subscriptionRaw } = await supabase
             .from('subscriptions')
-            .select(`
-                *,
-                plan_tiers(*)
-            `)
+            .select('*')
             .eq('user_id', userId)
             .single()
+
+        let subscription = null
+        if (subscriptionRaw) {
+            // Buscar plan_tiers manualmente
+            const { data: planTier } = await supabase
+                .from('plan_tiers')
+                .select('*')
+                .eq('id', subscriptionRaw.plan_id)
+                .single()
+
+            // Merge manual
+            subscription = {
+                ...subscriptionRaw,
+                plan_tiers: planTier
+            }
+        }
 
         // 6. Estatísticas de Confraria
         const { data: confraternityStatsRaw } = await supabase
