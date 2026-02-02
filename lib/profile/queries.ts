@@ -128,10 +128,18 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             .eq('user_id', userId)
             .order('earned_at', { ascending: false })
 
+        // 13. Posição no ranking (usando serviço centralizado)
+        // EXCLUI admin/rotabusiness automaticamente
+        const { getUserRankingPositionServer } = await import('@/lib/services/ranking')
+        const rankingPosition = await getUserRankingPositionServer(supabase, userId)
+
         // Montar objeto completo
         return {
             profile: profile as ProfileData,
-            gamification: gamification as GamificationData | null,
+            gamification: gamification ? {
+                ...gamification,
+                ranking_position: rankingPosition // Adicionar posição no ranking
+            } as GamificationData : null,
             subscription: subscription as SubscriptionData | null,
             allMedals: (allMedals || []) as MedalData[],
             earnedMedals: (userMedals || []) as any as UserMedalData[], // Fix type casting

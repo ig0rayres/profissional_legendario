@@ -24,6 +24,7 @@ export interface GamificationData {
     current_rank_id: string
     total_points: number
     total_medals: number
+    ranking_position?: number | null  // Posição no ranking (usando serviço centralizado)
     rank?: RankData
     user_medals?: UserMedalData[]
 }

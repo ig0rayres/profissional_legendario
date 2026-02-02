@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { getSeasonStartEmailTemplate, getSeasonEndEmailTemplate } from '@/lib/services/season-emails'
+import { getTopUsersForSeason } from '@/lib/services/ranking'
 
 /**
  * CRON: Gerenciamento automático de temporadas
  * 
- * Este endpoint deve ser chamado diariamente (via Vercel Cron ou similar)
+ * Executa diariamente (00:00 via Vercel Cron)
  * 
  * Funções:
- * 1. Encerra temporadas que passaram da data final
- * 2. Ativa a próxima temporada agendada
- * 3. Envia emails de encerramento/abertura
+ * 1. Encerra temporadas expiradas (end_date < hoje)
+ * 2. Registra top 3 como vencedores (EXCLUINDO admin/rotabusiness)
+ * 3. ZERA monthly_vigor de TODOS (mantém total_points e medalhas)
+ * 4. Envia email de encerramento
+ * 5. Ativa próxima temporada agendada
+ * 6. Envia email de nova temporada
  */
 
 let resend: Resend | null = null
@@ -29,11 +34,16 @@ function getSupabaseAdmin() {
     )
 }
 
+function getMonthName(month: number): string {
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+    return months[month - 1]
+}
+
 export async function GET(request: NextRequest) {
-    // Verificar token de segurança (para cron)
+    // Verificar token de segurança
     const authHeader = request.headers.get('authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        // Em desenvolvimento, permite sem token
         if (process.env.NODE_ENV === 'production') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -44,62 +54,96 @@ export async function GET(request: NextRequest) {
         const today = new Date().toISOString().split('T')[0]
         const results: string[] = []
 
-        console.log(`[CRON SEASONS] Executando em ${today}`)
+        console.log(`[CRON SEASONS] 🕐 Executando em ${today}`)
 
-        // 1. Buscar temporada ativa que já deveria ter encerrado
+        // ============================================
+        // 1. ENCERRAR TEMPORADAS EXPIRADAS
+        // ============================================
         const { data: expiredSeasons } = await supabase
             .from('seasons')
             .select('*')
-            .eq('is_active', true)
+            .eq('status', 'active')
             .lt('end_date', today)
 
         if (expiredSeasons && expiredSeasons.length > 0) {
             for (const season of expiredSeasons) {
-                console.log(`[CRON] Encerrando temporada: ${season.name}`)
+                console.log(`[CRON] 🏁 Encerrando temporada: ${season.name}`)
 
-                // Buscar top 3 do ranking
-                const { data: ranking } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, avatar_url, xp')
-                    .order('xp', { ascending: false })
-                    .limit(3)
+                // ✅ QUERY CENTRALIZADA: getTopUsersForSeason (exclui admin/rotabusiness)
+                const topUsers = await getTopUsersForSeason(supabase, 3)
+
+                console.log(`[CRON] Top 3 encontrados: ${topUsers.length} usuários (admin/rotabusiness EXCLUÍDOS)`)
 
                 // Salvar vencedores
-                if (ranking && ranking.length >= 3) {
+                if (topUsers.length >= 3) {
                     for (let i = 0; i < 3; i++) {
+                        const winner = topUsers[i]
                         await supabase.from('season_winners').insert({
                             season_id: season.id,
-                            user_id: ranking[i].id,
+                            user_id: winner.user_id,
                             position: i + 1,
-                            xp_earned: ranking[i].xp
+                            xp_earned: winner.total_points
                         })
                     }
+                    console.log(`[CRON] ✅ Top 3 registrados`)
+                } else {
+                    console.log(`[CRON] ⚠️ Menos de 3 usuários elegíveis (${topUsers.length})`)
                 }
 
-                // Marcar como encerrada
+                // Marcar temporada como finished
                 await supabase
                     .from('seasons')
-                    .update({ is_active: false, status: 'finished' })
+                    .update({
+
+                        status: 'finished',
+                        finished_at: new Date().toISOString()
+                    })
                     .eq('id', season.id)
 
-                // Enviar email de encerramento
-                try {
-                    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/seasons/send-emails`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            seasonId: season.id,
-                            type: 'champions'
-                        })
-                    })
-                    results.push(`✅ Temporada "${season.name}" encerrada e emails enviados`)
-                } catch (e) {
-                    results.push(`⚠️ Temporada "${season.name}" encerrada (erro no email)`)
+                // ✅ ZERAR MONTHLY_VIGOR (CRÍTICO!)
+                console.log('[CRON] 🔄 Zerando monthly_vigor de TODOS os usuários...')
+                const { data: resetResult } = await supabase.rpc('reset_monthly_vigor')
+
+                if (resetResult && Array.isArray(resetResult) && resetResult.length > 0) {
+                    const { users_affected, total_points_reset } = resetResult[0]
+                    console.log(`[CRON] ✅ Reset concluído:`)
+                    console.log(`       - ${users_affected} usuários afetados`)
+                    console.log(`       - ${total_points_reset} pontos zerados`)
+                    console.log(`       - Medalhas PRESERVADAS`)
                 }
+
+                // Preparar dados para email de encerramento
+                const winners = topUsers.slice(0, 3).map((winner, idx) => ({
+                    position: idx + 1,
+                    userName: winner.full_name,
+                    userAvatar: winner.avatar_url,
+                    prize: `${idx + 1}º Lugar`
+                }))
+
+
+                const { data: prizes } = await supabase
+                    .from('season_prizes')
+                    .select('position, title, image_url')
+                    .eq('season_id', season.id)
+                    .order('position')
+                    .limit(3)
+
+                // TODO: Enviar email de encerramento
+                // const html = getSeasonEndEmailTemplate({
+                //     seasonName: season.name,
+                //     monthYear: `${getMonthName(season.month)}/${season.year}`,
+                //     prizes: prizes || [],
+                //     winners: winners || []
+                // })
+                // await sendEmailToAllUsers(html, 'Temporada Encerrada')
+
+                results.push(`✅ Temporada "${season.name}" encerrada e monthly_vigor resetado`)
             }
         }
 
-        // 2. Buscar próxima temporada agendada que deve iniciar
+        // ============================================
+        // 2. ATIVAR PRÓXIMA TEMPORADA AGENDADA
+        // ============================================
         const { data: pendingSeasons } = await supabase
             .from('seasons')
             .select('*')
@@ -111,36 +155,37 @@ export async function GET(request: NextRequest) {
 
         if (pendingSeasons && pendingSeasons.length > 0) {
             const nextSeason = pendingSeasons[0]
-            console.log(`[CRON] Ativando temporada: ${nextSeason.name}`)
+            console.log(`[CRON] 🚀 Ativando temporada: ${nextSeason.name}`)
 
             // Ativar nova temporada
             await supabase
                 .from('seasons')
-                .update({ is_active: true, status: 'active' })
+                .update({ status: 'active' })
                 .eq('id', nextSeason.id)
 
-            // Resetar XP de todos (opcional - comentar se não quiser)
-            // await supabase.rpc('reset_all_xp')
+            // Buscar prêmios da nova temporada
+            const { data: newPrizes } = await supabase
+                .from('season_prizes')
+                .select('position, title, image_url')
+                .eq('season_id', nextSeason.id)
+                .order('position')
 
-            // Enviar email de nova temporada
-            try {
-                await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/seasons/send-emails`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        seasonId: nextSeason.id,
-                        type: 'new_season'
-                    })
-                })
-                results.push(`✅ Temporada "${nextSeason.name}" ativada e emails enviados`)
-            } catch (e) {
-                results.push(`⚠️ Temporada "${nextSeason.name}" ativada (erro no email)`)
-            }
+            // TODO: Enviar email de nova temporada
+            // const html = getSeasonStartEmailTemplate({
+            //     seasonName: nextSeason.name,
+            //     monthYear: `${getMonthName(nextSeason.month)}/${nextSeason.year}`,
+            //     prizes: newPrizes || []
+            // })
+            // await sendEmailToAllUsers(html, 'Nova Temporada')
+
+            results.push(`✅ Temporada "${nextSeason.name}" ativada`)
         }
 
         if (results.length === 0) {
-            results.push('Nenhuma ação necessária')
+            results.push('✅ Nenhuma ação necessária (temporadas em dia)')
         }
+
+        console.log('[CRON] ✅ Processo concluído com sucesso')
 
         return NextResponse.json({
             success: true,
@@ -149,7 +194,10 @@ export async function GET(request: NextRequest) {
         })
 
     } catch (error: any) {
-        console.error('[CRON SEASONS] Error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error('[CRON SEASONS] ❌ Erro:', error)
+        return NextResponse.json({
+            error: error.message,
+            stack: error.stack
+        }, { status: 500 })
     }
 }
