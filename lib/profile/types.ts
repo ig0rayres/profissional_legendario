@@ -144,6 +144,12 @@ export interface UserProezaData {
     season_month?: string
 }
 
+export interface CategoryData {
+    id: string
+    name: string
+    icon?: string
+}
+
 export interface CompleteProfileData {
     profile: ProfileData
     gamification: GamificationData | null
@@ -153,6 +159,7 @@ export interface CompleteProfileData {
     allProezas: ProezaData[]
     earnedProezas: UserProezaData[]
     confraternityStats: ConfraternityStat | null
+    categories?: CategoryData[]
     portfolio: PortfolioItem[]
     ratings: RatingData[]
     ratingStats: RatingStats | null
