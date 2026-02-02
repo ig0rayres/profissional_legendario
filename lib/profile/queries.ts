@@ -73,16 +73,35 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
         let subscription = null
         if (subscriptionRaw) {
             // Buscar plan_tiers manualmente
-            const { data: planTier } = await supabase
+            const { data: planTier, error: planTierError } = await supabase
                 .from('plan_tiers')
                 .select('*')
                 .eq('id', subscriptionRaw.plan_id)
                 .single()
 
+            console.log('[queries.ts] Plan lookup:', {
+                plan_id: subscriptionRaw.plan_id,
+                planTier,
+                planTierError: planTierError?.message
+            })
+
+            // Fallback HARDCODED se query falhar (VIEW pode ter problema)
+            let finalPlanTier = planTier
+            if (!planTier && subscriptionRaw.plan_id === 'elite') {
+                console.warn('[queries.ts] FALLBACK: Usando plano Elite hardcoded')
+                finalPlanTier = {
+                    id: 'elite',
+                    name: 'Elite',
+                    description: 'Plano Elite',
+                    price_monthly: 197,
+                    price_annually: 1970
+                }
+            }
+
             // Merge manual
             subscription = {
                 ...subscriptionRaw,
-                plan_tiers: planTier
+                plan_tiers: finalPlanTier
             }
         }
 
