@@ -98,7 +98,7 @@ export default function EditarPerfilPage() {
     }
     const [availablePistas, setAvailablePistas] = useState<Pista[]>([])
     const [selectedPistaId, setSelectedPistaId] = useState<string | null>(null)
-    const [userMaxCategories, setUserMaxCategories] = useState<number>(3) // Limite de categorias por plano
+    const [userMaxCategories, setUserMaxCategories] = useState<number>(-1) // -1 = ilimitado (enquanto carrega do banco)
 
     // Password change
     const [showPasswordForm, setShowPasswordForm] = useState(false)
