@@ -246,6 +246,7 @@ export async function awardAchievement(
 
 /**
  * Get user's gamification stats
+ * USA TABELA: user_gamification (fonte centralizada - ÚNICA)
  */
 export async function getUserGamificationStats(
     userId: string
@@ -254,7 +255,7 @@ export async function getUserGamificationStats(
         const supabase = createClient()
 
         const { data, error } = await supabase
-            .from('gamification_stats')
+            .from('user_gamification')
             .select('*')
             .eq('user_id', userId)
             .single()
@@ -264,7 +265,16 @@ export async function getUserGamificationStats(
             return null
         }
 
-        return data
+        // Mapear campos para interface existente
+        return {
+            user_id: data.user_id,
+            total_xp: data.total_points,
+            current_rank_id: data.current_rank_id,
+            season_xp: data.monthly_points || 0,
+            daily_xp_count: 0,
+            last_xp_date: data.last_activity_at,
+            updated_at: data.updated_at
+        }
     } catch (error) {
         console.error('Exception fetching gamification stats:', error)
         return null
@@ -303,6 +313,7 @@ export async function getUserBadges(userId: string): Promise<UserBadge[]> {
 
 /**
  * Get user's recent XP activity
+ * USA TABELA: points_history (histórico centralizado - ÚNICO)
  */
 export async function getUserRecentActions(
     userId: string,
@@ -312,7 +323,7 @@ export async function getUserRecentActions(
         const supabase = createClient()
 
         const { data, error } = await supabase
-            .from('xp_logs')
+            .from('points_history')
             .select('*')
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
@@ -323,7 +334,17 @@ export async function getUserRecentActions(
             return []
         }
 
-        return data || []
+        // Mapear campos para interface existente
+        return (data || []).map(item => ({
+            id: item.id,
+            user_id: item.user_id,
+            amount: item.points,
+            base_amount: item.points,
+            action_type: item.action_type,
+            description: item.description,
+            metadata: item.metadata,
+            created_at: item.created_at
+        }))
     } catch (error) {
         console.error('Exception fetching recent actions:', error)
         return []
@@ -369,19 +390,21 @@ export async function checkBadgeCriteria(
 
 /**
  * Initialize gamification stats for a new user
+ * USA TABELA: user_gamification (fonte centralizada - ÚNICA)
  */
 export async function initializeUserGamification(userId: string): Promise<boolean> {
     try {
         const supabase = createClient()
 
         const { error } = await supabase
-            .from('gamification_stats')
+            .from('user_gamification')
             .insert({
                 user_id: userId,
-                total_xp: 0,
-                current_rank_id: 'recruta',
-                season_xp: 0,
-                daily_xp_count: 0
+                total_points: 0,
+                current_rank_id: 'novato',
+                monthly_points: 0,
+                total_medals: 0,
+                streak_days: 0
             })
 
         if (error) {
