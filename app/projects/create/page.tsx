@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth/context'
 import { User, Mail, Phone } from 'lucide-react'
 import { PROJECT_CATEGORIES } from '@/lib/data/categories'
 import { SelectGroup, SelectLabel } from '@/components/ui/select'
+import { CategorySearch, type ServiceCategory } from '@/components/categories/CategorySearch'
 
 // Base schema for project details
 const baseProjectSchema = {
@@ -53,6 +54,7 @@ export default function CreateProjectPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
     const [files, setFiles] = useState<File[]>([])
+    const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null)
 
     // Select schema based on auth status
     // We use a key to force re-render/re-initialization of the form when user state changes
@@ -284,26 +286,22 @@ export default function CreateProjectPage() {
 
                                 {/* Category */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="category">Categoria</Label>
-                                    <Select onValueChange={(value) => setValue('category', value)}>
-                                        <SelectTrigger className="bg-background/50 border-primary/20 focus:border-primary">
-                                            <SelectValue placeholder="Selecione uma categoria" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-zinc-950 border-primary/20 max-h-[300px]">
-                                            {PROJECT_CATEGORIES.map((group, index) => (
-                                                <SelectGroup key={index}>
-                                                    <SelectLabel className="text-primary font-bold mt-2">{group.label}</SelectLabel>
-                                                    {group.options.map((option) => (
-                                                        <SelectItem key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectGroup>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Label htmlFor="category">Categoria do Projeto</Label>
+                                    <CategorySearch
+                                        selectedCategories={selectedCategory ? [selectedCategory] : []}
+                                        onSelect={(category) => {
+                                            setSelectedCategory(category)
+                                            setValue('category', category.id)
+                                        }}
+                                        onRemove={() => {
+                                            setSelectedCategory(null)
+                                            setValue('category', '')
+                                        }}
+                                        maxCategories={1}
+                                        placeholder="Busque a categoria do seu projeto..."
+                                    />
                                     {errors.category && (
-                                        <p className="text-sm text-destructive">{errors.category.message}</p>
+                                        <p className="text-sm text-destructive mt-1">{errors.category.message}</p>
                                     )}
                                 </div>
 

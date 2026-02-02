@@ -118,6 +118,11 @@ export function CategorySearch({
 
     return (
         <div className="space-y-4">
+            {/* Hint de Pesquisa */}
+            <p className="text-xs text-gray-500">
+                💡 Dica: Use a pesquisa para encontrar categorias rapidamente
+            </p>
+
             {/* Campo de Busca */}
             <div className="relative" ref={dropdownRef}>
                 <div className="relative">
@@ -143,9 +148,10 @@ export function CategorySearch({
                     )}
                 </div>
 
+
                 {/* Dropdown de Resultados */}
                 {showDropdown && results.length > 0 && (
-                    <div className="absolute z-[100] w-full mt-2 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
+                    <div className="absolute z-[100] w-full mt-2 bg-white border border-gray-300 rounded-md shadow-lg max-h-[32rem] overflow-y-auto">
                         {results.map((category) => (
                             <button
                                 key={category.id}
