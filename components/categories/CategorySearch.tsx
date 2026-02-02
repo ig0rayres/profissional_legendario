@@ -90,7 +90,7 @@ export function CategorySearch({
     }, [searchTerm, selectedCategories])
 
     // Verificar se atingiu o limite
-    const isLimitReached = maxCategories !== -1 && selectedCategories.length >= maxCategories
+    const isLimitReached = maxCategories !== -1 && selectedCategories.length > maxCategories
     const remainingSlots = maxCategories === -1
         ? Infinity
         : maxCategories - selectedCategories.length
