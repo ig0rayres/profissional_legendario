@@ -174,8 +174,8 @@ export default function EditarPerfilPage() {
             .eq('tier', subscription?.plan_id || 'recruta')
             .single()
 
-        // -1 = ilimitado → usar 999 no frontend
-        const maxCategories = planConfig?.max_categories === -1 ? 999 : (planConfig?.max_categories || 2)
+        // -1 = ilimitado (CategorySearch já trata -1 corretamente)
+        const maxCategories = planConfig?.max_categories ?? 2
         setUserMaxCategories(maxCategories)
 
         // Popular formulário com dados do perfil
