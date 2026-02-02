@@ -53,21 +53,44 @@ export async function GET() {
             .order('id')
 
         // 5. Subscription & Plano
-        const { data: subscription } = await supabase
+        const { data: subscriptionRaw } = await supabase
             .from('subscriptions')
             .select('*')
             .eq('user_id', user.id)
             .single()
 
-        // Buscar dados do plano separadamente usando o tier
-        let planConfig = null
-        if (subscription?.plan_id) {
-            const { data: plan } = await supabase
-                .from('plan_config')
+        // Buscar plan_tiers manualmente (VIEW, não tabela!)
+        let subscription = null
+        if (subscriptionRaw) {
+            const { data: planTier, error: planTierError } = await supabase
+                .from('plan_tiers')
                 .select('*')
-                .eq('tier', subscription.plan_id)
+                .eq('id', subscriptionRaw.plan_id)
                 .single()
-            planConfig = plan
+
+            console.log('[API /me] Plan lookup:', {
+                plan_id: subscriptionRaw.plan_id,
+                planTier,
+                planTierError: planTierError?.message
+            })
+
+            // Fallback HARDCODED se query falhar
+            let finalPlanTier = planTier
+            if (!planTier && subscriptionRaw.plan_id === 'elite') {
+                console.warn('[API /me] FALLBACK: Usando plano Elite hardcoded')
+                finalPlanTier = {
+                    id: 'elite',
+                    name: 'Elite',
+                    description: 'Plano Elite',
+                    price_monthly: 197,
+                    price_annually: 1970
+                }
+            }
+
+            subscription = {
+                ...subscriptionRaw,
+                plan_tiers: finalPlanTier
+            }
         }
 
         // 6. Estatísticas de Confraria
@@ -136,8 +159,7 @@ export async function GET() {
         const profileData = {
             profile,
             gamification,
-            subscription: subscription ? { ...subscription, plan: planConfig } : null,
-            planConfig,
+            subscription,
             allMedals: allMedals || [],
             earnedMedals: userMedals || [],
             allProezas: allProezas || [],
