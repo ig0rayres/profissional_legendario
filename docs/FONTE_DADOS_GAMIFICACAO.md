@@ -7,127 +7,119 @@ Inconsistências nesses dados impactam diretamente o **financeiro da operação*
 
 ---
 
-## 🎯 TABELA OFICIAL: `user_gamification`
+## 🎯 ARQUITETURA OFICIAL (Atualizado 02/02/2026)
+
+### **2 TABELAS OFICIAIS:**
+
+| Tabela | Propósito | Descrição |
+|--------|-----------|-----------|
+| `user_gamification` | **PONTOS ATUAIS** | Temporada atual, rank, streak |
+| `points_history` | **HISTÓRICO** | Log de todas as ações/pontos |
+
+---
+
+## 📌 TABELA 1: `user_gamification` - PONTOS ATUAIS
 
 ### Campos Principais:
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `user_id` | UUID | ID do usuário (FK para profiles) |
+| `user_id` | UUID | ID do usuário (PK, FK para auth.users) |
 | `total_points` | INTEGER | **VIGOR TOTAL** - Principal métrica de ranking |
-| `current_rank_id` | TEXT | **PATENTE ATUAL** - ID da patente (recruta, veterano, elite, mestre, lenda) |
-| `total_xp` | INTEGER | XP total (histórico) |
+| `monthly_points` | INTEGER | Pontos do mês atual |
+| `current_rank_id` | TEXT | **PATENTE ATUAL** (novato → lenda) |
+| `total_medals` | INTEGER | Contador de medalhas |
+| `streak_days` | INTEGER | Dias consecutivos ativos |
 | `last_activity_at` | TIMESTAMP | Última atividade |
 
-### 🎖️ PATENTES DISPONÍVEIS (current_rank_id):
-| ID | Nome | Ícone | Cor |
-|----|------|-------|-----|
-| `recruta` | Recruta | Shield | #9CA3AF (cinza) |
-| `veterano` | Veterano | ShieldCheck | #22C55E (verde) |
-| `elite` | Elite | Target | #3B82F6 (azul) |
-| `mestre` | Mestre | Medal | #F97316 (laranja) |
-| `lenda` | Lenda | Crown | #EAB308 (dourado) |
-
-### Query Padrão para Ranking:
-```sql
-SELECT 
-    ug.user_id,
-    ug.total_points,
-    ug.current_rank_id,  -- PATENTE: usar direto no AvatarWithRank
-    p.full_name,
-    p.avatar_url
-FROM user_gamification ug
-JOIN profiles p ON p.id = ug.user_id
-WHERE ug.total_points > 0
-ORDER BY ug.total_points DESC
-LIMIT 50;
-```
-
----
-
-## 🚫 TABELAS QUE NÃO DEVEM SER USADAS PARA RANKING
-
-| Tabela | Motivo |
-|--------|--------|
-| `user_season_stats` | Dados por temporada, pode estar vazio |
-| `gamification_stats` | Tabela legada/deprecated |
-| Qualquer outra | Não é a fonte oficial |
-
----
-
-## ✅ ONDE USAR `user_gamification`
-
-### Componentes que DEVEM usar esta fonte:
-
-1. **Banner de Temporada** (`SeasonBannerCarouselV2.tsx`)
-   - Exibe: participantes, ranking
-   
-2. **Admin Rota do Valente** (`SeasonsManager.tsx`)
-   - Exibe: ranking, participantes, líder XP
-   
-3. **Feed Na Rota** (`/na-rota/page.tsx` via `PostsService`)
-   - Exibe: ranking lateral
-   
-4. **Dashboard Rota do Valente** (`/dashboard/rota-do-valente`)
-   - Exibe: ranking completo
-
-5. **Perfil do Usuário** (`profile-page-template.tsx`)
-   - Exibe: posição no ranking, vigor
-
----
-
-## 🔧 SERVIÇO CENTRALIZADO
-
-Use o serviço em `/lib/services/posts-service.ts`:
-
+### API que usa:
 ```typescript
-// Método loadRanking() - FONTE OFICIAL
-private async loadRanking(limit = 5): Promise<RankingUser[]> {
-    const { data } = await this.supabase
-        .from('user_gamification')
-        .select('user_id, total_points, current_rank_id')
-        .order('total_points', { ascending: false })
-        .limit(limit)
-    // ...
-}
+// /app/api/profile/me/route.ts
+const { data: gamification } = await supabase
+    .from('user_gamification')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
 ```
+
+### 🎖️ PATENTES DISPONÍVEIS (current_rank_id):
+| ID | Nome | Ícone | XP Necessário |
+|----|------|-------|---------------|
+| `novato` | Novato | Shield | 0 |
+| `especialista` | Especialista | Target | 200 |
+| `guardiao` | Guardião | ShieldCheck | 500 |
+| `comandante` | Comandante | Medal | 1000 |
+| `general` | General | Flame | 2000 |
+| `lenda` | Lenda | Crown | 3500 |
+
+---
+
+## 📌 TABELA 2: `points_history` - HISTÓRICO
+
+### Campos Principais:
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | UUID | ID do registro |
+| `user_id` | UUID | ID do usuário |
+| `points` | INTEGER | Quantidade de pontos |
+| `action_type` | VARCHAR | Tipo (medal_reward, proeza, etc) |
+| `description` | TEXT | Descrição da ação |
+| `metadata` | JSONB | Dados extras (season_month, etc) |
+| `created_at` | TIMESTAMP | Data/hora |
+
+### Componentes que usam:
+- `BattleHistory.tsx` - Card "Histórico de Batalha"
+- `PointsHistory.tsx` - Lista de atividades
+
+---
+
+## 🚫 TABELAS DEPRECATED - NÃO USAR!
+
+| Tabela | Status | Motivo |
+|--------|--------|--------|
+| `gamification_stats` | ❌ DEPRECATED | Redundante com user_gamification |
+| `xp_logs` | ❌ DEPRECATED | Substituído por points_history |
+| `user_season_stats` | ⚠️ CUIDADO | Apenas para dados de temporadas passadas |
+
+---
+
+## ✅ ONDE USAR CADA TABELA
+
+### `user_gamification` - Usar para:
+1. **Dashboard** - Exibir VIGOR atual
+2. **Ranking** - Ordenar por total_points
+3. **Perfil** - Mostrar patente atual
+4. **Banner de Temporada** - Participantes
+
+### `points_history` - Usar para:
+1. **Histórico de Batalha** - Card FEV/2026
+2. **Atividades recentes** - Lista de ações
+3. **Auditoria** - Rastrear pontos concedidos
+
+---
+
+## 🔧 FUNÇÃO SQL: `remove_user_medal`
+
+Para remover medalha corretamente, use:
+```sql
+SELECT remove_user_medal('user_id', 'medal_id');
+```
+
+**Remove de:**
+1. `user_medals`
+2. `points_history`
+3. Atualiza `user_gamification.total_points`
 
 ---
 
 ## 📋 CHECKLIST PARA NOVOS COMPONENTES
 
-Antes de criar qualquer componente que exiba dados de ranking/vigor:
-
-- [ ] Verificar se está usando `user_gamification`
+- [ ] Verificar se está usando `user_gamification` para pontos ATUAIS
+- [ ] Verificar se está usando `points_history` para HISTÓRICO
+- [ ] **NUNCA** usar `gamification_stats` ou `xp_logs`
 - [ ] Usar `total_points` como campo de ordenação
-- [ ] NÃO criar queries diretas - usar serviço centralizado
 - [ ] Testar com dados reais antes de deploy
 
 ---
 
-## 🛡️ MEDIDAS DE PROTEÇÃO
-
-### 1. Validação em CI/CD
-Adicionar lint rule para detectar uso de tabelas incorretas:
-- Alertar se `user_season_stats` for usado para ranking
-- Alertar se `gamification_stats` for usado
-
-### 2. Monitoramento
-- Log de todas as queries de gamificação
-- Alertas se houver discrepância entre fontes
-
-### 3. Auditoria Mensal
-- Verificar consistência entre `user_gamification` e premiações
-- Documentar qualquer ajuste manual
-
----
-
-## 📞 CONTATO EM CASO DE DÚVIDAS
-
-Em caso de dúvidas sobre qual tabela usar, **SEMPRE consulte este documento** ou o líder técnico antes de implementar.
-
-**NUNCA improvise com dados de gamificação.**
-
----
-
-*Última atualização: 30/01/2026*
+*Última atualização: 02/02/2026*
 *Responsável: Equipe de Desenvolvimento*

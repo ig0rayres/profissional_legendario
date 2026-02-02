@@ -1,9 +1,37 @@
 # 🧠 CONTEXTO DO PROJETO - ROTA BUSINESS CLUB
 
-*Última atualização: 02/02/2026 - 14:00*
+*Última atualização: 02/02/2026 - 18:55*
 
 > **INSTRUÇÃO:** No início de cada sessão, peça para o assistente ler este arquivo:
 > `"leia o arquivo CONTEXTO_PROJETO.md"`
+
+---
+
+## 🔍 MODUS OPERANDI - INSPECIONAR ELEMENTO
+
+**REGRA OBRIGATÓRIA** para facilitar comunicação entre assistente e usuário:
+
+### Quando Reportar Bugs Visuais:
+
+1. **Clique com botão direito** no elemento problemático
+2. **Inspecionar** (ou F12)
+3. **Copie o HTML** do elemento
+4. **Cole para o assistente**
+
+### Exemplo:
+```html
+<div class="text-[26px] font-black text-white">500</div>
+```
+
+### Por que fazer isso?
+- O assistente encontra o componente **EXATO** em segundos
+- Evita manipular componentes/tabelas erradas
+- Acelera resolução de bugs em **10x**
+
+### Informações úteis:
+- **Classes CSS** identificam componentes únicos
+- **React DevTools** → Aba "Components" mostra nome do componente
+- **Console logs** identificam qual serviço está carregando dados
 
 ---
 
