@@ -82,46 +82,166 @@ export const PROJECT_CATEGORIES = [
     {
         label: "Saúde & Bem-estar",
         options: [
+            // ========================================
+            // MEDICINA CLÍNICA
+            // ========================================
             { value: "clinico-geral", label: "Médico Clínico Geral" },
             { value: "pediatra", label: "Pediatra" },
+            { value: "geriatra", label: "Geriatra" },
+            { value: "medicina-familia", label: "Medicina de Família" },
+            { value: "intensivista", label: "Médico Intensivista (UTI)" },
+            { value: "emergencista", label: "Médico Emergencista" },
+
+            // ========================================
+            // ANESTESIOLOGIA
+            // ========================================
+            { value: "anestesista", label: "Anestesista / Anestesiologista" },
+
+            // ========================================
+            // CIRURGIA
+            // ========================================
+            { value: "cirurgiao-geral", label: "Cirurgião Geral" },
+            { value: "cirurgiao-cardiovascular", label: "Cirurgião Cardiovascular" },
+            { value: "cirurgiao-toracico", label: "Cirurgião Torácico" },
+            { value: "cirurgiao-vascular", label: "Cirurgião Vascular" },
+            { value: "cirurgiao-pediatrico", label: "Cirurgião Pediátrico" },
+            { value: "cirurgiao-plastico", label: "Cirurgião Plástico" },
+            { value: "cirurgiao-cabeca-pescoco", label: "Cirurgião de Cabeça e Pescoço" },
+            { value: "cirurgiao-trauma", label: "Cirurgião do Trauma" },
+            { value: "cirurgiao-oncologico", label: "Cirurgião Oncológico" },
+            { value: "cirurgiao-bariatrico", label: "Cirurgião Bariátrico" },
+            { value: "cirurgiao-coloproctologia", label: "Coloproctologista" },
+            { value: "bucomaxilofacial", label: "Cirurgião Bucomaxilofacial" },
+
+            // ========================================
+            // ESPECIALIDADES MÉDICAS
+            // ========================================
             { value: "cardiologista", label: "Cardiologista" },
             { value: "dermatologista", label: "Dermatologista" },
-            { value: "ginecologista", label: "Ginecologista" },
+            { value: "ginecologista", label: "Ginecologista e Obstetra" },
+            { value: "obstetra", label: "Obstetra" },
+            { value: "mastologista", label: "Mastologista" },
             { value: "ortopedista", label: "Ortopedista" },
+            { value: "traumatologista", label: "Traumatologista Ortopédico" },
+            { value: "cirurgia-coluna", label: "Cirurgião de Coluna" },
+            { value: "cirurgia-mao", label: "Cirurgião de Mão" },
+            { value: "cirurgia-joelho", label: "Cirurgião de Joelho" },
+            { value: "medicina-esportiva", label: "Médico do Esporte" },
             { value: "oftalmologista", label: "Oftalmologista" },
             { value: "otorrino", label: "Otorrinolaringologista" },
             { value: "neurologista", label: "Neurologista" },
+            { value: "neurocirurgiao", label: "Neurocirurgião" },
             { value: "psiquiatra", label: "Psiquiatra" },
             { value: "endocrinologista", label: "Endocrinologista" },
             { value: "urologista", label: "Urologista" },
-            { value: "geriatra", label: "Geriatra" },
             { value: "nutrologo", label: "Nutrólogo" },
-            { value: "cirurgiao-plastico", label: "Cirurgião Plástico" },
+            { value: "gastroenterologista", label: "Gastroenterologista" },
+            { value: "hepatologista", label: "Hepatologista" },
+            { value: "nefrologista", label: "Nefrologista" },
+            { value: "pneumologista", label: "Pneumologista" },
+            { value: "reumatologista", label: "Reumatologista" },
+            { value: "hematologista", label: "Hematologista" },
+            { value: "infectologista", label: "Infectologista" },
+            { value: "oncologista", label: "Oncologista" },
+            { value: "radioterapia", label: "Radioterapeuta" },
+            { value: "radiologista", label: "Radiologista" },
+            { value: "ultrassonografista", label: "Ultrassonografista" },
+            { value: "patologista", label: "Patologista" },
+            { value: "geneticista", label: "Geneticista Médico" },
+            { value: "alergologista", label: "Alergologista e Imunologista" },
+            { value: "homeopata", label: "Médico Homeopata" },
+            { value: "medicina-preventiva", label: "Medicina Preventiva" },
+            { value: "medicina-trabalho", label: "Medicina do Trabalho" },
+            { value: "medicina-legal", label: "Medicina Legal" },
+
+            // ========================================
+            // ODONTOLOGIA
+            // ========================================
             { value: "dentista-geral", label: "Dentista (Clínico Geral)" },
             { value: "ortodontista", label: "Ortodontista (Aparelhos)" },
             { value: "implantodontista", label: "Implantodontista" },
             { value: "endodontista", label: "Endodontista (Canal)" },
             { value: "periodontista", label: "Periodontista (Gengiva)" },
             { value: "odontopediatra", label: "Odontopediatra" },
+            { value: "protesista", label: "Protesista Dentário" },
+            { value: "buco-maxilo", label: "Cirurgia Bucomaxilofacial" },
             { value: "harmonizacao-facial", label: "Harmonização Facial" },
+            { value: "clareamento-dental", label: "Clareamento Dental" },
+            { value: "dentistica", label: "Dentística (Estética)" },
+
+            // ========================================
+            // TERAPIAS & REABILITAÇÃO
+            // ========================================
             { value: "fisioterapeuta", label: "Fisioterapeuta" },
+            { value: "fisio-respiratoria", label: "Fisioterapia Respiratória" },
+            { value: "fisio-neurologica", label: "Fisioterapia Neurológica" },
+            { value: "fisio-traumato", label: "Fisioterapia Traumato-Ortopédica" },
+            { value: "fisio-pelvica", label: "Fisioterapia Pélvica" },
             { value: "pilates", label: "Instrutor de Pilates" },
+            { value: "rpg", label: "RPG (Reeducação Postural Global)" },
             { value: "quiropraxista", label: "Quiropraxista" },
             { value: "osteopata", label: "Osteopata" },
             { value: "acupuntura", label: "Acupunturista" },
             { value: "fonoaudiologo", label: "Fonoaudiólogo" },
             { value: "terapeuta-ocupacional", label: "Terapeuta Ocupacional" },
+            { value: "terapia-aquatica", label: "Hidroterapia / Fisioterapia Aquática" },
+
+            // ========================================
+            // PSICOLOGIA & SAÚDE MENTAL
+            // ========================================
             { value: "psicologo", label: "Psicólogo" },
             { value: "psicanalista", label: "Psicanalista" },
+            { value: "neuropsicolog", label: "Neuropsicólogo" },
+            { value: "psicologo-infantil", label: "Psicólogo Infantil" },
+            { value: "terapia-casal", label: "Terapeuta de Casal" },
+            { value: "terapia-familiar", label: "Terapeuta Familiar" },
+
+            // ========================================
+            // NUTRIÇÃO & FITNESS
+            // ========================================
             { value: "nutricionista", label: "Nutricionista" },
+            { value: "nutri-esportiva", label: "Nutricionista Esportiva" },
+            { value: "nutri-clinica", label: "Nutricionista Clínica" },
             { value: "personal-trainer", label: "Personal Trainer" },
+            { value: "educador-fisico", label: "Educador Físico" },
             { value: "yoga", label: "Instrutor de Yoga" },
+            { value: "crossfit", label: "Instrutor de CrossFit" },
+            { value: "funcional", label: "Treinamento Funcional" },
+            { value: "natacao", label: "Professor de Natação" },
+
+            // ========================================
+            // ESTÉTICA & TERAPIAS COMPLEMENTARES
+            // ========================================
             { value: "massoterapeuta", label: "Massoterapeuta" },
             { value: "esteticista", label: "Esteticista" },
+            { value: "estetica-facial", label: "Estética Facial" },
+            { value: "estetica-corporal", label: "Estética Corporal" },
+            { value: "depilacao", label: "Depilação a Laser" },
+            { value: "micropigmentacao", label: "Micropigmentação" },
+            { value: "design-sobrancelha", label: "Design de Sobrancelhas" },
+            { value: "drenagem-linfatica", label: "Drenagem Linfática" },
+            { value: "reiki", label: "Terapeuta Reiki" },
+            { value: "aromaterapia", label: "Aromaterapia" },
+            { value: "auriculoterapia", label: "Auriculoterapia" },
+            { value: "reflexologia", label: "Reflexologia" },
+
+            // ========================================
+            // ENFERMAGEM & CUIDADOS
+            // ========================================
             { value: "enfermeiro", label: "Enfermeiro(a)" },
+            { value: "tecnico-enfermagem", label: "Técnico de Enfermagem" },
             { value: "cuidador-idosos", label: "Cuidador de Idosos" },
+            { value: "cuidado-paliativo", label: "Cuidados Paliativos" },
+            { value: "home-care", label: "Home Care / Assistência Domiciliar" },
             { value: "doula", label: "Doula" },
-            { value: "podologo", label: "Podólogo" }
+            { value: "podologo", label: "Podólogo" },
+
+            // ========================================
+            // EXAMES & DIAGNÓSTICO
+            // ========================================
+            { value: "biomedico", label: "Biomédico" },
+            { value: "farmaceutico", label: "Farmacêutico" },
+            { value: "bioanalista", label: "Analista Clínico" }
         ]
     },
     {
