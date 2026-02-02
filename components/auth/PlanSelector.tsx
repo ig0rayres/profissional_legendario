@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 interface Plan {
     id: string
     name: string
+    description?: string // De plan_config
     monthly_price: number
     features: string[]
     display_order: number
@@ -20,29 +21,28 @@ interface PlanSelectorProps {
     disabled?: boolean
 }
 
-// Configuração de ícones por tier - V6 Home Style (Verde + Laranja Elite)
+// Configuração de ícones por tier (UI only)
 const TIER_CONFIG: Record<string, {
     icon: any
-    description: string
     highlight?: string
 }> = {
     recruta: {
         icon: Shield,
-        description: 'O início da sua jornada na guilda. Explore os recursos básicos da plataforma.',
     },
     veterano: {
         icon: Sparkles,
-        description: 'Para quem já provou seu valor no campo. Amplie suas conexões e oportunidades.',
     },
     elite: {
         icon: Star,
-        description: 'A força máxima da elite de negócios. Maximize seu potencial de networking.',
         highlight: 'MAIS POPULAR'
     },
     lendario: {
         icon: Crown,
-        description: 'O topo absoluto. Lendas nunca são esquecidas. Acesso ilimitado a tudo.',
     }
+}
+
+interface PlanWithDescription extends Plan {
+    description?: string
 }
 
 export function PlanSelector({ plans, value, onChange, disabled }: PlanSelectorProps) {
@@ -170,7 +170,7 @@ export function PlanSelector({ plans, value, onChange, disabled }: PlanSelectorP
                                     </div>
                                 </div>
                                 <CardDescription className="text-sm leading-relaxed text-gray-600">
-                                    {config.description}
+                                    {selectedPlan.description || 'Plano sem descrição'}
                                 </CardDescription>
                             </div>
                         </div>
