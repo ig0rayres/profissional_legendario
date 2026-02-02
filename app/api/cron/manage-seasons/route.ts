@@ -163,6 +163,19 @@ export async function GET(request: NextRequest) {
                 .update({ status: 'active' })
                 .eq('id', nextSeason.id)
 
+            // ✅ CRIAR PRÓXIMA TEMPORADA AUTOMATICAMENTE (mês seguinte)
+            const { data: nextSeasonCreated } = await supabase.rpc('create_next_season')
+
+            if (nextSeasonCreated && Array.isArray(nextSeasonCreated) && nextSeasonCreated.length > 0) {
+                const created = nextSeasonCreated[0]
+                if (created.created) {
+                    console.log(`[CRON] 📅 Próxima temporada criada automaticamente: ${created.season_name}`)
+                    results.push(`📅 Temporada "${created.season_name}" criada automaticamente (scheduled)`)
+                } else {
+                    console.log(`[CRON] ℹ️  Próxima temporada já existe: ${created.season_name}`)
+                }
+            }
+
             // Buscar prêmios da nova temporada
             const { data: newPrizes } = await supabase
                 .from('season_prizes')

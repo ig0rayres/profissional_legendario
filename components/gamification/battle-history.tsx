@@ -134,21 +134,11 @@ export function BattleHistory({ userId }: BattleHistoryProps) {
     }
 
     // Calcular ranking atual do usuário
+    // USAR SERVIÇO CENTRALIZADO (exclui admin/rotabusiness automaticamente)
     async function loadUserRanking() {
-        const { data } = await supabase
-            .from('user_gamification')
-            .select('total_points')
-            .eq('user_id', userId)
-            .single()
-
-        if (data) {
-            const { count } = await supabase
-                .from('user_gamification')
-                .select('*', { count: 'exact', head: true })
-                .gt('total_points', data.total_points)
-
-            setUserRankingPosition((count || 0) + 1)
-        }
+        const { getUserRankingPosition } = await import('@/lib/services/ranking')
+        const position = await getUserRankingPosition(userId)
+        setUserRankingPosition(position)
     }
 
     // Helper para obter ícone do rank do banco
