@@ -47,6 +47,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
         allProezas,
         earnedProezas,
         confraternityStats,
+        categories,
         portfolio,
         ratings,
         ratingStats
@@ -86,6 +87,7 @@ export function ProfilePageTemplate({ profileData, nextRank, backUrl = '/profess
                         gamification={gamification}
                         allMedals={allMedals}
                         earnedMedals={earnedMedals}
+                        categories={categories || []}
                         isOwner={isOwner}
                     />
                 </div>

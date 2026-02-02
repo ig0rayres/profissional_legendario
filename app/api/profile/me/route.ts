@@ -97,6 +97,22 @@ export async function GET() {
         const { data: confraternityStats } = await supabase
             .rpc('get_user_confraternity_stats', { p_user_id: user.id })
 
+        // 6.5. Categorias/Modalidades do usuário
+        const { data: userCategories } = await supabase
+            .from('user_categories')
+            .select(`
+                category_id,
+                service_categories!inner(id, name, icon)
+            `)
+            .eq('user_id', user.id)
+
+        // Mapear para formato simples
+        const categories = (userCategories || []).map((uc: any) => ({
+            id: uc.service_categories.id,
+            name: uc.service_categories.name,
+            icon: uc.service_categories.icon
+        }))
+
         // 7. Portfolio
         const { data: portfolio } = await supabase
             .from('portfolio_items')
@@ -165,6 +181,7 @@ export async function GET() {
             allProezas: allProezas || [],
             earnedProezas: userProezas || [],
             confraternityStats: confraternityStats || null,
+            categories: categories || [],
             portfolio: portfolio || [],
             ratings: ratings || [],
             ratingStats: ratingStats || null,

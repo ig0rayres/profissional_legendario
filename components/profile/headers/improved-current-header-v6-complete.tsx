@@ -25,6 +25,7 @@ interface ImprovedCurrentHeaderV6CompleteProps {
     confraternityStats?: any
     earnedMedals?: any[]
     allMedals?: any[]
+    categories?: { id: string; name: string; icon?: string }[]
 }
 
 /**
@@ -38,10 +39,17 @@ export default function ImprovedCurrentHeaderV6Complete({
     ratingStats,
     confraternityStats,
     earnedMedals = [],
-    allMedals = []
+    allMedals = [],
+    categories = []
 }: ImprovedCurrentHeaderV6CompleteProps) {
 
     const rating = ratingStats?.average_rating || 5.0
+
+    // Formatar categorias com limite de 30 caracteres
+    const categoriesText = categories.map(c => c.name).join(', ')
+    const truncatedCategories = categoriesText.length > 30
+        ? categoriesText.slice(0, 30) + '...'
+        : categoriesText
 
     return (
         <div className="relative w-full h-[256px] landscape:h-[320px] md:h-[320px] overflow-hidden">
@@ -142,6 +150,38 @@ export default function ImprovedCurrentHeaderV6Complete({
                                         <span className="ml-1">{rating.toFixed(1)} ({ratingStats?.total_ratings || 0})</span>
                                     </div>
                                 </div>
+
+                                {/* Modalidades/Categorias - Abaixo da localização */}
+                                {categories.length > 0 && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div className="flex items-center gap-1 mt-1 cursor-pointer text-[9px] md:text-xs text-[#D1D5DB] hover:text-white transition-colors">
+                                                    <Briefcase className="w-3 h-3 flex-shrink-0" />
+                                                    <span className="truncate max-w-[200px] md:max-w-[300px]">
+                                                        {truncatedCategories}
+                                                    </span>
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent
+                                                className="bg-[#1A2421] border-[#3D6B54] text-white p-3 shadow-xl max-w-[300px]"
+                                                side="bottom"
+                                            >
+                                                <p className="font-bold text-[#D4742C] text-xs uppercase tracking-wider mb-2">
+                                                    Modalidades ({categories.length})
+                                                </p>
+                                                <ul className="space-y-1">
+                                                    {categories.map((cat) => (
+                                                        <li key={cat.id} className="text-[11px] text-gray-200 flex items-center gap-1.5">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-[#D4742C]"></span>
+                                                            {cat.name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )}
                             </div>
 
                             {/* PATENTE - Badge tipo medalha - Hidden on mobile */}
