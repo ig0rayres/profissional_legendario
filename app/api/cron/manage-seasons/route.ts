@@ -128,14 +128,16 @@ export async function GET(request: NextRequest) {
                     .order('position')
                     .limit(3)
 
-                // TODO: Enviar email de encerramento
-                // const html = getSeasonEndEmailTemplate({
-                //     seasonName: season.name,
-                //     monthYear: `${getMonthName(season.month)}/${season.year}`,
-                //     prizes: prizes || [],
-                //     winners: winners || []
-                // })
-                // await sendEmailToAllUsers(html, 'Temporada Encerrada')
+                // ✅ Enviar email de encerramento
+                const html = getSeasonEndEmailTemplate({
+                    seasonName: season.name,
+                    monthYear: `${getMonthName(season.month)}/${season.year}`,
+                    prizes: prizes || [],
+                    winners: winners || []
+                })
+
+                // TODO: Implementar sendEmailToAllUsers via Resend
+                console.log('[CRON] 📧 Email de encerramento pronto (Resend pendente)')
 
                 results.push(`✅ Temporada "${season.name}" encerrada e monthly_vigor resetado`)
             }
@@ -183,13 +185,15 @@ export async function GET(request: NextRequest) {
                 .eq('season_id', nextSeason.id)
                 .order('position')
 
-            // TODO: Enviar email de nova temporada
-            // const html = getSeasonStartEmailTemplate({
-            //     seasonName: nextSeason.name,
-            //     monthYear: `${getMonthName(nextSeason.month)}/${nextSeason.year}`,
-            //     prizes: newPrizes || []
-            // })
-            // await sendEmailToAllUsers(html, 'Nova Temporada')
+            // ✅ Enviar email de nova temporada
+            const html = getSeasonStartEmailTemplate({
+                seasonName: nextSeason.name,
+                monthYear: `${getMonthName(nextSeason.month)}/${nextSeason.year}`,
+                prizes: newPrizes || []
+            })
+
+            // TODO: Implementar sendEmailToAllUsers via Resend
+            console.log('[CRON] 📧 Email de nova temporada pronto (Resend pendente)')
 
             results.push(`✅ Temporada "${nextSeason.name}" ativada`)
         }
