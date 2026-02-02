@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import Image from 'next/image'
 import {
     MapPin, Star, Users, MessageCircle, UserPlus,
@@ -45,10 +46,10 @@ export default function ImprovedCurrentHeaderV6Complete({
 
     const rating = ratingStats?.average_rating || 5.0
 
-    // Formatar categorias com limite de 30 caracteres
+    // Formatar categorias com limite de 80 caracteres
     const categoriesText = categories.map(c => c.name).join(', ')
-    const truncatedCategories = categoriesText.length > 30
-        ? categoriesText.slice(0, 30) + '...'
+    const truncatedCategories = categoriesText.length > 80
+        ? categoriesText.slice(0, 80) + '...'
         : categoriesText
 
     return (
@@ -153,34 +154,33 @@ export default function ImprovedCurrentHeaderV6Complete({
 
                                 {/* Modalidades/Categorias - Abaixo da localização */}
                                 {categories.length > 0 && (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div className="flex items-center gap-1 mt-1 cursor-pointer text-[9px] md:text-xs text-[#D1D5DB] hover:text-white transition-colors">
-                                                    <Briefcase className="w-3 h-3 flex-shrink-0" />
-                                                    <span className="truncate max-w-[200px] md:max-w-[300px]">
-                                                        {truncatedCategories}
-                                                    </span>
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent
-                                                className="bg-[#1A2421] border-[#3D6B54] text-white p-3 shadow-xl max-w-[300px]"
-                                                side="bottom"
-                                            >
-                                                <p className="font-bold text-[#D4742C] text-xs uppercase tracking-wider mb-2">
-                                                    Modalidades ({categories.length})
-                                                </p>
-                                                <ul className="space-y-1">
-                                                    {categories.map((cat) => (
-                                                        <li key={cat.id} className="text-[11px] text-gray-200 flex items-center gap-1.5">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-[#D4742C]"></span>
-                                                            {cat.name}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <div className="flex items-center gap-1 mt-1 cursor-pointer text-[9px] md:text-xs text-[#D1D5DB] hover:text-white transition-colors">
+                                                <Briefcase className="w-3 h-3 flex-shrink-0" />
+                                                <span className="truncate max-w-[180px] md:max-w-[400px]">
+                                                    {truncatedCategories}
+                                                </span>
+                                            </div>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            className="bg-[#1A2421] border-[#3D6B54] text-white p-3 shadow-xl max-w-[300px]"
+                                            side="bottom"
+                                            align="start"
+                                        >
+                                            <p className="font-bold text-[#D4742C] text-xs uppercase tracking-wider mb-2">
+                                                Modalidades ({categories.length})
+                                            </p>
+                                            <ul className="space-y-1">
+                                                {categories.map((cat) => (
+                                                    <li key={cat.id} className="text-[11px] text-gray-200 flex items-center gap-1.5">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#D4742C]"></span>
+                                                        {cat.name}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </PopoverContent>
+                                    </Popover>
                                 )}
                             </div>
 
