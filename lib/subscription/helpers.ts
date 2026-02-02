@@ -37,7 +37,7 @@ export interface PlanLimits {
 }
 
 /**
- * Busca os limites do plano do usuário diretamente da plan_config
+ * Busca os limites do plano do usuário
  * @param userId ID do usuário
  * @returns Limites do plano
  */
@@ -54,50 +54,13 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
 
     const planTier = subscription?.plan_id || 'recruta'
 
-    // Buscar configuração do plano
-    const { data: planConfig } = await supabase
-        .from('plan_config')
-        .select('*')
-        .eq('tier', planTier)
-        .eq('is_active', true)
-        .single()
+    // FONTE ÚNICA DE VERDADE - plan-limits.ts (CENTRALIZADO!)
+    const tierKey = (planTier as 'recruta' | 'soldado' | 'especialista' | 'elite') || 'recruta'
+    const limits = PLAN_LIMITS[tierKey] || PLAN_LIMITS.recruta
 
-    // Fallback para recruta se não encontrar
-    if (!planConfig) {
-        console.warn(`[getUserPlanLimits] Plan config não encontrado para tier: ${planTier}. Buscando recruta...`)
+    console.log(`[getUserPlanLimits] User ${userId} | Plan: ${planTier} | Categories: ${limits.max_categories}`)
 
-        // Buscar plano recruta como fallback dinâmico
-        const { data: recruitaPlan } = await supabase
-            .from('plan_config')
-            .select('*')
-            .eq('tier', 'recruta')
-            .eq('is_active', true)
-            .single()
-
-        if (recruitaPlan) {
-            return {
-                confraternities_per_month: recruitaPlan.max_confraternities_month,
-                can_send_elo: recruitaPlan.can_send_elo,
-                xp_multiplier: recruitaPlan.xp_multiplier,
-                max_elos: recruitaPlan.max_elos,
-                max_marketplace_ads: recruitaPlan.max_marketplace_ads,
-                max_categories: recruitaPlan.max_categories
-            }
-        }
-
-        // Fallback crítico apenas se banco falhar completamente
-        console.error('[getUserPlanLimits] ERRO CRÍTICO: Não foi possível carregar nenhum plano do banco!')
-        throw new Error('Configuração de planos indisponível')
-    }
-
-    return {
-        confraternities_per_month: planConfig.max_confraternities_month,
-        can_send_elo: planConfig.can_send_elo,
-        xp_multiplier: planConfig.xp_multiplier,
-        max_elos: planConfig.max_elos,
-        max_marketplace_ads: planConfig.max_marketplace_ads,
-        max_categories: planConfig.max_categories
-    }
+    return limits
 }
 
 /**

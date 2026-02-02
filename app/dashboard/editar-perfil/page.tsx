@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/context'
+import { getPlanLimits } from '@/lib/constants/plan-limits'
 import { createClient } from '@/lib/supabase/client'
 import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -167,18 +168,9 @@ export default function EditarPerfilPage() {
             .eq('user_id', user.id)
             .single()
 
-        // Determinar max_categories baseado no plano
-        let maxCategories = 1 // Default
-        if (subscription?.plan_id) {
-            const planLimits: Record<string, number> = {
-                'recruta': 1,
-                'soldado': 3,
-                'especialista': 5,
-                'elite': 10
-            }
-            maxCategories = planLimits[subscription.plan_id] || 1
-        }
-        setUserMaxCategories(maxCategories)
+        // FONTE ÚNICA DE VERDADE - plan-limits.ts
+        const limits = getPlanLimits(subscription?.plan_id)
+        setUserMaxCategories(limits.max_categories)
 
         // Popular formulário com dados do perfil
         if (profile) {

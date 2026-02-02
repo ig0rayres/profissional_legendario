@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getPlanLimits } from '@/lib/constants/plan-limits'
 
 // GET - Buscar categorias do usuário autenticado
 export async function GET() {
