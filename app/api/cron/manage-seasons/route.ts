@@ -136,8 +136,10 @@ export async function GET(request: NextRequest) {
                     winners: winners || []
                 })
 
-                // TODO: Implementar sendEmailToAllUsers via Resend
-                console.log('[CRON] 📧 Email de encerramento pronto (Resend pendente)')
+                // ✅ ENVIAR VIA RESEND
+                const { sendEmailToAllUsers } = await import('@/lib/services/send-email')
+                const emailResult = await sendEmailToAllUsers(html, `🏆 Temporada ${season.name} Encerrada!`)
+                console.log(`[CRON] 📧 ${emailResult.sent} emails enviados (${emailResult.errors} erros)`)
 
                 results.push(`✅ Temporada "${season.name}" encerrada e monthly_vigor resetado`)
             }
@@ -192,8 +194,10 @@ export async function GET(request: NextRequest) {
                 prizes: newPrizes || []
             })
 
-            // TODO: Implementar sendEmailToAllUsers via Resend
-            console.log('[CRON] 📧 Email de nova temporada pronto (Resend pendente)')
+            // ✅ ENVIAR VIA RESEND
+            const { sendEmailToAllUsers } = await import('@/lib/services/send-email')
+            const emailResult = await sendEmailToAllUsers(html, `🚀 Nova Temporada: ${nextSeason.name}`)
+            console.log(`[CRON] 📧 ${emailResult.sent} emails enviados (${emailResult.errors} erros)`)
 
             results.push(`✅ Temporada "${nextSeason.name}" ativada`)
         }
