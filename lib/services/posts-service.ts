@@ -389,6 +389,7 @@ export class PostsService {
             const { count } = await this.supabase
                 .from('profiles')
                 .select('*', { count: 'exact', head: true })
+                .not('email', 'in', '("admin@rotabusinessclub.com.br","sistema@rotabusinessclub.com.br","rotabusiness@rotabusinessclub.com.br")')
             return count || 0
         } catch {
             return 0
@@ -435,29 +436,35 @@ export class PostsService {
             if (gamError) throw gamError
             if (!gamificationData || gamificationData.length === 0) return []
 
-            // Buscar perfis separadamente
+            // Buscar perfis separadamente (EXCLUINDO admin/sistema/rotabusiness)
             const userIds = gamificationData.map(g => g.user_id)
             const { data: profiles } = await this.supabase
                 .from('profiles')
-                .select('id, full_name, avatar_url, slug, rota_number')
+                .select('id, full_name, avatar_url, slug, rota_number, email')
                 .in('id', userIds)
+                .not('email', 'in', '("admin@rotabusinessclub.com.br","sistema@rotabusinessclub.com.br","rotabusiness@rotabusinessclub.com.br")')
 
             // Criar mapa de perfis
             const profileMap = new Map<string, any>()
             profiles?.forEach(p => profileMap.set(p.id, p))
 
-            return gamificationData.map(item => {
-                const profile = profileMap.get(item.user_id)
-                return {
-                    id: item.user_id,
-                    full_name: profile?.full_name || 'Usuário',
-                    avatar_url: profile?.avatar_url || null,
-                    slug: profile?.slug || null,
-                    rota_number: profile?.rota_number || null,
-                    vigor: item.total_points || 0,
-                    rank_id: item.current_rank_id
-                }
-            })
+            // Filtrar apenas usuários com perfil válido (exclui admin/sistema)
+            return gamificationData
+                .map(item => {
+                    const profile = profileMap.get(item.user_id)
+                    return {
+                        id: item.user_id,
+                        full_name: profile?.full_name || 'Usuário',
+                        avatar_url: profile?.avatar_url || null,
+                        slug: profile?.slug || null,
+                        rota_number: profile?.rota_number || null,
+                        vigor: item.total_points || 0,
+                        rank_id: item.current_rank_id,
+                        _hasProfile: !!profile // Controle interno
+                    }
+                })
+                .filter(user => user._hasProfile) // Remove sem perfil (admin/sistema)
+                .slice(0, limit) // Garantir limite após filtro
         } catch (error) {
             console.error('Erro ao carregar ranking:', error)
             return []
