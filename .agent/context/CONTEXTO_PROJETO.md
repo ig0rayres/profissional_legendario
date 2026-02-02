@@ -1,6 +1,6 @@
 # 🧠 CONTEXTO DO PROJETO - ROTA BUSINESS CLUB
 
-*Última atualização: 31/01/2026 - 15:00*
+*Última atualização: 02/02/2026 - 14:00*
 
 > **INSTRUÇÃO:** No início de cada sessão, peça para o assistente ler este arquivo:
 > `"leia o arquivo CONTEXTO_PROJETO.md"`
@@ -28,9 +28,46 @@
 
 ---
 
-## 🚨 PONTO DE RETOMADA - 01/02/2026
+## 🚨 PONTO DE RETOMADA - 02/02/2026
 
-### **ÚLTIMA SESSÃO: 01/02/2026 - ~13:00**
+### **ÚLTIMA SESSÃO: 02/02/2026 - ~14:00**
+
+#### ✅ **CENTRALIZAÇÃO DE LIMITES DE PLANOS** 🎯
+
+**Duração:** ~20min  
+**Status:** ✅ COMPLETO E EM PRODUÇÃO
+
+##### **Problema Resolvido:**
+- Dados de limites de planos **dispersos** em múltiplos arquivos
+- Bugs constantes por inconsistência de valores
+- `plan_config` e `plan_tiers` quebrando queries
+
+##### **Solução Implementada:**
+- ✅ Criado **FONTE ÚNICA**: `/lib/constants/plan-limits.ts`
+- ✅ Substituído em 4 arquivos críticos:
+  - `/app/api/user/categories/route.ts`
+  - `/app/dashboard/editar-perfil/page.tsx`
+  - `/lib/subscription/helpers.ts`
+  - (marketplace em fase de substituição)
+
+##### **Valores Definidos:**
+```typescript
+recruta: { max_categories: 1, max_marketplace_ads: 0, ... }
+soldado: { max_categories: 3, max_marketplace_ads: 1, ... }
+especialista: { max_categories: 5, max_marketplace_ads: 2, ... }
+elite: { max_categories: 10, max_marketplace_ads: 3, ... }
+```
+
+##### **Regra de Ouro:**
+**NUNCA mais:**
+- Buscar `plan_config` ou `plan_tiers`
+- Hardcodar limites em arquivos
+
+**SEMPRE:**
+```typescript
+import { getPlanLimits } from '@/lib/constants/plan-limits'
+const limits = getPlanLimits(userPlanId)
+```
 
 ---
 

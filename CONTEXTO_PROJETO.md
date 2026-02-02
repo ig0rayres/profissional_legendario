@@ -38,3 +38,5 @@ Antes de trabalhar, **LEIA OBRIGATORIAMENTE**:
 🎯 **[AVATARES_E_BADGES.md](docs/AVATARES_E_BADGES.md)** - **DOCUMENTAÇÃO COMPLETA** de todos os avatares e badges de patente do sistema
 
 🖼️ **[PADRAO_AVATAR.md](docs/PADRAO_AVATAR.md)** - Padrão de avatares (frame quadrada, patente no canto direito)
+
+🔧 **[lib/constants/plan-limits.ts](lib/constants/plan-limits.ts)** - **FONTE ÚNICA** de limites de planos (categorias, anúncios, confraternities) - NUNCA usar plan_config ou hardcoded!

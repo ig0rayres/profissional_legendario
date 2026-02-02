@@ -79,20 +79,21 @@ A plataforma usa metáforas militares e de aventura:
 
 ### Limites por Plano
 
-> **IMPORTANTE:** Todos os limites abaixo são gerenciados dinamicamente através do painel admin (`/admin/financeiro → Planos`). Qualquer alteração feita no admin é refletida AUTOMATICAMENTE em todos os cards de planos (home, /planos, etc) sem necessidade de alterar código.
+> **⚠️ FONTE ÚNICA DE VERDADE:** `/lib/constants/plan-limits.ts`
+>
+> **NUNCA** buscar `plan_config`, `plan_tiers` ou hardcodar valores!  
+> **SEMPRE** importar: `import { getPlanLimits } from '@/lib/constants/plan-limits'`
 
-| Recurso | Recruta | Veterano | Elite | Lendário |
-|---------|---------|----------|-------|----------|
-| Elos Máximos | 10 | 100 | ∞ Ilimitado | ∞ Ilimitado |
-| Confrarias/Mês | 0 | 4 | 10 | ∞ Ilimitado |
-| Anúncios Marketplace | 0 | 2 | 10 | ∞ Ilimitado |
-| **Max Categorias** | 3 | 5 | 10 | ∞ Ilimitado |
-| Destaque no Ranking | ❌ | ❌ | ✅ | ✅ |
+| Recurso | Recruta | Soldado | Especialista | Elite |
+|---------|---------|---------|--------------|-------|
+| Max Categorias | 1 | 3 | 5 | 10 |
+| Elos Máximos | 10 | 50 | 100 | 999 (∞) |
+| Confrarias/Mês | 1 | 2 | 3 | 999 (∞) |
+| Anúncios Marketplace | 0 | 1 | 2 | 3 |
+| XP Multiplier | 1.0x | 1.0x | 1.5x | 2.0x |
+| Pode Enviar Elo | ❌ | ✅ | ✅ | ✅ |
 
-**Convenções de Valores:**
-- **`-1`** = Ilimitado (exibe ∞ nas interfaces)
-- **`0`** = Sem acesso (usuário não pode usar a funcionalidade)
-- **Valores positivos** = Limite numérico específico
+**Valores centralizados em:** `/lib/constants/plan-limits.ts` (02/02/2026)
 
 ### Features por Plano
 
