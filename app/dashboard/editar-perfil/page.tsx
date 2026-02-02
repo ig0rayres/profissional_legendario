@@ -146,13 +146,41 @@ export default function EditarPerfilPage() {
             setAvailablePistas(pistas)
         }
 
-        // Carregar perfil
-        const { data: profile, error } = await supabase
+        // Carregar perfil (SEM plan_config que não existe mais!)
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('*, plan_config!inner(max_categories)')
+            .select('*')
             .eq('id', user.id)
             .single()
 
+        if (profileError || !profile) {
+            console.error('[Editar Perfil] Erro ao carregar perfil:', profileError)
+            toast.error('Erro ao carregar perfil')
+            setLoading(false)
+            return
+        }
+
+        // Buscar subscription separadamente
+        const { data: subscription } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+
+        // Determinar max_categories baseado no plano
+        let maxCategories = 1 // Default
+        if (subscription?.plan_id) {
+            const planLimits: Record<string, number> = {
+                'recruta': 1,
+                'soldado': 3,
+                'especialista': 5,
+                'elite': 10
+            }
+            maxCategories = planLimits[subscription.plan_id] || 1
+        }
+        setUserMaxCategories(maxCategories)
+
+        // Popular formulário com dados do perfil
         if (profile) {
             setFormData({
                 full_name: profile.full_name || '',
@@ -168,23 +196,6 @@ export default function EditarPerfilPage() {
             setAvatarUrl(profile.avatar_url)
             setCoverUrl(profile.cover_url)
             setSelectedPistaId(profile.pista_id || null)
-
-            // Carregar limite de categorias do plano
-            const planConfig = Array.isArray(profile.plan_config)
-                ? profile.plan_config[0]
-                : profile.plan_config
-
-            // Validar configuração do plano
-            if (!planConfig?.max_categories) {
-                console.error('[Editar Perfil] Configuração de plano não encontrada')
-                toast.error('Erro ao carregar plano', {
-                    description: 'Não foi possível validar seu limite de categorias. Por favor, recarregue a página.'
-                })
-                setUserMaxCategories(1) // Mínimo seguro para não bloquear totalmente
-                return
-            }
-
-            setUserMaxCategories(planConfig.max_categories)
         }
 
         // Carregar categorias do usuário
