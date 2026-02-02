@@ -365,17 +365,12 @@ async function handleSubscriptionUpdate(supabase: any, subscription: Stripe.Subs
  * Assinatura cancelada
  */
 async function handleSubscriptionDeleted(supabase: any, subscription: Stripe.Subscription) {
-    const { data: recruitaPlan } = await supabase
-        .from('plans')
-        .select('id')
-        .eq('tier', 'recruta')
-        .single()
-
+    // plan_id já é o tier (recruta, veterano, lendario)
     await supabase
         .from('subscriptions')
         .update({
             status: 'canceled',
-            plan_id: recruitaPlan?.id || null,
+            plan_id: 'recruta', // Voltar para plano recruta
             cancel_at_period_end: false,
             updated_at: new Date().toISOString()
         })

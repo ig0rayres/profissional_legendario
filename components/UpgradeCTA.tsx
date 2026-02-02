@@ -34,16 +34,10 @@ export function UpgradeCTA({ variant = 'card', className = '' }: UpgradeCTAProps
                 .maybeSingle()
 
             if (sub?.plan_id) {
-                // Buscar slug do plano
-                const { data: plan } = await supabase
-                    .from('plans')
-                    .select('slug')
-                    .eq('id', sub.plan_id)
-                    .single()
-
-                setCurrentTier(plan?.slug || 'free')
+                // plan_id já É o tier (recruta, veterano, lendario)
+                setCurrentTier(sub.plan_id)
             } else {
-                setCurrentTier('free')
+                setCurrentTier('recruta')
             }
         } catch (error) {
             console.error('Error loading subscription:', error)

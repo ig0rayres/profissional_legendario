@@ -20,9 +20,9 @@ export async function POST(request: Request) {
 
     // 2. Check if plan exists
     const { data: plan, error: planError } = await supabase
-        .from('plans')
+        .from('plan_config')
         .select('*')
-        .eq('id', planId)
+        .eq('tier', planId)
         .single()
 
     if (planError || !plan) {
