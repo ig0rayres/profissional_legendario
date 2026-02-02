@@ -30,6 +30,7 @@ import { generateSlug } from '@/lib/profile/utils'
 import * as LucideIcons from 'lucide-react'
 import { ImageCropDialog } from '@/components/ui/image-crop-dialog'
 import { CategorySearch } from '@/components/categories/CategorySearch'
+import { toast } from 'sonner'
 
 interface ProfileFormData {
     full_name: string
@@ -172,7 +173,18 @@ export default function EditarPerfilPage() {
             const planConfig = Array.isArray(profile.plan_config)
                 ? profile.plan_config[0]
                 : profile.plan_config
-            setUserMaxCategories(planConfig?.max_categories || 3)
+
+            // Validar configuração do plano
+            if (!planConfig?.max_categories) {
+                console.error('[Editar Perfil] Configuração de plano não encontrada')
+                toast.error('Erro ao carregar plano', {
+                    description: 'Não foi possível validar seu limite de categorias. Por favor, recarregue a página.'
+                })
+                setUserMaxCategories(1) // Mínimo seguro para não bloquear totalmente
+                return
+            }
+
+            setUserMaxCategories(planConfig.max_categories)
         }
 
         // Carregar categorias do usuário

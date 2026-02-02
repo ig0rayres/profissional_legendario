@@ -104,7 +104,16 @@ export async function POST(request: NextRequest) {
         const planConfig = Array.isArray(profile.plan_config)
             ? profile.plan_config[0]
             : profile.plan_config
-        const maxCategories = planConfig?.max_categories || 3
+
+        // Validar que encontrou configuração do plano
+        if (!planConfig?.max_categories) {
+            console.error(`[API Categories] Plan config não encontrado ou sem max_categories para user ${user.id}`)
+            return NextResponse.json({
+                error: 'Configuração de plano não encontrada. Entre em contato com o suporte.'
+            }, { status: 500 })
+        }
+
+        const maxCategories = planConfig.max_categories
 
         // Validar limite
         if (maxCategories !== -1 && categoryIds.length > maxCategories) {

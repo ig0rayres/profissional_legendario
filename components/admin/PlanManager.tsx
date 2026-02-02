@@ -164,7 +164,7 @@ export function PlanManager() {
         max_elos: null,
         max_confraternities_month: 0,
         max_marketplace_ads: 0,
-        max_categories: 3,
+        max_categories: 2, // Padrão alinhado com plano Recruta
         can_send_elo: false,
         is_active: true,
         display_order: 0
@@ -192,7 +192,7 @@ export function PlanManager() {
                     max_elos: newPlan.max_elos,
                     max_confraternities_month: newPlan.max_confraternities_month || 0,
                     max_marketplace_ads: newPlan.max_marketplace_ads || 0,
-                    max_categories: newPlan.max_categories || 3,
+                    max_categories: newPlan.max_categories || 2,
                     can_send_elo: newPlan.can_send_elo || false,
                     is_active: newPlan.is_active ?? true,
                     display_order: maxOrder + 1,
@@ -217,7 +217,7 @@ export function PlanManager() {
                 max_elos: null,
                 max_confraternities_month: 0,
                 max_marketplace_ads: 0,
-                max_categories: 3,
+                max_categories: 2, // Resetado para padrão Recruta
                 can_send_elo: false,
                 is_active: true,
                 display_order: 0
@@ -385,7 +385,7 @@ export function PlanManager() {
                                 <div className="flex items-center gap-2">
                                     <Switch
                                         checked={newPlan.max_categories === -1}
-                                        onCheckedChange={(checked) => setNewPlan({ ...newPlan, max_categories: checked ? -1 : 3 })}
+                                        onCheckedChange={(checked) => setNewPlan({ ...newPlan, max_categories: checked ? -1 : 2 })}
                                     />
                                     <span className="text-sm">Ilimitado</span>
                                 </div>
@@ -393,8 +393,8 @@ export function PlanManager() {
                                     <Input
                                         type="number"
                                         min="1"
-                                        value={newPlan.max_categories || 3}
-                                        onChange={(e) => setNewPlan({ ...newPlan, max_categories: parseInt(e.target.value) || 3 })}
+                                        value={newPlan.max_categories || 2}
+                                        onChange={(e) => setNewPlan({ ...newPlan, max_categories: parseInt(e.target.value) || 2 })}
                                     />
                                 )}
                             </div>
@@ -690,7 +690,7 @@ export function PlanManager() {
                                                     onCheckedChange={(checked) =>
                                                         setEditForm({
                                                             ...editForm,
-                                                            max_categories: checked ? -1 : 3
+                                                            max_categories: checked ? -1 : 2
                                                         })
                                                     }
                                                 />
@@ -700,11 +700,11 @@ export function PlanManager() {
                                                 <Input
                                                     type="number"
                                                     min="1"
-                                                    value={editForm.max_categories || 3}
+                                                    value={editForm.max_categories || 2}
                                                     onChange={(e) =>
                                                         setEditForm({
                                                             ...editForm,
-                                                            max_categories: parseInt(e.target.value) || 3
+                                                            max_categories: parseInt(e.target.value) || 2
                                                         })
                                                     }
                                                 />
@@ -839,7 +839,7 @@ export function PlanManager() {
                                             {plan.max_categories === -1 ? (
                                                 <><Infinity className="w-5 h-5" /> Ilimitado</>
                                             ) : (
-                                                plan.max_categories || 3
+                                                plan.max_categories
                                             )}
                                         </p>
                                     </div>

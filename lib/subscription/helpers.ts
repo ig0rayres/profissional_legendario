@@ -64,14 +64,30 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
 
     // Fallback para recruta se não encontrar
     if (!planConfig) {
-        return {
-            confraternities_per_month: 0,
-            can_send_elo: true,
-            xp_multiplier: 1,
-            max_elos: 10,
-            max_marketplace_ads: 0,
-            max_categories: 3
+        console.warn(`[getUserPlanLimits] Plan config não encontrado para tier: ${planTier}. Buscando recruta...`)
+
+        // Buscar plano recruta como fallback dinâmico
+        const { data: recruitaPlan } = await supabase
+            .from('plan_config')
+            .select('*')
+            .eq('tier', 'recruta')
+            .eq('is_active', true)
+            .single()
+
+        if (recruitaPlan) {
+            return {
+                confraternities_per_month: recruitaPlan.max_confraternities_month,
+                can_send_elo: recruitaPlan.can_send_elo,
+                xp_multiplier: recruitaPlan.xp_multiplier,
+                max_elos: recruitaPlan.max_elos,
+                max_marketplace_ads: recruitaPlan.max_marketplace_ads,
+                max_categories: recruitaPlan.max_categories
+            }
         }
+
+        // Fallback crítico apenas se banco falhar completamente
+        console.error('[getUserPlanLimits] ERRO CRÍTICO: Não foi possível carregar nenhum plano do banco!')
+        throw new Error('Configuração de planos indisponível')
     }
 
     return {

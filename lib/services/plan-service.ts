@@ -164,6 +164,7 @@ export function getMultiplierSync(tier: string | null | undefined): number {
 
     // Fallback hardcoded para garantir multiplicador mesmo sem cache
     // CRÍTICO: Isso garante que APIs server-side funcionem
+    // ⚠️ ATENÇÃO: Este fallback deve ser evitado. Ideal é sempre ter cache carregado.
     const FALLBACK_MULTIPLIERS: Record<string, number> = {
         'recruta': 1,
         'veterano': 1.5,
@@ -171,6 +172,7 @@ export function getMultiplierSync(tier: string | null | undefined): number {
         'lendario': 5
     }
 
+    console.warn(`[PlanService] USANDO FALLBACK HARDCODED de multiplicador para tier: ${tier}. Considere atualizar o cache ou buscar dinamicamente do banco.`)
     return FALLBACK_MULTIPLIERS[tierLower] || 1
 }
 
