@@ -16,6 +16,7 @@
  */
 
 import { createClient } from '@/lib/supabase/client'
+import { PLAN_LIMITS } from '@/lib/constants/plan-limits'
 
 export type PlanId = 'recruta' | 'veterano' | 'elite'
 
