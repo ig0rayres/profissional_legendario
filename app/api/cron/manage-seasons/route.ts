@@ -72,11 +72,11 @@ export async function GET(request: NextRequest) {
                 // ✅ QUERY CENTRALIZADA: getTopUsersForSeason (exclui admin/rotabusiness)
                 const topUsers = await getTopUsersForSeason(supabase, 3)
 
-                console.log(`[CRON] Top 3 encontrados: ${topUsers.length} usuários (admin/rotabusiness EXCLUÍDOS)`)
+                console.log(`[CRON] Top ${topUsers.length} encontrados (admin/rotabusiness EXCLUÍDOS)`)
 
-                // Salvar vencedores
-                if (topUsers.length >= 3) {
-                    for (let i = 0; i < 3; i++) {
+                // Salvar vencedores (TODOS, mesmo se < 3)
+                if (topUsers.length > 0) {
+                    for (let i = 0; i < topUsers.length; i++) {
                         const winner = topUsers[i]
                         await supabase.from('season_winners').insert({
                             season_id: season.id,
@@ -85,9 +85,9 @@ export async function GET(request: NextRequest) {
                             xp_earned: winner.total_points
                         })
                     }
-                    console.log(`[CRON] ✅ Top 3 registrados`)
+                    console.log(`[CRON] ✅ Top ${topUsers.length} registrados em season_winners`)
                 } else {
-                    console.log(`[CRON] ⚠️ Menos de 3 usuários elegíveis (${topUsers.length})`)
+                    console.log(`[CRON] ⚠️ Nenhum usuário com pontos nesta temporada`)
                 }
 
                 // Marcar temporada como finished
@@ -112,14 +112,13 @@ export async function GET(request: NextRequest) {
                     console.log(`       - Medalhas PRESERVADAS`)
                 }
 
-                // Preparar dados para email de encerramento
+                // Preparar dados para email de encerramento (SEMPRE envia, mesmo com < 3)
                 const winners = topUsers.slice(0, 3).map((winner, idx) => ({
                     position: idx + 1,
                     userName: winner.full_name,
                     userAvatar: winner.avatar_url,
                     prize: `${idx + 1}º Lugar`
                 }))
-
 
                 const { data: prizes } = await supabase
                     .from('season_prizes')
@@ -128,18 +127,19 @@ export async function GET(request: NextRequest) {
                     .order('position')
                     .limit(3)
 
-                // ✅ Enviar email de encerramento
+                // ✅ Enviar email de encerramento (SEMPRE, mesmo sem vencedores)
+                console.log(`[CRON] 📧 Enviando email de encerramento...`)
                 const html = getSeasonEndEmailTemplate({
                     seasonName: season.name,
                     monthYear: `${getMonthName(season.month)}/${season.year}`,
                     prizes: prizes || [],
-                    winners: winners || []
+                    winners: winners
                 })
 
                 // ✅ ENVIAR VIA RESEND
                 const { sendEmailToAllUsers } = await import('@/lib/services/send-email')
                 const emailResult = await sendEmailToAllUsers(html, `🏆 Temporada ${season.name} Encerrada!`)
-                console.log(`[CRON] 📧 ${emailResult.sent} emails enviados (${emailResult.errors} erros)`)
+                console.log(`[CRON] 📧 Email encerramento: ${emailResult.sent} enviados, ${emailResult.errors} erros`)
 
                 results.push(`✅ Temporada "${season.name}" encerrada e monthly_vigor resetado`)
             }
@@ -148,13 +148,13 @@ export async function GET(request: NextRequest) {
         // ============================================
         // 2. ATIVAR PRÓXIMA TEMPORADA AGENDADA
         // ============================================
+        // Busca próxima temporada scheduled (independente da data de início)
         const { data: pendingSeasons } = await supabase
             .from('seasons')
             .select('*')
             .eq('status', 'scheduled')
-            .lte('start_date', today)
-            .gte('end_date', today)
-            .order('start_date')
+            .order('year', { ascending: true })
+            .order('month', { ascending: true })
             .limit(1)
 
         if (pendingSeasons && pendingSeasons.length > 0) {
