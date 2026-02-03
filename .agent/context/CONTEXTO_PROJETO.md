@@ -1,37 +1,75 @@
 # 🧠 CONTEXTO DO PROJETO - ROTA BUSINESS CLUB
 
-*Última atualização: 02/02/2026 - 18:55*
+*Última atualização: 02/02/2026 - 22:45*
 
 > **INSTRUÇÃO:** No início de cada sessão, peça para o assistente ler este arquivo:
 > `"leia o arquivo CONTEXTO_PROJETO.md"`
 
 ---
 
-## 🔍 MODUS OPERANDI - INSPECIONAR ELEMENTO
+## 🚨 PONTO DE RETOMADA - 03/02/2026
 
-**REGRA OBRIGATÓRIA** para facilitar comunicação entre assistente e usuário:
+### **PRIMEIRA TAREFA DO DIA:**
 
-### Quando Reportar Bugs Visuais:
+**Testar cenário de cookie de indicação:**
+1. Acesse: `https://rotabusinessclub.com.br/r/igor-ayres`
+2. **SAIA DO SITE** (feche ou navegue para outra página)
+3. Volte direto em: `https://rotabusinessclub.com.br`
+4. Clique em "Cadastrar" (sem ?ref= na URL)
+5. Crie a conta e verifique se a indicação foi registrada
 
-1. **Clique com botão direito** no elemento problemático
-2. **Inspecionar** (ou F12)
-3. **Copie o HTML** do elemento
-4. **Cole para o assistente**
+**Por que testar isso:** Garantir que o cookie de 30 dias funciona mesmo se o usuário sair do link e voltar depois.
 
-### Exemplo:
-```html
-<div class="text-[26px] font-black text-white">500</div>
+---
+
+### **ÚLTIMA SESSÃO: 02/02/2026 - 22:45**
+
+#### ✅ **SISTEMA DE INDICAÇÃO AUTOMÁTICO** 🎯
+
+**Duração:** ~2 horas (16 testes)  
+**Status:** ✅ FUNCIONANDO EM PRODUÇÃO
+
+##### **Problema Resolvido:**
+- Indicações não eram registradas automaticamente
+- Múltiplos pontos de falha (cookie, localStorage, API)
+
+##### **Solução Implementada (à prova de falhas):**
+
+```
+FLUXO COMPLETO:
+/r/slug → ?ref=slug → localStorage → signUp(user_metadata) → /profile/ensure → indicação ✅
+           ↓
+       cookie (30 dias) → fallback se voltar sem ?ref=
 ```
 
-### Por que fazer isso?
-- O assistente encontra o componente **EXATO** em segundos
-- Evita manipular componentes/tabelas erradas
-- Acelera resolução de bugs em **10x**
+**Arquivos modificados:**
+- `/app/r/[slug]/route.ts` - Seta cookie + redireciona com ?ref=
+- `/app/auth/register/page.tsx` - Captura ?ref= ou lê cookie, salva localStorage
+- `/lib/auth/context.tsx` - Passa referral_code no signUp e fallback
+- `/app/api/profile/ensure/route.ts` - **PROCESSA INDICAÇÃO AUTOMATICAMENTE**
 
-### Informações úteis:
-- **Classes CSS** identificam componentes únicos
-- **React DevTools** → Aba "Components" mostra nome do componente
-- **Console logs** identificam qual serviço está carregando dados
+##### **Múltiplas fontes (por ordem):**
+1. **URL param** (`?ref=slug`) - Prioridade máxima
+2. **localStorage** - Persistido da sessão
+3. **Cookie** (30 dias) - Fallback se fechar navegador
+
+##### **Trigger atualizado:**
+O trigger `handle_new_user` também foi atualizado para processar `referral_code` do user_metadata, mas o fallback `/profile/ensure` é executado primeiro na maioria dos casos.
+
+---
+
+#### ✅ **MEDALHA "ALISTAMENTO CONCLUÍDO"** 🎖️
+
+**Status:** ✅ FUNCIONANDO
+
+**Requisitos simplificados:**
+- Nome completo ✅
+- Bio ✅
+- Avatar ✅
+
+(Removidos: phone, pista - impediam concessão)
+
+**Pontos:** 100 base + 50% bônus = 150 pts
 
 ---
 
@@ -43,10 +81,8 @@
 
 **🌐 Deploy:** ✅ **PRODUÇÃO - ONLINE E CONFIGURADO**
 - **URL Principal:** https://rotabusinessclub.com.br ✅
-- **URL Alternativa:** https://rotabusinessclub.vercel.app
 - **Hospedagem:** Vercel (plano Hobby)
 - **DNS + CDN:** Cloudflare (ativo)
-- **Email:** Resend (domínio verificado)
 - **Banco de Dados:** Supabase PostgreSQL ✅
 
 **🔌 Acesso Direto ao Banco:**
@@ -56,151 +92,25 @@
 
 ---
 
-## 🚨 PONTO DE RETOMADA - 02/02/2026
+## 🔗 SISTEMA DE AFILIADOS
 
-### **ÚLTIMA SESSÃO: 02/02/2026 - ~14:00**
+### **Como funciona:**
 
-#### ✅ **CENTRALIZAÇÃO DE LIMITES DE PLANOS** 🎯
+| Etapa | O que acontece |
+|-------|----------------|
+| 1. Link | `/r/igor-ayres` |
+| 2. Redirect | `/auth/register?ref=igor-ayres` |
+| 3. Cookie | Salvo por 30 dias |
+| 4. localStorage | Salvo para a sessão |
+| 5. signUp | Inclui `referral_code` no user_metadata |
+| 6. /profile/ensure | Cria perfil + indicação |
 
-**Duração:** ~20min  
-**Status:** ✅ COMPLETO E EM PRODUÇÃO
-
-##### **Problema Resolvido:**
-- Dados de limites de planos **dispersos** em múltiplos arquivos
-- Bugs constantes por inconsistência de valores
-- `plan_config` e `plan_tiers` quebrando queries
-
-##### **Solução Implementada:**
-- ✅ Criado **FONTE ÚNICA**: `/lib/constants/plan-limits.ts`
-- ✅ Substituído em 4 arquivos críticos:
-  - `/app/api/user/categories/route.ts`
-  - `/app/dashboard/editar-perfil/page.tsx`
-  - `/lib/subscription/helpers.ts`
-  - (marketplace em fase de substituição)
-
-##### **Valores Definidos:**
-```typescript
-recruta: { max_categories: 1, max_marketplace_ads: 0, ... }
-soldado: { max_categories: 3, max_marketplace_ads: 1, ... }
-especialista: { max_categories: 5, max_marketplace_ads: 2, ... }
-elite: { max_categories: 10, max_marketplace_ads: 3, ... }
-```
-
-##### **Regra de Ouro:**
-**NUNCA mais:**
-- Buscar `plan_config` ou `plan_tiers`
-- Hardcodar limites em arquivos
-
-**SEMPRE:**
-```typescript
-import { getPlanLimits } from '@/lib/constants/plan-limits'
-const limits = getPlanLimits(userPlanId)
-```
-
----
-
-### ⚠️ ALTERAÇÕES TEMPORÁRIAS - REVERTER ANTES DE PRODUÇÃO
-
-> **LEIA:** `docs/sessions/REVERTER_ROTA_UNICO.md`
-
-**O que foi desabilitado:**
-1. **Validação de rota_number único** no frontend (`app/auth/register/page.tsx`)
-2. Código comentado para permitir testes de cadastro
-
-**Commit:** `72f8016d`
-
-**Para reverter:** Seguir checklist em `docs/sessions/REVERTER_ROTA_UNICO.md`
-
----
-
-### **SESSÃO ANTERIOR: 31/01/2026 - 14:35 às 15:00**
-
-### **O QUE FOI FEITO HOJE:**
-
-#### ✅ **SISTEMA DE PLANOS 100% DINÂMICO** 🎯
-
-**Duração:** ~25min  
-**Status:** ✅ COMPLETO E PRONTO PARA DEPLOY
-
-##### 1. **Novos Campos no plan_config:**
-
-**max_categories (INTEGER):**
-- ✅ Migration: `20260131_add_max_categories_to_plans.sql`
-- ✅ Valores padrão: Recruta=3, Veterano=10, Elite=25, Lendário=-1 (ilimitado)
-- ✅ Checkbox "Ilimitado" no admin
-- ✅ Card visual na visualização
-
-**description (TEXT):**
-- ✅ Migration: `20260131_add_description_to_plans.sql`
-- ✅ Campo editável no admin (criação e edição)
-- ✅ Removido `TIER_DESCRIPTIONS` hardcoded dos componentes
-- ✅ Home e página /planos agora usam `plan.description` do banco
-
-##### 2. **UX Aprimorada - Checkboxes "Ilimitado":**
-
-**Antes:** Digitar `-1` manualmente  
-**Agora:** ☑ Checkbox intuitivo
-
-**Campos atualizados:**
-- ✅ Elos Máximos → Checkbox + input condicional
-- ✅ Confrarias/Mês → Checkbox + input condicional
-- ✅ Anúncios Marketplace → Checkbox + input condicional
-- ✅ Max Categorias → Checkbox + input condicional
-
-**Lógica:**
-- Marcado → Salva `-1`, esconde input
-- Desmarcado → Mostra input numérico (padrão)
-- Visualização → `-1` mostra "∞ Ilimitado"
-
-##### 3. **Remoção de Redundância:**
-
-**Removido:** Campo `can_send_confraternity` (boolean redundante)
-
-**Lógica automática implementada:**
-```typescript
-max_confraternities_month === 0  → NÃO pode enviar
-max_confraternities_month === -1 → Ilimitado
-max_confraternities_month > 0    → Limitado
-```
-
-**Arquivos atualizados:**
-- ✅ Interface `Plan` (removido campo)
-- ✅ PlanManager (removido toggle)
-- ✅ `helpers.ts` (lógica automática)
-
-##### 4. **helpers.ts: De Hardcoded para Dinâmico:**
-
-**Antes:** `PLAN_LIMITS` const hardcoded  
-**Agora:** `getUserPlanLimits()` busca de `plan_config`
-
-**Benefício:** Admin altera → Reflete automaticamente sem código
-
-##### 5. **Frontend 100% Dinâmico:**
-
-**Componentes verificados:**
-- ✅ `/components/sections/plans-section.tsx` → Dinâmico
-- ✅ `/app/planos/page.tsx` → Dinâmico
-- ✅ Removido todos os hardcoded `TIER_DESCRIPTIONS`
-
-##### 6. **Documentação Atualizada:**
-
-**Arquivos criados:**
-- ✅ `docs/sessions/SESSION_2026-01-31_PLANOS_DINAMICOS.md` - Resumo completo
-- ✅ `docs/sessions/GESTAO_PLANOS_DINAMICA_2026-01-31.md` - Detalhes técnicos
-- ✅ `docs/CHECKLIST_PLANOS_DINAMICOS.md` - Checklist visual
-- ✅ `docs/ESCOPO_PROJETO.md` - Atualizado com max_categories
-
-### **MIGRATIONS CRIADAS:**
-```sql
--- 20260131_add_max_categories_to_plans.sql
--- 20260131_add_description_to_plans.sql
-```
-
-### **RESULTADO:**
-✅ **ZERO HARDCODE** → Tudo configurável no admin  
-✅ **UX INTUITIVA** → Checkboxes claros  
-✅ **LÓGICA UNIFICADA** → Sem redundância  
-✅ **AUTO-ATUALIZAÇÃO** → Cards refletem mudanças instantaneamente
+### **Tabela referrals:**
+- `referrer_id` - Quem indicou
+- `referred_id` - Quem foi indicado
+- `referral_code` - Slug do referrer
+- `status` - pending/converted
+- `converted_at` - Data de conversão
 
 ---
 
@@ -209,12 +119,9 @@ max_confraternities_month > 0    → Limitado
 | Arquivo | Conteúdo |
 |---------|----------|
 | `.agent/context/CONTEXTO_PROJETO.md` | Este arquivo (ponto de retomada) |
-| `.agent/context/AGENTS.md` | Personas dos agentes (Carlos, Marina, Lucas, Rafael) |
+| `.agent/context/AGENTS.md` | Personas dos agentes |
 | `.agent/EXECUTAR_SQL_SUPABASE.md` | **⚠️ COMO EXECUTAR SQL DIRETO NO BANCO** |
-| **`docs/PROJETOS_APRESENTACAO_NEGOCIO.md`** | 📊 Apresentação módulo projetos (pitch/stakeholders) |
-| **`docs/PROJETOS_DOCUMENTACAO_TECNICA.md`** | 🔧 Documentação técnica (banco, APIs, integrações) |
-| **`docs/PROJETOS_PLANO_TESTES.md`** | ✅ Plano de testes passo a passo (URLs,validações) |
-| **`docs/PROJETOS_MODULO_COMPLETO.md`** | 📋 Visão geral completa do módulo |
+| `lib/constants/plan-limits.ts` | **FONTE ÚNICA** de limites de planos |
 
 ---
 
@@ -225,34 +132,25 @@ max_confraternities_month > 0    → Limitado
 ├── /                    → Dashboard geral
 ├── /users               → Gestão de usuários
 ├── /game                → Medalhas, proezas, ranks
-├── /rota-valente        → Temporadas (prêmios, ranking, BANNERS)
-├── /financeiro          → Dashboard, Planos, Comissões, Relatórios, Prêmios
-├── /marketplace         → Anúncios, Tiers, Categorias
-├── /pistas              → Oportunidades de negócio
-├── /notifications       → Notificações
+├── /rota-valente        → Temporadas
+├── /financeiro          → Planos, Comissões
+├── /marketplace         → Anúncios
+├── /pistas              → Oportunidades
 └── /categories          → Categorias profissionais
 ```
 
 ---
 
-## 🔜 PRÓXIMOS PASSOS SUGERIDOS
+## 🔜 PRÓXIMOS PASSOS
 
-### **PRIORIDADE 1 - Testar Módulo de Projetos (31/01/2026):**
-1. **Executar plano de testes** - Seguir `docs/PROJETOS_PLANO_TESTES.md` passo a passo
-2. **Validar fluxo end-to-end** - Cliente cria → Profissional propõe → Cliente aceita
-3. **Corrigir bugs** - Instalar componentes shadcn faltantes, ajustar erros
-4. **Validar notificações** - Tempo real funcionando
-5. **Testar CRON job** - Distribuição automática
+### **PRIORIDADE 1 - Testar Cookie de Indicação (03/02):**
+1. Testar cenário: link → sair → voltar pelo site → cadastrar
+2. Verificar se indicação é registrada pelo cookie
 
-### **PRIORIDADE 2 - Finalizar Módulo de Projetos:**
-1. **Upload de arquivos** - Integrar Supabase Storage
-2. **Email real** - Configurar SendGrid ou Resend
-3. **Interfaces extras** - Modal enviar proposta integrado, dashboard profissional
-
-### **PRIORIDADE 3 - Outros Módulos:**
-1. **Marketplace** - Grid Elite para anúncios premium
-2. **Temporadas** - Testar banners gerados
-3. **Melhorias UX** - Animações, responsividade mobile
+### **PRIORIDADE 2 - Outros módulos:**
+1. Marketplace
+2. Temporadas
+3. Melhorias UX
 
 ---
 
