@@ -196,6 +196,9 @@ export default function RegisterPage() {
                 return
             }
 
+            // Buscar código de indicação do localStorage para passar no user_metadata
+            const referralCode = localStorage.getItem('referral_code') || undefined
+
             const result = await signUp(
                 data.email,
                 data.password,
@@ -203,7 +206,8 @@ export default function RegisterPage() {
                 data.cpf,
                 data.pista,
                 selectedPlan,  // Usando estado local
-                data.rotaNumber
+                data.rotaNumber,
+                referralCode  // Passa código de indicação para user_metadata
             ) as unknown as { user: any; needsCheckout: boolean; planId: string }
 
             // Registrar indicação (se veio de link de indicação)

@@ -232,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null
     }
 
-    const signUp = async (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => {
+    const signUp = async (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string, referralCode?: string) => {
         // 1. Criar usuário no Auth
         const { data: authData, error } = await supabase.auth.signUp({
             email,
@@ -244,7 +244,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     pista: pista,
                     plan: plan,
                     rota_number: rotaNumber,
-                    role: rotaNumber ? 'professional' : 'user'
+                    role: rotaNumber ? 'professional' : 'user',
+                    referral_code: referralCode // Código de indicação para processamento pelo trigger
                 }
             }
         })
