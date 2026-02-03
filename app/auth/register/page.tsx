@@ -208,7 +208,17 @@ export default function RegisterPage() {
 
             // Registrar indicação (se veio de link de indicação)
             try {
-                await fetch('/api/referral/register', { method: 'POST' })
+                const refCode = localStorage.getItem('referral_code')
+                if (refCode) {
+                    await fetch('/api/referral/register', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ referralCode: refCode })
+                    })
+                    localStorage.removeItem('referral_code')
+                    console.log('[Referral] Indicação registrada:', refCode)
+                }
             } catch (e) {
                 // Ignora erro de indicação, não impede o cadastro
                 console.log('[Referral] Erro ao registrar indicação:', e)
