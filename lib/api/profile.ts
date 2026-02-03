@@ -32,8 +32,6 @@ export async function checkProfileCompletion(userId: string): Promise<boolean> {
             'full_name',    // Nome completo
             'bio',          // Biografia
             'avatar_url',   // Foto de perfil
-            'phone',        // Telefone
-            'pista'         // Localização/Pista
         ]
 
         console.log('[checkProfileCompletion] Verificando campos:')

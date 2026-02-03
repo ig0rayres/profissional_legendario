@@ -47,19 +47,20 @@ export default function RegisterPage() {
     const [loadingPlans, setLoadingPlans] = useState(true)
     const [selectedPlan, setSelectedPlan] = useState<string>('')  // Estado local para plano
 
-    // Carregar pistas do banco de dados
+    // Carregar pistas via API (bypass de RLS para usuários anônimos)
     useEffect(() => {
         async function loadPistas() {
             setLoadingPistas(true)
-            const { data, error } = await supabase
-                .from('pistas')
-                .select('id, name, city, state')
-                .eq('active', true)
-                .order('state')
-                .order('city')
-
-            if (data) {
-                setPistas(data)
+            try {
+                const response = await fetch('/api/pistas')
+                if (response.ok) {
+                    const data = await response.json()
+                    setPistas(data)
+                } else {
+                    console.error('Erro ao carregar pistas:', response.statusText)
+                }
+            } catch (error) {
+                console.error('Erro ao carregar pistas:', error)
             }
             setLoadingPistas(false)
         }

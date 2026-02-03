@@ -25,7 +25,11 @@ export async function POST(request: NextRequest) {
 
         // Ler cookie de indicação
         const cookieStore = await cookies()
+        const allCookies = cookieStore.getAll()
+        console.log('[API referral/register] Cookies recebidos:', allCookies.map(c => c.name))
+
         const referralCode = cookieStore.get('referral_code')?.value
+        console.log('[API referral/register] Cookie referral_code:', referralCode || 'NÃO ENCONTRADO')
 
         if (!referralCode) {
             return NextResponse.json(

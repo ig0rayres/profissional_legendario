@@ -69,6 +69,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             return
                         }
 
+                        // FALLBACK: Se não existe perfil, criar automaticamente
+                        if (!data) {
+                            console.log('[Auth] 🚨 Perfil não existe! Criando via fallback...')
+                            const meta = session.user.user_metadata || {}
+                            fetch('/api/profile/ensure', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    userId: session.user.id,
+                                    email: session.user.email,
+                                    fullName: meta.full_name,
+                                    cpf: meta.cpf,
+                                    role: meta.role,
+                                    rotaNumber: meta.rota_number,
+                                    pistaId: meta.pista,
+                                    plan: meta.plan
+                                })
+                            })
+                                .then(res => res.json())
+                                .then(async result => {
+                                    console.log('[Auth] ✅ Perfil criado via fallback:', result)
+                                    // Registrar indicação se houver cookie
+                                    await fetch('/api/referral/register', { method: 'POST', credentials: 'include' }).catch(() => { })
+                                    // Recarregar a página para buscar o perfil criado
+                                    window.location.reload()
+                                })
+                                .catch(err => {
+                                    console.error('[Auth] ❌ Erro no fallback:', err)
+                                    setLoading(false)
+                                })
+                            return
+                        }
+
                         if (data) {
                             console.log('[Auth] Enriching user with profile:', data.full_name, 'role:', data.role)
                             // Enriquecer com dados do banco
@@ -81,6 +114,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 rota_number: data.rota_number,
                                 avatar_url: data.avatar_url
                             })
+
+                            // Registrar indicação se houver cookie de referral
+                            fetch('/api/referral/register', { method: 'POST', credentials: 'include' })
+                                .then(res => res.json())
+                                .then(result => {
+                                    if (result.success) {
+                                        console.log('[Auth] Indicação registrada:', result.message)
+                                    }
+                                })
+                                .catch(err => console.warn('[Auth] Erro ao registrar indicação:', err))
                         }
                         setLoading(false) // Libera após enriquecer
                     })
@@ -121,6 +164,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 rota_number: data.rota_number,
                                 avatar_url: data.avatar_url
                             })
+
+                            // Registrar indicação se houver cookie de referral (SIGNED_IN = novo login)
+                            if (event === 'SIGNED_IN') {
+                                fetch('/api/referral/register', { method: 'POST' })
+                                    .then(res => res.json())
+                                    .then(result => {
+                                        if (result.success) {
+                                            console.log('[Auth] Indicação registrada:', result.message)
+                                        }
+                                    })
+                                    .catch(err => console.warn('[Auth] Erro ao registrar indicação:', err))
+                            }
                         }
                         setLoading(false)
                     })
