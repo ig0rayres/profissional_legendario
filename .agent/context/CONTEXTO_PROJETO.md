@@ -7,6 +7,20 @@
 
 ---
 
+## 🚨 REGRAS CRÍTICAS OBRIGATÓRIAS
+
+**ATENÇÃO ASSISTENTE:** Antes de qualquer ação, leia e siga:
+
+📜 **[REGRAS_CRITICAS.md](file:///home/igor/Vídeos/Legendarios/.agent/REGRAS_CRITICAS.md)**
+
+**Resumo:**
+1. ✅ Execute SQL direto no Supabase (não peça ao usuário)
+2. ❌ Proibido hardcode - tudo vem do painel admin
+3. ⚠️ Evite criar novos campos/tabelas
+4. 🎯 Centralize dados - proibido duplicar informações
+
+---
+
 ## 🚨 PONTO DE RETOMADA - 03/02/2026
 
 ### **PRIMEIRA TAREFA DO DIA:**

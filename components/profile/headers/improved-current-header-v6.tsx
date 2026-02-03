@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
@@ -9,6 +10,7 @@ import {
     TrendingUp, Eye, Camera, Settings, Edit
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { NotificationPreferencesDialog } from '@/components/settings/notification-preferences-dialog'
 
 interface ImprovedCurrentHeaderV6Props {
     profile: {
@@ -37,6 +39,7 @@ export default function ImprovedCurrentHeaderV6({
     onCoverUpdate
 }: ImprovedCurrentHeaderV6Props) {
     const rating = 5.0
+    const [showPreferences, setShowPreferences] = useState(false)
 
     return (
         <div className="relative w-full h-[320px] overflow-hidden">
@@ -267,6 +270,7 @@ export default function ImprovedCurrentHeaderV6({
                                         size="sm"
                                         variant="outline"
                                         className="h-9 border-white/20 text-white hover:bg-white/10"
+                                        onClick={() => setShowPreferences(true)}
                                     >
                                         <Settings className="w-4 h-4 mr-1.5" />
                                         Configurações
@@ -351,6 +355,12 @@ export default function ImprovedCurrentHeaderV6({
                 </div>
 
             </div>
+
+            {/* Dialog de Preferências de Notificações */}
+            <NotificationPreferencesDialog
+                isOpen={showPreferences}
+                onClose={() => setShowPreferences(false)}
+            />
         </div>
     )
 }

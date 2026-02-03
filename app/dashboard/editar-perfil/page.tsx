@@ -119,9 +119,20 @@ export default function EditarPerfilPage() {
         loadProfile()
     }, [user, authLoading])
 
+    // Auto-save formData no localStorage
+    useEffect(() => {
+        if (!user || loading) return
+        const key = `profile_edit_draft_${user.id}`
+        localStorage.setItem(key, JSON.stringify(formData))
+    }, [formData, user, loading])
+
     async function loadProfile() {
         if (!user) return
         setLoading(true)
+
+        // Verificar se há rascunho salvo
+        const draftKey = `profile_edit_draft_${user.id}`
+        const savedDraft = localStorage.getItem(draftKey)
 
         // Carregar categorias disponíveis
         const { data: categories } = await supabase
@@ -189,7 +200,7 @@ export default function EditarPerfilPage() {
                 }
             }
 
-            setFormData({
+            const profileData = {
                 full_name: profile.full_name || '',
                 bio: profile.bio || '',
                 phone: profile.phone || '',
@@ -199,7 +210,24 @@ export default function EditarPerfilPage() {
                 rota_number: profile.rota_number || '',
                 slug: profile.slug || '',
                 specialties: []
-            })
+            }
+
+            // Se há rascunho salvo, usar ele (exceto rota_number que não muda)
+            if (savedDraft) {
+                try {
+                    const draft = JSON.parse(savedDraft)
+                    setFormData({
+                        ...draft,
+                        rota_number: profileData.rota_number // Sempre usar do banco
+                    })
+                    toast.info('Rascunho restaurado! Seus dados foram preservados.')
+                } catch {
+                    setFormData(profileData)
+                }
+            } else {
+                setFormData(profileData)
+            }
+
             setAvatarUrl(profile.avatar_url)
             setCoverUrl(profile.cover_url)
             setSelectedPistaId(profile.pista_id || null)
@@ -217,6 +245,7 @@ export default function EditarPerfilPage() {
 
         setLoading(false)
     }
+
 
     // Abre dialog de crop quando seleciona arquivo de avatar
     function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -425,6 +454,10 @@ export default function EditarPerfilPage() {
 
             setFormData(prev => ({ ...prev, slug }))
             setSuccess(true)
+
+            // Limpar rascunho do localStorage
+            const draftKey = `profile_edit_draft_${user.id}`
+            localStorage.removeItem(draftKey)
 
             // 🎖️ Verificar medalha "Alistamento Concluído" (perfil 100% completo)
             console.log('[EDITAR PERFIL] 🎖️ Iniciando verificação de medalha...')

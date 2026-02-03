@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
     Dialog,
     DialogContent,
@@ -19,48 +20,66 @@ import {
 } from "@/components/ui/dialog"
 import {
     Copy, Share2, Users, Wallet, Clock, CheckCircle, DollarSign,
-    TrendingUp, Loader2, Link2, AlertCircle, Calendar, ArrowRight, XCircle
+    TrendingUp, Loader2, Link2, AlertCircle, Calendar, ArrowRight, XCircle, Filter
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/api/financial'
 import {
     getReferralConfig,
-    getUserReferralBalance,
-    getUserReferrals,
-    canRequestWithdrawal,
-    requestWithdrawal,
     generateReferralLink
 } from '@/lib/services/referral-service'
 
+interface Commission {
+    id: string
+    payment_amount: number
+    commission_amount: number
+    status: string
+    payment_date: string
+    release_date: string | null
+    available_at: string | null
+}
+
 interface ReferralData {
-    referral: {
-        id: string
-        status: string
-        created_at: string
-    }
+    id: string
+    referred_id: string
+    status: string
+    created_at: string
     referred: {
         full_name: string
         avatar_url: string | null
     }
-    commission?: {
-        status: string
-        commission_amount: number
-        release_date: string | null
-    }
+    commission: Commission | null
 }
+
+interface WithdrawalRequest {
+    id: string
+    amount: number
+    status: string
+    created_at: string
+    pix_key: string
+    processed_at: string | null
+}
+
+type PeriodFilter = '15days' | '30days' | 'custom' | 'all'
 
 export default function FinanceiroPage() {
     const [loading, setLoading] = useState(true)
     const [profile, setProfile] = useState<any>(null)
     const [config, setConfig] = useState<any>(null)
-    const [balance, setBalance] = useState<any>(null)
     const [referrals, setReferrals] = useState<ReferralData[]>([])
-    const [withdrawalStatus, setWithdrawalStatus] = useState<any>(null)
+    const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([])
+
+    // Filtros
+    const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all')
+    const [customStartDate, setCustomStartDate] = useState('')
+    const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split('T')[0])
 
     // Form de saque
     const [withdrawAmount, setWithdrawAmount] = useState('')
     const [pixKey, setPixKey] = useState('')
     const [pixKeyType, setPixKeyType] = useState<'cpf' | 'email' | 'phone' | 'random'>('cpf')
+    const [beneficiaryName, setBeneficiaryName] = useState('')
+    const [beneficiaryCPF, setBeneficiaryCPF] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [dialogOpen, setDialogOpen] = useState(false)
 
@@ -89,23 +108,128 @@ export default function FinanceiroPage() {
             const configData = await getReferralConfig(true)
             setConfig(configData)
 
-            // Carregar saldo
-            const balanceData = await getUserReferralBalance(user.id)
-            setBalance(balanceData)
+            // Carregar indicações com comissões
+            const { data: referralsData } = await supabase
+                .from('referrals')
+                .select(`
+                    *,
+                    referred:profiles!referred_id(full_name, avatar_url)
+                `)
+                .eq('referrer_id', user.id)
+                .order('created_at', { ascending: false })
 
-            // Carregar indicações
-            const referralsData = await getUserReferrals(user.id)
-            setReferrals(referralsData)
+            if (referralsData) {
+                // Buscar comissões para cada referral
+                const enrichedReferrals = await Promise.all(
+                    referralsData.map(async (referral) => {
+                        const { data: commissionData } = await supabase
+                            .from('referral_commissions')
+                            .select('*')
+                            .eq('referral_id', referral.id)
+                            .single()
 
-            // Verificar se pode sacar
-            const canWithdraw = await canRequestWithdrawal(user.id)
-            setWithdrawalStatus(canWithdraw)
+                        return {
+                            ...referral,
+                            commission: commissionData || null
+                        }
+                    })
+                )
+                setReferrals(enrichedReferrals)
+            }
+
+            // Carregar solicitações de saque
+            const { data: withdrawalsData } = await supabase
+                .from('withdrawal_requests')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+
+            setWithdrawals(withdrawalsData || [])
 
         } catch (error) {
             console.error('Error loading data:', error)
         } finally {
             setLoading(false)
         }
+    }
+
+    const getDateRange = (): { start: Date; end: Date } => {
+        const end = new Date()
+        end.setHours(23, 59, 59, 999)
+
+        let start = new Date()
+
+        switch (periodFilter) {
+            case '15days':
+                start.setDate(start.getDate() - 15)
+                break
+            case '30days':
+                start.setDate(start.getDate() - 30)
+                break
+            case 'custom':
+                if (customStartDate) {
+                    start = new Date(customStartDate)
+                    start.setHours(0, 0, 0, 0)
+                }
+                if (customEndDate) {
+                    end.setTime(new Date(customEndDate).getTime())
+                    end.setHours(23, 59, 59, 999)
+                }
+                break
+            case 'all':
+            default:
+                start = new Date(0) // desde sempre
+        }
+
+        return { start, end }
+    }
+
+    const filteredReferrals = referrals.filter(referral => {
+        const { start, end } = getDateRange()
+        const createdAt = new Date(referral.created_at)
+        return createdAt >= start && createdAt <= end
+    })
+
+    const filteredWithdrawals = withdrawals.filter(withdrawal => {
+        const { start, end } = getDateRange()
+        const createdAt = new Date(withdrawal.created_at)
+        return createdAt >= start && createdAt <= end
+    })
+
+    // Calcular totalizadores do período
+    const periodStats = {
+        // Comissões disponíveis para resgatar
+        available: filteredReferrals
+            .filter(r => r.commission?.status === 'available')
+            .reduce((sum, r) => sum + (r.commission?.commission_amount || 0), 0),
+
+        // Comissões pendentes (ainda não liberadas)
+        pending: filteredReferrals
+            .filter(r => r.commission?.status === 'pending')
+            .reduce((sum, r) => sum + (r.commission?.commission_amount || 0), 0),
+
+        // Comissões já resgatadas
+        withdrawn: filteredReferrals
+            .filter(r => r.commission?.status === 'withdrawn')
+            .reduce((sum, r) => sum + (r.commission?.commission_amount || 0), 0),
+
+        // Total de saques pagos
+        paidWithdrawals: filteredWithdrawals
+            .filter(w => w.status === 'paid')
+            .reduce((sum, w) => sum + w.amount, 0),
+
+        // Total de saques pendentes
+        pendingWithdrawals: filteredWithdrawals
+            .filter(w => ['pending', 'approved'].includes(w.status))
+            .reduce((sum, w) => sum + w.amount, 0),
+
+        // Total de comissões geradas no período
+        totalCommissions: filteredReferrals
+            .filter(r => r.commission)
+            .reduce((sum, r) => sum + (r.commission?.commission_amount || 0), 0),
+
+        // Total de indicações no período
+        totalReferrals: filteredReferrals.length
     }
 
     const copyLink = () => {
@@ -133,23 +257,41 @@ export default function FinanceiroPage() {
             return
         }
 
+        if (amount > periodStats.available) {
+            toast.error('Valor maior que o saldo disponível')
+            return
+        }
+
+        if (amount < (config?.min_withdrawal_amount || 250)) {
+            toast.error('Valor menor que o mínimo permitido')
+            return
+        }
+
         setIsSubmitting(true)
         try {
-            const result = await requestWithdrawal(profile.id, amount, pixKey, pixKeyType)
+            const { error } = await supabase
+                .from('withdrawal_requests')
+                .insert({
+                    user_id: profile.id,
+                    amount,
+                    pix_key: pixKey,
+                    pix_key_type: pixKeyType,
+                    beneficiary_name: beneficiaryName,
+                    beneficiary_cpf: beneficiaryCPF,
+                    status: 'pending'
+                })
 
-            if (result.success) {
-                toast.success('Saque solicitado!', {
-                    description: `Pagamento será processado todo dia ${config?.payment_day || 10}`
-                })
-                setDialogOpen(false)
-                setWithdrawAmount('')
-                setPixKey('')
-                loadData()
-            } else {
-                toast.error('Erro ao solicitar', {
-                    description: result.error
-                })
-            }
+            if (error) throw error
+
+            toast.success('Saque solicitado!', {
+                description: `Pagamento será processado todo dia ${config?.payment_day || 10}`
+            })
+            setDialogOpen(false)
+            setWithdrawAmount('')
+            setPixKey('')
+            setBeneficiaryName('')
+            setBeneficiaryCPF('')
+            loadData()
         } catch (error) {
             console.error('Error requesting withdrawal:', error)
             toast.error('Erro ao solicitar saque')
@@ -165,9 +307,24 @@ export default function FinanceiroPage() {
             case 'available':
                 return <Badge variant="outline" className="border-green-500 text-green-500"><CheckCircle className="w-3 h-3 mr-1" />Disponível</Badge>
             case 'withdrawn':
-                return <Badge variant="outline" className="border-gray-500 text-gray-500"><Wallet className="w-3 h-3 mr-1" />Sacado</Badge>
+                return <Badge variant="outline" className="border-blue-500 text-blue-500"><Wallet className="w-3 h-3 mr-1" />Resgatada</Badge>
             case 'cancelled':
-                return <Badge variant="outline" className="border-red-500 text-red-500"><XCircle className="w-3 h-3 mr-1" />Cancelado</Badge>
+                return <Badge variant="outline" className="border-red-500 text-red-500"><XCircle className="w-3 h-3 mr-1" />Cancelada</Badge>
+            default:
+                return <Badge variant="outline">{status}</Badge>
+        }
+    }
+
+    const getWithdrawalStatusBadge = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return <Badge variant="outline" className="border-yellow-500 text-yellow-500"><Clock className="w-3 h-3 mr-1" />Pendente</Badge>
+            case 'approved':
+                return <Badge variant="outline" className="border-blue-500 text-blue-500"><CheckCircle className="w-3 h-3 mr-1" />Aprovado</Badge>
+            case 'paid':
+                return <Badge variant="outline" className="border-green-500 text-green-500"><DollarSign className="w-3 h-3 mr-1" />Pago</Badge>
+            case 'rejected':
+                return <Badge variant="outline" className="border-red-500 text-red-500"><XCircle className="w-3 h-3 mr-1" />Recusado</Badge>
             default:
                 return <Badge variant="outline">{status}</Badge>
         }
@@ -190,9 +347,11 @@ export default function FinanceiroPage() {
     }
 
     const referralLink = profile?.slug ? generateReferralLink(profile.slug) : ''
+    const hasPendingWithdrawal = withdrawals.some(w => ['pending', 'approved'].includes(w.status))
+    const canWithdraw = periodStats.available >= (config?.min_withdrawal_amount || 250) && !hasPendingWithdrawal
 
     return (
-        <div className="container max-w-4xl mx-auto py-8 px-4 space-y-6">
+        <div className="container max-w-6xl mx-auto py-8 px-4 space-y-6">
             {/* Header */}
             <div className="flex items-center gap-3">
                 <div className="p-3 rounded-lg bg-primary/20 border border-primary/30">
@@ -239,19 +398,68 @@ export default function FinanceiroPage() {
                 </CardContent>
             </Card>
 
-            {/* Cards de Saldo */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Filtros de Período */}
+            <Card className="border-primary/20">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Filter className="w-5 h-5" />
+                        Filtrar por Período
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                            <Label>Período</Label>
+                            <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos os registros</SelectItem>
+                                    <SelectItem value="15days">Últimos 15 dias</SelectItem>
+                                    <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                                    <SelectItem value="custom">Personalizado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {periodFilter === 'custom' && (
+                            <>
+                                <div className="flex-1">
+                                    <Label>Data Inicial</Label>
+                                    <Input
+                                        type="date"
+                                        value={customStartDate}
+                                        onChange={(e) => setCustomStartDate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <Label>Data Final</Label>
+                                    <Input
+                                        type="date"
+                                        value={customEndDate}
+                                        onChange={(e) => setCustomEndDate(e.target.value)}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Cards de Saldo - Período Selecionado */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="border-green-500/30">
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-2 text-green-500 mb-2">
                             <Wallet className="w-5 h-5" />
-                            <span className="text-sm font-medium">Saldo Disponível</span>
+                            <span className="text-sm font-medium">Disponível</span>
                         </div>
                         <p className="text-3xl font-bold text-green-500">
-                            {formatCurrency(balance?.available_balance || 0)}
+                            {formatCurrency(periodStats.available)}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Disponível para saque
+                            Para resgatar agora
                         </p>
                     </CardContent>
                 </Card>
@@ -260,13 +468,28 @@ export default function FinanceiroPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-2 text-yellow-500 mb-2">
                             <Clock className="w-5 h-5" />
-                            <span className="text-sm font-medium">Saldo Pendente</span>
+                            <span className="text-sm font-medium">Pendente</span>
                         </div>
                         <p className="text-3xl font-bold text-yellow-500">
-                            {formatCurrency(balance?.pending_balance || 0)}
+                            {formatCurrency(periodStats.pending)}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Aguardando {config?.release_days || 60} dias
+                            Aguardando liberação
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-blue-500/30">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-2 text-blue-500 mb-2">
+                            <DollarSign className="w-5 h-5" />
+                            <span className="text-sm font-medium">Resgatado</span>
+                        </div>
+                        <p className="text-3xl font-bold text-blue-500">
+                            {formatCurrency(periodStats.withdrawn)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Já sacado
                         </p>
                     </CardContent>
                 </Card>
@@ -275,13 +498,13 @@ export default function FinanceiroPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-2 text-primary mb-2">
                             <TrendingUp className="w-5 h-5" />
-                            <span className="text-sm font-medium">Total Ganho</span>
+                            <span className="text-sm font-medium">Total</span>
                         </div>
                         <p className="text-3xl font-bold text-primary">
-                            {formatCurrency(balance?.total_earned || 0)}
+                            {formatCurrency(periodStats.totalCommissions)}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {balance?.total_referrals || 0} indicações
+                            {periodStats.totalReferrals} indicações
                         </p>
                     </CardContent>
                 </Card>
@@ -305,7 +528,7 @@ export default function FinanceiroPage() {
                         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button
-                                    disabled={!withdrawalStatus?.canWithdraw}
+                                    disabled={!canWithdraw}
                                     className="min-w-[200px]"
                                 >
                                     <DollarSign className="w-4 h-4 mr-2" />
@@ -344,7 +567,7 @@ export default function FinanceiroPage() {
                                             />
                                         </div>
                                         <p className="text-xs text-muted-foreground">
-                                            Disponível: {formatCurrency(balance?.available_balance || 0)} •
+                                            Disponível: {formatCurrency(periodStats.available)} •
                                             Mínimo: {formatCurrency(config?.min_withdrawal_amount || 250)}
                                         </p>
                                     </div>
@@ -382,6 +605,35 @@ export default function FinanceiroPage() {
                                             onChange={(e) => setPixKey(e.target.value)}
                                         />
                                     </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Nome do Favorecido</Label>
+                                        <Input
+                                            placeholder="Nome completo conforme cadastro"
+                                            value={beneficiaryName}
+                                            onChange={(e) => setBeneficiaryName(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>CPF do Favorecido</Label>
+                                        <Input
+                                            placeholder="000.000.000-00"
+                                            value={beneficiaryCPF}
+                                            onChange={(e) => setBeneficiaryCPF(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Aviso sobre titularidade */}
+                                    <div className="flex items-start gap-3 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                                        <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                                        <div>
+                                            <p className="font-medium text-sm text-amber-600">Atenção - Mesma Titularidade</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                O CPF e nome do favorecido devem ser <strong>idênticos</strong> aos cadastrados em sua conta. Não é possível realizar transferências para terceiros.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <DialogFooter>
@@ -401,14 +653,14 @@ export default function FinanceiroPage() {
                         </Dialog>
                     </div>
 
-                    {withdrawalStatus?.hasPendingRequest && (
+                    {hasPendingWithdrawal && (
                         <div className="mt-4 flex items-center gap-2 text-yellow-500 text-sm">
                             <AlertCircle className="w-4 h-4" />
                             Você já possui uma solicitação de saque pendente
                         </div>
                     )}
 
-                    {!withdrawalStatus?.canWithdraw && !withdrawalStatus?.hasPendingRequest && (
+                    {!canWithdraw && !hasPendingWithdrawal && (
                         <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
                             <AlertCircle className="w-4 h-4" />
                             Saldo insuficiente. Mínimo: {formatCurrency(config?.min_withdrawal_amount || 250)}
@@ -417,36 +669,79 @@ export default function FinanceiroPage() {
                 </CardContent>
             </Card>
 
+            {/* Histórico de Saques */}
+            {filteredWithdrawals.length > 0 && (
+                <Card className="border-primary/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Wallet className="w-5 h-5" />
+                            Histórico de Saques ({filteredWithdrawals.length})
+                        </CardTitle>
+                        <CardDescription>
+                            Solicitações de saque no período selecionado
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {filteredWithdrawals.map((withdrawal) => (
+                                <div
+                                    key={withdrawal.id}
+                                    className="flex items-center justify-between p-4 bg-card border border-primary/10 rounded-lg"
+                                >
+                                    <div>
+                                        <p className="font-bold text-lg">{formatCurrency(withdrawal.amount)}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Solicitado em {new Date(withdrawal.created_at).toLocaleDateString('pt-BR')}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            PIX: {withdrawal.pix_key}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        {getWithdrawalStatusBadge(withdrawal.status)}
+                                        {withdrawal.processed_at && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {new Date(withdrawal.processed_at).toLocaleDateString('pt-BR')}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Lista de Indicações */}
             <Card className="border-primary/20">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="w-5 h-5" />
-                        Suas Indicações ({referrals.length})
+                        Suas Indicações ({filteredReferrals.length})
                     </CardTitle>
                     <CardDescription>
-                        Pessoas que se cadastraram usando seu link
+                        Indicações no período selecionado
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {referrals.length === 0 ? (
+                    {filteredReferrals.length === 0 ? (
                         <div className="text-center py-8">
                             <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-lg font-medium">Nenhuma indicação ainda</p>
+                            <p className="text-lg font-medium">Nenhuma indicação no período</p>
                             <p className="text-sm text-muted-foreground">
-                                Compartilhe seu link para começar a ganhar comissões!
+                                Ajuste o filtro ou compartilhe seu link para começar a ganhar comissões!
                             </p>
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {referrals.map((item) => {
+                            {filteredReferrals.map((item) => {
                                 const daysRemaining = item.commission?.release_date
                                     ? getDaysRemaining(item.commission.release_date)
                                     : null
 
                                 return (
                                     <div
-                                        key={item.referral.id}
+                                        key={item.id}
                                         className="flex items-center justify-between p-4 bg-card border border-primary/10 rounded-lg"
                                     >
                                         <div className="flex items-center gap-3">
@@ -459,7 +754,7 @@ export default function FinanceiroPage() {
                                             <div>
                                                 <p className="font-medium">{item.referred.full_name}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {new Date(item.referral.created_at).toLocaleDateString('pt-BR')}
+                                                    {new Date(item.created_at).toLocaleDateString('pt-BR')}
                                                 </p>
                                             </div>
                                         </div>

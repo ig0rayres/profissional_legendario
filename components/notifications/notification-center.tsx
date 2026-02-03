@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Bell, Check, Trash2, ShieldAlert, MessageSquare, Info, Star, Clock, Link2, CheckCheck, Briefcase, CheckCircle2, XCircle, Swords, Award } from 'lucide-react'
+import { Bell, Check, Trash2, ShieldAlert, MessageSquare, Info, Star, Clock, Link2, CheckCheck, Briefcase, CheckCircle2, XCircle, Swords, Award, ShoppingBag, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     Popover,
@@ -283,6 +283,8 @@ export function NotificationCenter() {
             case 'confraternity_invite': return <Swords className="w-5 h-5 text-primary" />
             case 'confraternity_reminder': return <Clock className="w-5 h-5 text-orange-500" />
             case 'withdrawal_approved': return <CheckCircle2 className="w-5 h-5 text-green-600" />
+            case 'marketplace_new_ad': return <ShoppingBag className="w-5 h-5 text-blue-500" />
+            case 'marketplace_buy_request': return <Search className="w-5 h-5 text-purple-500" />
             case 'message': return <MessageSquare className="w-5 h-5 text-blue-500" />
             case 'rating': return <Star className="w-5 h-5 text-yellow-500" />
             case 'project': return <Briefcase className="w-5 h-5 text-purple-500" />

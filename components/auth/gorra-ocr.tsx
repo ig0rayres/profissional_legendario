@@ -94,9 +94,18 @@ export function GorraOCR({ onIdExtracted, onPhotoCapture, disabled = false }: Go
             console.log('[GorraOCR] Resultado:', result)
 
             if (result.success && result.id) {
-                setExtractedId(result.id)
-                onIdExtracted(result.id)
-                console.log('[GorraOCR] ✅ ID extraído:', result.id)
+                // ✅ SUBSTITUIR 141018 (gorra única de teste) por número aleatório
+                // Isso sempre acontece, em DEV e PRODUÇÃO
+                let finalId = result.id
+                if (result.id === '141018') {
+                    finalId = String(30000 + Math.floor(Math.random() * 70000))
+                    console.log(`[GorraOCR] 🔄 Substituído ${result.id} por ${finalId}`)
+                }
+
+                setExtractedId(finalId)
+                onIdExtracted(finalId)
+                console.log('[GorraOCR] ✅ ID extraído:', finalId)
+
             } else {
                 const errorMsg = result.error || 'Não foi possível identificar o número na imagem.'
                 setError(errorMsg)
