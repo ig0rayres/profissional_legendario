@@ -18,7 +18,7 @@ interface AuthContextType {
     user: User | null
     loading: boolean
     signIn: (email: string, password: string) => Promise<{ id: string; email: string | undefined; role: string; full_name: string } | null>
-    signUp: (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string) => Promise<{ user: any; needsCheckout: boolean; planId: string }>
+    signUp: (email: string, password: string, fullName: string, cpf: string, pista: string, plan: string, rotaNumber?: string, referralCode?: string) => Promise<{ user: any; needsCheckout: boolean; planId: string }>
     signOut: () => Promise<void>
 }
 
