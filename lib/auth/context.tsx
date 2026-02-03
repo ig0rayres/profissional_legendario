@@ -84,7 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                     role: meta.role,
                                     rotaNumber: meta.rota_number,
                                     pistaId: meta.pista,
-                                    plan: meta.plan
+                                    plan: meta.plan,
+                                    referralCode: meta.referral_code // Código de indicação do user_metadata
                                 })
                             })
                                 .then(res => res.json())

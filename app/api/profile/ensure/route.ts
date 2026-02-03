@@ -18,10 +18,11 @@ const supabaseAdmin = createClient(
  * 
  * Garante que o perfil do usuário existe.
  * FALLBACK para quando o trigger handle_new_user não executa.
+ * TAMBÉM processa o código de indicação!
  */
 export async function POST(request: Request) {
     try {
-        const { userId, email, fullName, cpf, role, rotaNumber, pistaId, plan } = await request.json()
+        const { userId, email, fullName, cpf, role, rotaNumber, pistaId, plan, referralCode } = await request.json()
 
         if (!userId || !email) {
             return NextResponse.json({ error: 'userId e email são obrigatórios' }, { status: 400 })
@@ -35,6 +36,10 @@ export async function POST(request: Request) {
             .maybeSingle()
 
         if (existing) {
+            // Perfil já existe - mas ainda precisamos processar indicação se não foi processada
+            if (referralCode) {
+                await processReferral(userId, referralCode)
+            }
             return NextResponse.json({ success: true, message: 'Perfil já existe' })
         }
 
@@ -79,11 +84,65 @@ export async function POST(request: Request) {
             })
             .single()
 
-        console.log('[API ensure] Perfil criado com sucesso para:', email)
+        // NOVO: Processar indicação
+        if (referralCode) {
+            await processReferral(userId, referralCode)
+        }
+
+        console.log('[API ensure] Perfil criado com sucesso para:', email, referralCode ? `(indicado por ${referralCode})` : '')
         return NextResponse.json({ success: true, message: 'Perfil criado!' })
 
     } catch (error) {
         console.error('[API ensure] Erro:', error)
         return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
+    }
+}
+
+/**
+ * Processa indicação: busca referrer pelo slug e cria registro
+ */
+async function processReferral(referredId: string, referralCode: string) {
+    try {
+        // Verificar se já existe indicação
+        const { data: existingRef } = await supabaseAdmin
+            .from('referrals')
+            .select('id')
+            .eq('referred_id', referredId)
+            .maybeSingle()
+
+        if (existingRef) {
+            console.log('[API ensure] Indicação já existe para:', referredId)
+            return
+        }
+
+        // Buscar referrer pelo slug
+        const { data: referrer } = await supabaseAdmin
+            .from('profiles')
+            .select('id, full_name')
+            .eq('slug', referralCode)
+            .maybeSingle()
+
+        if (!referrer) {
+            console.log('[API ensure] Referrer não encontrado:', referralCode)
+            return
+        }
+
+        // Criar indicação
+        const { error } = await supabaseAdmin
+            .from('referrals')
+            .insert({
+                referrer_id: referrer.id,
+                referred_id: referredId,
+                referral_code: referralCode,
+                status: 'pending'
+            })
+
+        if (error) {
+            console.error('[API ensure] Erro ao criar indicação:', error)
+        } else {
+            console.log(`[API ensure] ✅ Indicação criada: ${referredId} indicado por ${referrer.full_name} (${referralCode})`)
+        }
+    } catch (err) {
+        console.error('[API ensure] Erro ao processar indicação:', err)
     }
 }
