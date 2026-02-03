@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { FinancialMetrics } from '@/components/admin/FinancialMetrics'
 import { PlanManager } from '@/components/admin/PlanManager'
 import { CouponManager } from '@/components/admin/CouponManager'
@@ -11,9 +12,29 @@ import { ReferralManager } from '@/components/admin/ReferralManager'
 import { CommissionReportsManager } from '@/components/admin/CommissionReportsManager'
 import { PrizePaymentManager } from '@/components/admin/PrizePaymentManager'
 import { DollarSign } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function FinanceiroPage() {
     const [activeTab, setActiveTab] = useState('dashboard')
+    const [pendingWithdrawals, setPendingWithdrawals] = useState(0)
+
+    const supabase = createClient()
+
+    useEffect(() => {
+        const loadPendingCount = async () => {
+            const { count } = await supabase
+                .from('withdrawal_requests')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'pending')
+
+            setPendingWithdrawals(count || 0)
+        }
+
+        loadPendingCount()
+        // Atualizar a cada 30 segundos
+        const interval = setInterval(loadPendingCount, 30000)
+        return () => clearInterval(interval)
+    }, [])
 
     return (
         <div className="space-y-6">
@@ -34,11 +55,17 @@ export default function FinanceiroPage() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-7 lg:w-[1000px]">
+                <TabsList className="grid w-full grid-cols-6 lg:w-[900px]">
                     <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                     <TabsTrigger value="planos">Planos</TabsTrigger>
-                    <TabsTrigger value="comissoes">Comissões</TabsTrigger>
-                    <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+                    <TabsTrigger value="comissoes" className="relative">
+                        Comissões
+                        {pendingWithdrawals > 0 && (
+                            <Badge className="ml-2 bg-red-600 text-white border-none">
+                                {pendingWithdrawals}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
                     <TabsTrigger value="premios">Prêmios</TabsTrigger>
                     <TabsTrigger value="cupons">Cupons</TabsTrigger>
                     <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
@@ -64,7 +91,7 @@ export default function FinanceiroPage() {
                     </Card>
                 </TabsContent>
 
-                {/* Comissões Tab */}
+                {/* Comissões Tab - AGORA COM RELATÓRIOS */}
                 <TabsContent value="comissoes" className="space-y-6">
                     <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
                         <CardHeader>
@@ -77,10 +104,8 @@ export default function FinanceiroPage() {
                             <ReferralManager />
                         </CardContent>
                     </Card>
-                </TabsContent>
 
-                {/* Relatórios Tab */}
-                <TabsContent value="relatorios" className="space-y-6">
+                    {/* Relatórios de Comissões */}
                     <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
                         <CardHeader>
                             <CardTitle className="text-primary">Relatórios de Comissões</CardTitle>
@@ -142,5 +167,4 @@ export default function FinanceiroPage() {
         </div>
     )
 }
-
 

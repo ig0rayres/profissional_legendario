@@ -6,6 +6,8 @@ import { LayoutDashboard, Users, ShieldCheck, Settings, LogOut, Flame, Bell, Tag
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth/context'
 import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Badge } from '@/components/ui/badge'
 
 export default function AdminLayout({
     children,
@@ -17,6 +19,9 @@ export default function AdminLayout({
     const { user, signOut, loading } = useAuth()
     const [isLoading, setIsLoading] = useState(true)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [pendingWithdrawals, setPendingWithdrawals] = useState(0)
+
+    const supabase = createClient()
 
     useEffect(() => {
         // Wait for auth to load before checking
@@ -56,6 +61,25 @@ export default function AdminLayout({
     useEffect(() => {
         setMobileMenuOpen(false)
     }, [pathname])
+
+    // Carregar contador de saques pendentes
+    useEffect(() => {
+        if (!user || user.role !== 'admin') return
+
+        const loadPendingCount = async () => {
+            const { count } = await supabase
+                .from('withdrawal_requests')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'pending')
+
+            setPendingWithdrawals(count || 0)
+        }
+
+        loadPendingCount()
+        // Atualizar a cada minuto
+        const interval = setInterval(loadPendingCount, 60000)
+        return () => clearInterval(interval)
+    }, [user])
 
     const navigation = [
         { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -135,6 +159,11 @@ export default function AdminLayout({
                             >
                                 <Icon className="w-5 h-5" />
                                 {item.name}
+                                {item.href === '/admin/financeiro' && pendingWithdrawals > 0 && (
+                                    <span className="ml-auto bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                                        {pendingWithdrawals}
+                                    </span>
+                                )}
                             </Link>
                         )
                     })}
@@ -183,6 +212,11 @@ export default function AdminLayout({
                             >
                                 <Icon className="w-4 h-4" />
                                 {item.name}
+                                {item.href === '/admin/financeiro' && pendingWithdrawals > 0 && (
+                                    <span className="ml-auto bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                                        {pendingWithdrawals}
+                                    </span>
+                                )}
                             </Link>
                         )
                     })}

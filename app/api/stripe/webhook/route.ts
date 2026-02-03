@@ -406,6 +406,15 @@ async function handlePaymentSucceeded(supabase: any, invoice: Stripe.Invoice) {
                 if (result.success) {
                     console.log('[Stripe Webhook] Commission registered:', result.commissionAmount, 'for user:', subscription.user_id)
                 }
+
+                // Atualizar data do último pagamento no perfil
+                await supabase
+                    .from('profiles')
+                    .update({ last_payment_at: new Date().toISOString() })
+                    .eq('id', subscription.user_id)
+
+                console.log('[Stripe Webhook] Updated last_payment_at for user:', subscription.user_id)
+
             } catch (error) {
                 console.error('[Stripe Webhook] Error registering commission:', error)
             }

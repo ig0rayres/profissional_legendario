@@ -171,6 +171,18 @@ export async function registerReferral(
         return { success: false, error: 'Erro ao registrar indicação' }
     }
 
+    // Incrementar contador de indicações do referrer
+    const { error: updateError } = await supabase.rpc('increment_referral_count', {
+        user_id: referrer.id
+    })
+
+    if (updateError) {
+        console.error('[ReferralService] Erro ao incrementar contador:', updateError)
+        // Não falha o registro, apenas loga o erro
+    } else {
+        console.log(`[ReferralService] Contador incrementado para user ${referrer.id}`)
+    }
+
     return { success: true }
 }
 
