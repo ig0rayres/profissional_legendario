@@ -434,7 +434,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
         }
     }
 
-    async function handleAcceptConnection(connectionId: string) {
+    async function handleAcceptConnection(connectionId: string, requesterId: string, requesterName: string) {
         console.log('[ELO] Aceitando conexão:', connectionId)
         try {
             const { data, error } = await supabase
@@ -449,6 +449,61 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                 console.error('[ELO] Erro:', error)
                 alert('Erro ao aceitar: ' + error.message)
                 return
+            }
+
+            // 🎮 GAMIFICAÇÃO: +pontos por ACEITAR elo
+            console.log('[ELO] 🎮 Iniciando gamificação de aceite...')
+            try {
+                const { useAuth } = await import('@/lib/auth/context')
+                const { awardPoints, awardBadge, checkEloPointsAlreadyAwarded } = await import('@/lib/api/gamification')
+                const { getActionPoints } = await import('@/lib/services/point-actions-service')
+
+                // Pegar user ID do contexto - alternativa sem hooks
+                const { data: { user } } = await supabase.auth.getUser()
+
+                if (user) {
+                    console.log('[ELO] User ID:', user.id, 'Requester ID:', requesterId)
+
+                    // Verificar se já recebeu pontos por este elo (anti-farming)
+                    const alreadyAwarded = await checkEloPointsAlreadyAwarded(user.id, requesterId, 'elo_accepted')
+                    console.log('[ELO] Anti-farming result:', alreadyAwarded)
+
+                    if (!alreadyAwarded) {
+                        // Dar pontos ao usuário que aceitou
+                        const points = await getActionPoints('elo_accepted')
+                        console.log('[ELO] Pontos a creditar:', points)
+
+                        const result = await awardPoints(
+                            user.id,
+                            points,
+                            'elo_accepted',
+                            `Aceitou elo com ${requesterName}`,
+                            { target_user_id: requesterId } // Para verificação de duplicação
+                        )
+                        console.log('[ELO] ✅ awardPoints resultado:', result)
+
+                        // Verificar se é o primeiro elo (medalha "presente")
+                        const { count } = await supabase
+                            .from('user_connections')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('addressee_id', user.id)
+                            .eq('status', 'accepted')
+
+                        console.log('[ELO] Total de elos aceitos:', count)
+
+                        if (count === 1) {
+                            console.log('[ELO] 🏅 Primeiro elo! Concedendo medalha  "Presente"...')
+                            await awardBadge(user.id, 'presente')
+                            console.log('[ELO] ✅ Medalha "Presente" concedida!')
+                        }
+                    } else {
+                        console.log('[ELO] ⚠️ Pontos de aceite já creditados para este par de usuários')
+                    }
+                } else {
+                    console.error('[ELO] ❌ Usuário não autenticado')
+                }
+            } catch (gamifError) {
+                console.error('[ELO] ❌ Erro de gamificação:', gamifError)
             }
 
             // Remover da lista e atualizar contagem
@@ -586,7 +641,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                                                     </div>
                                                     <div className="flex gap-2 mt-2">
                                                         <button
-                                                            onClick={() => handleAcceptConnection(request.id)}
+                                                            onClick={() => handleAcceptConnection(request.id, request.requester_id, request.requester?.full_name || 'Usuário')}
                                                             className="flex-1 py-1.5 bg-[#1E4D40] text-white text-xs font-medium rounded-lg hover:bg-[#2A6B5A] transition-colors"
                                                         >
                                                             Aceitar

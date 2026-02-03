@@ -84,7 +84,58 @@ export async function POST(request: Request) {
             )
         }
 
-        // 4. Registrar no histórico
+        // 4. 🔥 ATUALIZAR TEMPORADA ATUAL (user_season_stats)
+        // Buscar ou criar temporada ativa
+        const { data: activeSeason } = await supabaseAdmin
+            .from('gamification_seasons')
+            .select('id')
+            .eq('is_active', true)
+            .maybeSingle()
+
+        if (activeSeason) {
+            console.log('[AwardPoints API] Updating season stats:', activeSeason.id)
+
+            // Buscar ou criar stats da temporada
+            const { data: seasonStats } = await supabaseAdmin
+                .from('user_season_stats')
+                .select('total_xp')
+                .eq('user_id', userId)
+                .eq('season_id', activeSeason.id)
+                .maybeSingle()
+
+            if (seasonStats) {
+                // Atualizar existente
+                await supabaseAdmin
+                    .from('user_season_stats')
+                    .update({
+                        total_xp: (seasonStats.total_xp || 0) + finalAmount,
+                        last_xp_date: new Date().toISOString().split('T')[0],
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', userId)
+                    .eq('season_id', activeSeason.id)
+
+                console.log('[AwardPoints API] Season stats updated:', seasonStats.total_xp, '->', (seasonStats.total_xp || 0) + finalAmount)
+            } else {
+                // Criar novo
+                await supabaseAdmin
+                    .from('user_season_stats')
+                    .insert({
+                        user_id: userId,
+                        season_id: activeSeason.id,
+                        total_xp: finalAmount,
+                        rank_id: 'novato',
+                        daily_xp_count: finalAmount,
+                        last_xp_date: new Date().toISOString().split('T')[0]
+                    })
+
+                console.log('[AwardPoints API] Season stats created with:', finalAmount)
+            }
+        } else {
+            console.warn('[AwardPoints API] No active season found, skipping season stats update')
+        }
+
+        // 5. Registrar no histórico
         const { error: historyError } = await supabaseAdmin
             .from('points_history')
             .insert({

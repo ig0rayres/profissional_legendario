@@ -185,6 +185,13 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
     async function respondConnection(accept: boolean) {
         if (!user) return
 
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log('[ConnectionButton] 🎯 respondConnection CHAMADA')
+        console.log('[ConnectionButton] Accept:', accept)
+        console.log('[ConnectionButton] User:', user.id)
+        console.log('[ConnectionButton] Target:', targetUserId)
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
         setLoading(true)
 
         const { error: updateError } = await supabase
@@ -201,14 +208,33 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
 
             // 🎮 GAMIFICAÇÃO: +5 XP por aceitar elo
             if (accept) {
-                console.log('[ConnectionButton] Gamificação: Aceite de elo, adicionando XP...')
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                console.log('[ConnectionButton] 🎮 INICIANDO GAMIFICAÇÃO DE ACEITE')
+                console.log('[ConnectionButton] User ID:', user.id)
+                console.log('[ConnectionButton] Target User ID:', targetUserId)
+                console.log('[ConnectionButton] Target User Name:', targetUserName)
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
                 try {
                     // Verificar se já recebeu pontos por este elo (anti-farming)
+                    console.log('[ConnectionButton] 🔍 STEP 1: Verificando anti-farming...')
                     const alreadyAwarded = await checkEloPointsAlreadyAwarded(user.id, targetUserId, 'elo_accepted')
+                    console.log('[ConnectionButton] ✓ Anti-farming result:', alreadyAwarded)
 
                     if (!alreadyAwarded) {
+                        console.log('[ConnectionButton] ✅ Pontos não foram creditados antes, prosseguindo...')
+
                         // Adicionar pontos ao usuário que aceitou
+                        console.log('[ConnectionButton] 🔍 STEP 2: Buscando pontos da ação...')
                         const points = await getActionPoints('elo_accepted')
+                        console.log('[ConnectionButton] ✓ Pontos obtidos:', points)
+
+                        console.log('[ConnectionButton] 🔍 STEP 3: Chamando API awardPoints...')
+                        console.log('[ConnectionButton]    - userId:', user.id)
+                        console.log('[ConnectionButton]    - points:', points)
+                        console.log('[ConnectionButton]    - actionType: elo_accepted')
+                        console.log('[ConnectionButton]    - description:', `Aceitou elo com ${targetUserName}`)
+
                         const result = await awardPoints(
                             user.id,
                             points,
@@ -216,25 +242,37 @@ export function ConnectionButton({ targetUserId, targetUserName }: ConnectionBut
                             `Aceitou elo com ${targetUserName}`,
                             { target_user_id: targetUserId } // Para verificação de duplicação
                         )
-                        console.log('[ConnectionButton] awardPoints resultado:', result)
+                        console.log('[ConnectionButton] ✓ awardPoints resultado:', result)
 
                         // Verificar se é o primeiro elo (medalha "presente")
+                        console.log('[ConnectionButton] 🔍 STEP 4: Verificando se é primeiro elo...')
                         const { count } = await supabase
                             .from('user_connections')
                             .select('*', { count: 'exact', head: true })
                             .eq('addressee_id', user.id)
                             .eq('status', 'accepted')
 
+                        console.log('[ConnectionButton] ✓ Total de elos aceitos:', count)
+
                         if (count === 1) {
+                            console.log('[ConnectionButton] 🏅 É o primeiro elo! Concedendo medalha "Presente"...')
                             await awardBadge(user.id, 'presente')
-                            console.log('[ConnectionButton] Medalha "Presente" concedida!')
+                            console.log('[ConnectionButton] ✓ Medalha "Presente" concedida!')
+                        } else {
+                            console.log('[ConnectionButton] ℹ️ Não é o primeiro elo (total:', count, ')')
                         }
+
+                        console.log('[ConnectionButton] ✅ GAMIFICAÇÃO CONCLUÍDA COM SUCESSO')
                     } else {
-                        console.log('[ConnectionButton] Pontos de aceite já creditados para este par de usuários')
+                        console.log('[ConnectionButton] ⚠️ PONTOS JÁ CREDITADOS - pulando gamificação')
+                        console.log('[ConnectionButton] Anti-farming bloqueou duplicação para:', { userId: user.id, targetUserId, action: 'elo_accepted' })
                     }
                 } catch (gamifError) {
-                    console.error('[ConnectionButton] Erro de gamificação:', gamifError)
+                    console.error('[ConnectionButton] ❌ ERRO DE GAMIFICAÇÃO:', gamifError)
+                    console.error('[ConnectionButton] Stack:', gamifError instanceof Error ? gamifError.stack : 'N/A')
                 }
+
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
                 // Mostrar modal de sucesso
                 setShowSuccessModal(true)

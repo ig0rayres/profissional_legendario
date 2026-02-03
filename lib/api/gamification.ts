@@ -93,24 +93,41 @@ export async function checkEloPointsAlreadyAwarded(
     try {
         const supabase = createClient()
 
-        // Buscar no histórico se já existe pontos para este par de usuários
-        const { data, error } = await supabase
+        // 🔥 ANTI-FARMING BI-LATERAL
+        // Verificar AMBAS as direções do par de usuários
+        // Se A→B já foi pontuado, B→A também não pode pontuar
+
+        const { data: direction1, error: error1 } = await supabase
             .from('points_history')
             .select('id')
             .eq('user_id', userId)
             .eq('action_type', actionType)
-            .contains('metadata', { target_user_id: targetUserId })
+            .eq('metadata->>target_user_id', targetUserId)
             .limit(1)
 
-        if (error) {
-            console.error('[Gamification] Erro ao verificar duplicação:', error)
+        const { data: direction2, error: error2 } = await supabase
+            .from('points_history')
+            .select('id')
+            .eq('user_id', targetUserId)
+            .eq('action_type', actionType)
+            .eq('metadata->>target_user_id', userId)
+            .limit(1)
+
+        if (error1 || error2) {
+            console.error('[Gamification] Erro ao verificar duplicação:', error1 || error2)
             return false // Em caso de erro, permitir (fail-open)
         }
 
-        const alreadyAwarded = data && data.length > 0
+        const alreadyAwarded = (direction1 && direction1.length > 0) || (direction2 && direction2.length > 0)
 
         if (alreadyAwarded) {
-            console.log(`[Gamification] ⚠️ Pontos de ${actionType} já creditados para par ${userId} <-> ${targetUserId}`)
+            console.log(`[Gamification] ⚠️ Anti-farming BI-LATERAL: Par ${userId} ↔ ${targetUserId} já foi pontuado em ${actionType}`)
+            if (direction1 && direction1.length > 0) {
+                console.log(`  → Direção ${userId} → ${targetUserId} já creditada`)
+            }
+            if (direction2 && direction2.length > 0) {
+                console.log(`  → Direção ${targetUserId} → ${userId} já creditada (inversa)`)
+            }
         }
 
         return alreadyAwarded
