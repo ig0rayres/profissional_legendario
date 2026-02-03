@@ -9,12 +9,9 @@ async function checkReferralsData() {
     const { data: allReferrals, error: refError } = await supabase
         .from('referrals')
         .select(`
-            id,
-            created_at,
-            referrer_id,
-            referred_id,
-            referrer:profiles!referrer_id(full_name),
-            referred:profiles!referred_id(full_name)
+            *,
+            referrer:referrer_id(full_name),
+            referred:referred_id(full_name)
         `)
         .order('created_at', { ascending: false })
 
@@ -49,12 +46,8 @@ async function checkReferralsData() {
     const { data: activeSubs, error: subError } = await supabase
         .from('subscriptions')
         .select(`
-            id,
-            user_id,
-            plan_id,
-            status,
-            created_at,
-            user:profiles!user_id(full_name)
+            *,
+            user:user_id(full_name)
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false })

@@ -21,7 +21,7 @@ interface AdTier {
 }
 
 export default async function ModalidadesPage() {
-    const supabase = createClient(cookies())
+    const supabase = await createClient()
 
     // Buscar modalidades ativas
     const { data: tiers } = await supabase
