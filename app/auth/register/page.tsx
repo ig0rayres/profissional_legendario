@@ -48,12 +48,32 @@ export default function RegisterPage() {
     const [loadingPlans, setLoadingPlans] = useState(true)
     const [selectedPlan, setSelectedPlan] = useState<string>('')  // Estado local para plano
 
-    // Capturar código de referral da URL e salvar no localStorage
+    // Capturar código de referral da URL, localStorage ou cookie (múltiplas fontes)
     useEffect(() => {
+        // 1. Prioridade: URL param
         const refCode = searchParams.get('ref')
         if (refCode) {
             localStorage.setItem('referral_code', refCode)
-            console.log('[Register] Código de referral salvo:', refCode)
+            console.log('[Register] Código de referral salvo (via URL):', refCode)
+            return
+        }
+
+        // 2. Se já tem no localStorage, mantém
+        const storedCode = localStorage.getItem('referral_code')
+        if (storedCode) {
+            console.log('[Register] Código de referral já existe (localStorage):', storedCode)
+            return
+        }
+
+        // 3. Fallback: tentar ler do cookie (se usuário voltou sem ?ref= na URL)
+        const cookies = document.cookie.split(';')
+        const refCookie = cookies.find(c => c.trim().startsWith('referral_code='))
+        if (refCookie) {
+            const cookieValue = refCookie.split('=')[1]?.trim()
+            if (cookieValue) {
+                localStorage.setItem('referral_code', cookieValue)
+                console.log('[Register] Código de referral recuperado (cookie):', cookieValue)
+            }
         }
     }, [searchParams])
 
