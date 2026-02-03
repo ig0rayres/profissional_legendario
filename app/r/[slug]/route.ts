@@ -27,8 +27,11 @@ export async function GET(
             return NextResponse.redirect(new URL('/', request.url))
         }
 
-        // Salvar código de indicação em cookie (30 dias)
-        const response = NextResponse.redirect(new URL('/auth/register', request.url))
+        // Salvar código de indicação em cookie (30 dias) E passar na URL
+        const registerUrl = new URL('/auth/register', request.url)
+        registerUrl.searchParams.set('ref', slug)
+
+        const response = NextResponse.redirect(registerUrl)
 
         response.cookies.set('referral_code', slug, {
             maxAge: 60 * 60 * 24 * 30, // 30 dias

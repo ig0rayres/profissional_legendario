@@ -7,7 +7,11 @@ import { registerReferral } from '@/lib/services/referral-service'
  * POST /api/referral/register
  * 
  * Registra a indicação após o usuário se cadastrar.
- * Lê o cookie 'referral_code' salvo pela rota /r/{slug}
+ * MÚLTIPLAS FONTES (por ordem de prioridade):
+ * 1. Body da requisição (localStorage do frontend)
+ * 2. Cookie 'referral_code' (setado pela rota /r/{slug})
+ * 
+ * A função registerReferral já verifica duplicidade (unique constraint).
  */
 export async function POST(request: NextRequest) {
     try {
@@ -23,13 +27,22 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Ler cookie de indicação
-        const cookieStore = await cookies()
-        const allCookies = cookieStore.getAll()
-        console.log('[API referral/register] Cookies recebidos:', allCookies.map(c => c.name))
+        // 1. Tentar ler código do body (localStorage)
+        let referralCode: string | null = null
+        try {
+            const body = await request.json()
+            referralCode = body?.referralCode || null
+            console.log('[API referral/register] Código via body:', referralCode || 'NÃO ENVIADO')
+        } catch {
+            // Body vazio ou inválido
+        }
 
-        const referralCode = cookieStore.get('referral_code')?.value
-        console.log('[API referral/register] Cookie referral_code:', referralCode || 'NÃO ENCONTRADO')
+        // 2. Fallback: ler do cookie
+        if (!referralCode) {
+            const cookieStore = await cookies()
+            referralCode = cookieStore.get('referral_code')?.value || null
+            console.log('[API referral/register] Código via cookie:', referralCode || 'NÃO ENCONTRADO')
+        }
 
         if (!referralCode) {
             return NextResponse.json(
@@ -38,11 +51,12 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Registrar indicação
+        // Registrar indicação (registerReferral já verifica duplicidade)
         const result = await registerReferral(referralCode, user.id)
 
-        // Limpar cookie após registrar
+        // Limpar cookie após registrar (se existir)
         if (result.success) {
+            const cookieStore = await cookies()
             cookieStore.delete('referral_code')
         }
 

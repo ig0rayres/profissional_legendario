@@ -90,8 +90,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 .then(res => res.json())
                                 .then(async result => {
                                     console.log('[Auth] ✅ Perfil criado via fallback:', result)
-                                    // Registrar indicação se houver cookie
-                                    await fetch('/api/referral/register', { method: 'POST', credentials: 'include' }).catch(() => { })
+                                    // Registrar indicação - tenta localStorage primeiro, depois cookie
+                                    const refCode = localStorage.getItem('referral_code')
+                                    await fetch('/api/referral/register', {
+                                        method: 'POST',
+                                        credentials: 'include',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ referralCode: refCode })
+                                    }).then(() => {
+                                        if (refCode) localStorage.removeItem('referral_code')
+                                    }).catch(() => { })
                                     // Recarregar a página para buscar o perfil criado
                                     window.location.reload()
                                 })
@@ -115,12 +123,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 avatar_url: data.avatar_url
                             })
 
-                            // Registrar indicação se houver cookie de referral
-                            fetch('/api/referral/register', { method: 'POST', credentials: 'include' })
+                            // Registrar indicação - tenta localStorage primeiro, depois cookie
+                            const refCode = localStorage.getItem('referral_code')
+                            fetch('/api/referral/register', {
+                                method: 'POST',
+                                credentials: 'include',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ referralCode: refCode })
+                            })
                                 .then(res => res.json())
                                 .then(result => {
                                     if (result.success) {
                                         console.log('[Auth] Indicação registrada:', result.message)
+                                        if (refCode) localStorage.removeItem('referral_code')
                                     }
                                 })
                                 .catch(err => console.warn('[Auth] Erro ao registrar indicação:', err))

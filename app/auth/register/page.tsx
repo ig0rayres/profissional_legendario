@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,6 +34,7 @@ interface Plan {
 
 export default function RegisterPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { signUp } = useAuth()
     const supabase = createClient()
 
@@ -46,6 +47,15 @@ export default function RegisterPage() {
     const [plans, setPlans] = useState<Plan[]>([])
     const [loadingPlans, setLoadingPlans] = useState(true)
     const [selectedPlan, setSelectedPlan] = useState<string>('')  // Estado local para plano
+
+    // Capturar código de referral da URL e salvar no localStorage
+    useEffect(() => {
+        const refCode = searchParams.get('ref')
+        if (refCode) {
+            localStorage.setItem('referral_code', refCode)
+            console.log('[Register] Código de referral salvo:', refCode)
+        }
+    }, [searchParams])
 
     // Carregar pistas via API (bypass de RLS para usuários anônimos)
     useEffect(() => {
