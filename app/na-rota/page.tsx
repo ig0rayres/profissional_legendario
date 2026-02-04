@@ -39,26 +39,8 @@ import { AvatarWithRank } from '@/components/ui/avatar-with-rank'
 // ============================================
 export default function NaRotaPage() {
     const { user } = useAuth()
-    const [activeTab, setActiveTab] = useState<'global' | 'user' | 'connections'>('global')
+    const [activeTab, setActiveTab] = useState<'global' | 'user' | 'connections' | 'marketplace'>('global')
     const [createModalOpen, setCreateModalOpen] = useState(false)
-
-    // 🆕 Filtro de Marketplace (único checkbox adicional)
-    const [showMarketplace, setShowMarketplace] = useState(true)
-
-    // Carregar preferência do localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem('feedShowMarketplace')
-        if (saved !== null) {
-            setShowMarketplace(JSON.parse(saved))
-        }
-    }, [])
-
-    // Salvar preferência no localStorage
-    const toggleMarketplace = () => {
-        const newValue = !showMarketplace
-        setShowMarketplace(newValue)
-        localStorage.setItem('feedShowMarketplace', JSON.stringify(newValue))
-    }
 
     // Hooks centralizados
     const {
@@ -404,7 +386,7 @@ export default function NaRotaPage() {
                             <CardContent className="p-4">
                                 {/* Tabs */}
                                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-4">
-                                    <TabsList className="grid w-full grid-cols-3 bg-gray-100">
+                                    <TabsList className="grid w-full grid-cols-4 bg-gray-100">
                                         <TabsTrigger value="global" className="flex gap-2 text-xs">
                                             <Users className="w-3.5 h-3.5" />
                                             Global
@@ -413,26 +395,16 @@ export default function NaRotaPage() {
                                             <Zap className="w-3.5 h-3.5" />
                                             Elos
                                         </TabsTrigger>
+                                        <TabsTrigger value="marketplace" className="flex gap-2 text-xs">
+                                            <Store className="w-3.5 h-3.5" />
+                                            Marketplace
+                                        </TabsTrigger>
                                         <TabsTrigger value="user" className="flex gap-2 text-xs" disabled={!user}>
                                             <MapPin className="w-3.5 h-3.5" />
                                             Meus
                                         </TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-
-                                {/* 🆕 Filtro de Marketplace (checkbox único) */}
-                                <div className="mb-4">
-                                    <label className="flex items-center gap-2 text-sm cursor-pointer p-2 hover:bg-gray-50 rounded transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            checked={showMarketplace}
-                                            onChange={toggleMarketplace}
-                                            className="w-4 h-4 text-orange-600 rounded"
-                                        />
-                                        <Store className="w-4 h-4 text-orange-600" />
-                                        <span className="text-gray-700 font-medium">Incluir Marketplace</span>
-                                    </label>
-                                </div>
 
                                 {/* Posts */}
                                 <div className="space-y-4">
