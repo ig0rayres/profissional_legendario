@@ -575,7 +575,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#1E4D40]/30 transition-all duration-300 group">
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#1E4D40]/30 transition-all duration-300 group overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
 
             <CardContent className="p-5 relative">
@@ -607,9 +607,9 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                                 </span>
                             </button>
 
-                            {/* Popup de solicitações pendentes - FIXED para não ser cortado */}
+                            {/* Popup de solicitações pendentes - FIXED e Z-INDEX MÁXIMO */}
                             {showPendingPopup && (
-                                <div className="fixed right-4 top-20 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-[9999] overflow-hidden">
+                                <div className="fixed right-4 top-20 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
                                     <div className="bg-gradient-to-r from-[#1E4D40] to-[#2A6B5A] p-3">
                                         <h4 className="text-white font-bold text-sm flex items-center gap-2">
                                             <UserPlus className="w-4 h-4" />
