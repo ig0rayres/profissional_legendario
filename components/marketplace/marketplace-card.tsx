@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { MapPin, Car, Home, Crown, Star, Eye } from 'lucide-react'
+import { MapPin, Car, Home, Crown, Star, Eye, Search } from 'lucide-react' // 🆕 Search para compra
 import { Card, CardContent } from '@/components/ui/card'
 import { MarketplaceAd } from '@/lib/data/marketplace'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +21,7 @@ export function MarketplaceCard({ ad }: MarketplaceCardProps) {
     const isLendario = ad.ad_tier?.tier_level === 'lendario'
     const isElite = ad.ad_tier?.tier_level === 'elite'
     const highlightColor = ad.ad_tier?.highlight_color
+    const isBuyListing = ad.listing_type === 'buy' // 🆕 Verificar se é PROCURA-SE
 
     // Pegar primeira imagem
     const mainImage = ad.images?.[0] || '/placeholder-product.jpg'
@@ -33,15 +34,25 @@ export function MarketplaceCard({ ad }: MarketplaceCardProps) {
             <Card className={`
                 h-full overflow-hidden hover:shadow-lg transition-all duration-300 group 
                 bg-card/50 backdrop-blur-sm relative
-                ${isLendario
-                    ? 'border-2 border-amber-500/50 hover:border-amber-500 shadow-amber-500/20'
-                    : isElite
-                        ? 'border-2 border-green-500/50 hover:border-green-500 shadow-green-500/20'
-                        : 'border-primary/10 hover:border-primary/30'
+                ${isBuyListing
+                    ? 'border-2 border-orange-500/50 hover:border-orange-500 shadow-orange-500/20'
+                    : isLendario
+                        ? 'border-2 border-amber-500/50 hover:border-amber-500 shadow-amber-500/20'
+                        : isElite
+                            ? 'border-2 border-green-500/50 hover:border-green-500 shadow-green-500/20'
+                            : 'border-primary/10 hover:border-primary/30'
                 }
             `}>
                 {/* Badge de Destaque */}
-                {(isLendario || isElite) && (
+                {isBuyListing ? (
+                    /* Badge para PROCURA-SE */
+                    <div className="absolute top-0 left-0 right-0 z-10 text-center py-1 text-xs font-bold bg-gradient-to-r from-orange-500 to-orange-400 text-white">
+                        <span className="flex items-center justify-center gap-1">
+                            <Search className="w-3 h-3" /> PROCURA-SE
+                        </span>
+                    </div>
+                ) : (isLendario || isElite) && (
+                    /* Badges para Lendário e Elite */
                     <div className={`
                         absolute top-0 left-0 right-0 z-10 text-center py-1 text-xs font-bold
                         ${isLendario ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-black' : 'bg-green-600 text-white'}
@@ -59,7 +70,7 @@ export function MarketplaceCard({ ad }: MarketplaceCardProps) {
                 )}
 
                 {/* Imagem */}
-                <div className={`relative aspect-square overflow-hidden bg-muted ${(isLendario || isElite) ? 'mt-6' : ''}`}>
+                <div className={`relative aspect-square overflow-hidden bg-muted ${(isBuyListing || isLendario || isElite) ? 'mt-6' : ''}`}>
                     <Image
                         src={mainImage}
                         alt={ad.title}

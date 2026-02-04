@@ -55,6 +55,7 @@ export interface MarketplaceAd {
     condition: 'new' | 'used_like_new' | 'used_good' | 'used_fair' | null
     location: string | null
     images: string[]
+    listing_type: 'sell' | 'buy' // 🆕 Tipo: venda ou compra
 
     // Detalhes específicos
     vehicle_details: VehicleDetails | null
