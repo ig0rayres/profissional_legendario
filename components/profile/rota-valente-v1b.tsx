@@ -181,7 +181,16 @@ export function RotaValenteV1B({
                                 <span className="text-xs text-white/70">Plano</span>
                             </div>
                             <span className="text-sm font-black text-white uppercase">
-                                {subscription?.plan_tiers?.name || 'RECRUTA'}
+                                {(() => {
+                                    const PLAN_NAMES = {
+                                        'recruta': 'Recruta',
+                                        'veterano': 'Veterano',
+                                        'elite': 'Elite',
+                                        'lendario': 'Lendário'
+                                    }
+                                    const planId = subscription?.plan_id || subscription?.plan_tiers?.id || 'recruta'
+                                    return PLAN_NAMES[planId as keyof typeof PLAN_NAMES] || subscription?.plan_tiers?.name || 'Recruta'
+                                })()}
                             </span>
                         </div>
                     </div>

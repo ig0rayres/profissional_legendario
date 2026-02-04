@@ -21,6 +21,7 @@ import { CreatePostModalV2 } from '@/components/social/create-post-modal-v2'
 import { LogoFrameAvatar } from '@/components/profile/logo-frame-avatar'
 import { RankInsignia } from '@/components/gamification/rank-insignia'
 import { useAvatarConfig } from '@/hooks/use-avatar-config'
+import { useAuth } from '@/lib/auth/context'
 
 
 /**
@@ -308,6 +309,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
     const [pendingRequests, setPendingRequests] = useState<any[]>([])
     const [loadingPending, setLoadingPending] = useState(false)
     const supabase = createClient()
+    const { user } = useAuth() // 🔒 SEGURANÇA: só mostra solicitações para o dono
 
     // Carregar configurações de avatar do banco
     const { sizes: avatarSizes } = useAvatarConfig('elo', 'desktop')
@@ -586,7 +588,8 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                         </div>
                     </div>
 
-                    {pendingCount > 0 && (
+                    {/* 🔒 SEGURANÇA: Sino de solicitações só aparece para o dono do perfil */}
+                    {pendingCount > 0 && user?.id === userId && (
                         <div className="relative">
                             <button
                                 onClick={handleBellClick}
@@ -765,6 +768,7 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
     const [loading, setLoading] = useState(!propConfraternities && !!userId)
     const supabase = createClient()
     const router = useRouter()
+    const { user } = useAuth() // 🔒 SEGURANÇA: só mostra convites para o dono
 
     useEffect(() => {
         // Se confraternities foram passadas como prop, não carrega
@@ -776,7 +780,10 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
         if (userId) {
             loadConfraternities()
             loadCounters()
-            loadPendingInvites()
+            // 🔒 SEGURANÇA: Só carrega convites pendentes se for o dono do perfil
+            if (user?.id === userId) {
+                loadPendingInvites()
+            }
         }
     }, [userId, propConfraternities])
 
@@ -998,7 +1005,8 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                             <span className="text-lg font-bold text-green-700">{counters.total_count}</span>
                             <span className="text-[9px] uppercase text-gray-600 font-medium">Total</span>
                         </div>
-                        {pendingInvitesCount > 0 && (
+                        {/* 🔒 SEGURANÇA: Sino só aparece para o dono do perfil  */}
+                        {pendingInvitesCount > 0 && user?.id === userId && (
                             <div className="relative ml-3">
                                 <div
                                     onClick={() => setShowInvitesPopup(!showInvitesPopup)}

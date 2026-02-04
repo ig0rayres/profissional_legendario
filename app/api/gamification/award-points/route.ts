@@ -85,22 +85,21 @@ export async function POST(request: Request) {
         }
 
         // 4. 🔥 ATUALIZAR TEMPORADA ATUAL (user_season_stats)
-        // Buscar ou criar temporada ativa
-        const { data: activeSeason } = await supabaseAdmin
-            .from('gamification_seasons')
-            .select('id')
-            .eq('is_active', true)
-            .maybeSingle()
+        // Usar RPC que autocria temporada se não existir
+        const { data: seasonId, error: seasonError } = await supabaseAdmin
+            .rpc('get_active_season')
 
-        if (activeSeason) {
-            console.log('[AwardPoints API] Updating season stats:', activeSeason.id)
+        if (seasonError) {
+            console.error('[AwardPoints API] Error fetching active season:', seasonError)
+        } else if (seasonId) {
+            console.log('[AwardPoints API] Updating season stats:', seasonId)
 
             // Buscar ou criar stats da temporada
             const { data: seasonStats } = await supabaseAdmin
                 .from('user_season_stats')
                 .select('total_xp')
                 .eq('user_id', userId)
-                .eq('season_id', activeSeason.id)
+                .eq('season_id', seasonId)
                 .maybeSingle()
 
             if (seasonStats) {
@@ -113,7 +112,7 @@ export async function POST(request: Request) {
                         updated_at: new Date().toISOString()
                     })
                     .eq('user_id', userId)
-                    .eq('season_id', activeSeason.id)
+                    .eq('season_id', seasonId)
 
                 console.log('[AwardPoints API] Season stats updated:', seasonStats.total_xp, '->', (seasonStats.total_xp || 0) + finalAmount)
             } else {
@@ -122,7 +121,7 @@ export async function POST(request: Request) {
                     .from('user_season_stats')
                     .insert({
                         user_id: userId,
-                        season_id: activeSeason.id,
+                        season_id: seasonId,
                         total_xp: finalAmount,
                         rank_id: 'novato',
                         daily_xp_count: finalAmount,

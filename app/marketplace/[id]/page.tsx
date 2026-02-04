@@ -358,6 +358,7 @@ export default function AdDetailsPage() {
                             alt={ad.title}
                             width={1200}
                             height={800}
+                            unoptimized
                             className="object-contain max-h-[90vh]"
                         />
                     </div>
@@ -417,6 +418,7 @@ export default function AdDetailsPage() {
                                     src={mainImage}
                                     alt={ad.title}
                                     fill
+                                    unoptimized
                                     className="object-cover cursor-pointer"
                                     onClick={() => setLightboxOpen(true)}
                                 />
@@ -463,11 +465,11 @@ export default function AdDetailsPage() {
                                             key={idx}
                                             onClick={() => setCurrentImageIndex(idx)}
                                             className={`
-                                                relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition
+                                                w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition
                                                 ${idx === currentImageIndex ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}
                                             `}
                                         >
-                                            <Image src={img} alt="" fill className="object-cover" />
+                                            <img src={img} alt="" className="w-full h-full object-cover" />
                                         </button>
                                     ))}
                                 </div>
@@ -779,12 +781,11 @@ export default function AdDetailsPage() {
                                                 href={`/marketplace/${related.id}`}
                                                 className="flex gap-3 p-2 rounded-lg hover:bg-muted/50 transition"
                                             >
-                                                <div className="relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
-                                                    <Image
+                                                <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
+                                                    <img
                                                         src={related.images?.[0] || '/placeholder-product.jpg'}
                                                         alt={related.title}
-                                                        fill
-                                                        className="object-cover"
+                                                        className="w-full h-full object-cover"
                                                     />
                                                 </div>
                                                 <div className="flex-1 min-w-0">

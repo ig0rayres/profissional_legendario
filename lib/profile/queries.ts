@@ -34,15 +34,31 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             return null
         }
 
-        // 2. Gamificação completa
-        const { data: gamification } = await supabase
-            .from('user_gamification')
-            .select(`
-                *,
-                rank:ranks!current_rank_id(*)
-            `)
-            .eq('user_id', userId)
-            .single()
+        // 2. Gamificação da temporada atual (user_season_stats)
+        const { data: seasonStatsRaw } = await supabase
+            .rpc('get_current_season_stats', { p_user_id: userId })
+
+        // Transformar para formato compatível com GamificationData
+        let gamification = null
+        if (seasonStatsRaw && seasonStatsRaw.length > 0) {
+            const stats = seasonStatsRaw[0]
+
+            // Buscar rank completo
+            const { data: rankData } = await supabase
+                .from('ranks')
+                .select('*')
+                .eq('id', stats.rank_id)
+                .single()
+
+            gamification = {
+                user_id: userId,
+                total_points: stats.total_xp, // Mapear total_xp para total_points
+                current_rank_id: stats.rank_id,
+                rank: rankData,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }
+        }
 
         // 3. Medalhas conquistadas
         const { data: userMedals } = await supabase
@@ -61,9 +77,14 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
             .select('*')
             .order('id')
 
-        // 5. Subscription & Plano
-        // NOTA: plan_tiers é uma VIEW, não tabela! JOIN automático do Supabase falha
-        // Solução: Buscar separadamente e fazer merge manual
+        // 5. Subscription - Usar mapa fixo de planos (mais confiável que VIEW)
+        const PLAN_MAP = {
+            'recruta': { id: 'recruta', name: 'Recruta', description: 'Plano Gratuito', price_monthly: 0, price_annually: 0 },
+            'veterano': { id: 'veterano', name: 'Veterano', description: 'Plano Veterano', price_monthly: 97, price_annually: 970 },
+            'elite': { id: 'elite', name: 'Elite', description: 'Plano Elite', price_monthly: 197, price_annually: 1970 },
+            'lendario': { id: 'lendario', name: 'Lendário', description: 'Plano Lendário', price_monthly: 297, price_annually: 2970 }
+        }
+
         const { data: subscriptionRaw } = await supabase
             .from('subscriptions')
             .select('*')
@@ -72,36 +93,9 @@ export async function getUserProfileData(userId: string): Promise<CompleteProfil
 
         let subscription = null
         if (subscriptionRaw) {
-            // Buscar plan_tiers manualmente
-            const { data: planTier, error: planTierError } = await supabase
-                .from('plan_tiers')
-                .select('*')
-                .eq('id', subscriptionRaw.plan_id)
-                .single()
-
-            console.log('[queries.ts] Plan lookup:', {
-                plan_id: subscriptionRaw.plan_id,
-                planTier,
-                planTierError: planTierError?.message
-            })
-
-            // Fallback HARDCODED se query falhar (VIEW pode ter problema)
-            let finalPlanTier = planTier
-            if (!planTier && subscriptionRaw.plan_id === 'elite') {
-                console.warn('[queries.ts] FALLBACK: Usando plano Elite hardcoded')
-                finalPlanTier = {
-                    id: 'elite',
-                    name: 'Elite',
-                    description: 'Plano Elite',
-                    price_monthly: 197,
-                    price_annually: 1970
-                }
-            }
-
-            // Merge manual
             subscription = {
                 ...subscriptionRaw,
-                plan_tiers: finalPlanTier
+                plan_tiers: PLAN_MAP[subscriptionRaw.plan_id as keyof typeof PLAN_MAP] || PLAN_MAP['recruta']
             }
         }
 
