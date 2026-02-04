@@ -520,6 +520,11 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
 
             // Recarregar conexões
             loadConnections()
+
+            // 🔄 Refresh da página para garantir sincronização completa
+            setTimeout(() => {
+                window.location.reload()
+            }, 500)
         } catch (error: any) {
             console.error('[ELO] Exception:', error)
             alert('Erro: ' + error.message)
@@ -842,6 +847,11 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
                 // Toast de sucesso
                 const { toast } = await import('sonner')
                 toast.success('Convite aceito!', { description: '+10 Vigor' })
+
+                // 🔄 Refresh da página para garantir sincronização completa
+                setTimeout(() => {
+                    window.location.reload()
+                }, 500)
             }
         } catch (e) {
             console.error(e)
