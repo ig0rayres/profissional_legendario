@@ -1,590 +1,1197 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import {
-    Flame, Search, Users, Briefcase, Star,
-    ChevronRight, Play, Quote, MapPin, Award, TrendingUp,
-    Mountain, Compass, Shield
-} from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { RatingDialog } from '@/components/ratings/rating-dialog'
-import { PlansSection } from '@/components/sections/plans-section'
-import { FeaturedConfraternities } from '@/components/home/FeaturedConfraternities'
-import { RotabusinessLogo } from '@/components/branding/logo'
-import { getProfileUrl } from '@/lib/profile/utils'
-import { RankInsignia } from '@/components/gamification/rank-insignia'
+    Trophy, Shield, Target, Award, Crown, Flame, ShieldCheck,
+    Zap, Users, CheckCircle2, ArrowRight, Sparkles, Play,
+    ChevronDown, Star, TrendingUp, Plus, Minus,
+    Facebook, Instagram, Linkedin, Mail, Phone,
+    ClipboardCheck, Heart, Briefcase, Gem, Medal
+} from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-interface Professional {
-    id: string
-    full_name: string
-    slug: string | null
-    rota_number: string | null
-    avatar_url: string | null
-    bio: string | null
-    pista: string | null
-    rank_id: string | null
-    vigor?: number
+interface Plan {
+    id: string;
+    tier: string;
+    name: string;
+    description?: string;
+    price: number;
+    features: string[]; // Array de strings, não string separada por \n
+    xp_multiplier: number;
+    max_elos: number | null;
+    max_confraternities_month: number;
+    max_marketplace_ads: number;
+    max_categories: number;
+    slug?: string;
+    is_active: boolean;
+    display_order: number;
 }
 
-export default function HomePage() {
-    const [scrolled, setScrolled] = useState(false)
-    const [searchTerm, setSearchTerm] = useState('')
-    const [currentSlide, setCurrentSlide] = useState(0)
-    const [professionals, setProfessionals] = useState<Professional[]>([])
-    const [loadingProfessionals, setLoadingProfessionals] = useState(true)
+export default function HomeV7() {
+    const { scrollYProgress } = useScroll();
+    const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+    const scale = useTransform(scrollYProgress, [0, 0.2], [1, 1.3]); // Aumentado de 1.1 para 1.3 (+20%)
 
-    const supabase = createClient()
+    const supabase = createClient();
+    // Buscar planos reais
+    const [plans, setPlans] = useState<Plan[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [currentSlide, setCurrentSlide] = useState(0);
 
-    // Carregar TOP 3 profissionais por Vigor
-    useEffect(() => {
-        async function loadTopProfessionals() {
-            // Buscar os 3 com mais vigor
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id, full_name, slug, rota_number, avatar_url, bio, pista, vigor, rank_id')
-                .not('rota_number', 'is', null)
-                .gt('vigor', 0)
-                .order('vigor', { ascending: false })
-                .limit(3)
-
-            if (data && !error && data.length > 0) {
-                setProfessionals(data)
-            } else {
-                // Fallback: qualquer 3 profissionais
-                const { data: fallback } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, slug, rota_number, avatar_url, bio, pista')
-                    .not('rota_number', 'is', null)
-                    .limit(3)
-                    .order('created_at', { ascending: false })
-
-                if (fallback) {
-                    setProfessionals(fallback.map(p => ({ ...p, rank_id: null, vigor: 0 })))
-                }
-            }
-            setLoadingProfessionals(false)
+    // Carousel slides data - 20 VARIAÇÕES PARA TESTE
+    const heroSlides = [
+        {
+            number: "01",
+            image: "/fotos-rota/TOP 1079 (1094).jpg",
+            title: "O ACAMPAMENTO BASE",
+            subtitle: "DO HOMEM DE NEGÓCIOS",
+            description: "Infraestrutura de apoio, estratégia e alianças para sua escalada.",
+            subtext: "O Rota Business Club não é apenas um diretório. É o ponto de convergência onde a disciplina da montanha encontra a ética corporativa."
+        },
+        {
+            number: "02",
+            image: "/fotos-rota/D (330).jpg",
+            title: "NETWORKING DE",
+            subtitle: "ALTO IMPACTO",
+            description: "Conexões que geram resultados reais para seu negócio.",
+            subtext: "Encontre parceiros estratégicos em uma comunidade de empreendedores comprometidos com excelência."
+        },
+        {
+            number: "03",
+            image: "/fotos-rota/TOP 1079 (546).jpg",
+            title: "ONDE NEGÓCIOS",
+            subtitle: "GANHAM VIDA",
+            description: "Mais de R$ 1.2M em contratos fechados em 2025.",
+            subtext: "Uma plataforma que transforma conexões em oportunidades concretas e mensuráveis."
+        },
+        {
+            number: "04",
+            image: "/fotos-rota/TOP 1079 (977).jpg",
+            title: "COMUNIDADE DE",
+            subtitle: "ELITE EMPRESARIAL",
+            description: "Profissionais verificados com histórico comprovado.",
+            subtext: "Networking baseado em confiança, transparência e resultados compartilhados."
+        },
+        {
+            number: "05",
+            image: "/fotos-rota/TOP 1079 (801).jpg",
+            title: "ESTRATÉGIA E",
+            subtitle: "EXECUÇÃO ASSERTIVA",
+            description: "Transforme visão em ação com apoio qualificado.",
+            subtext: "Acesso a mentorias, parcerias e ferramentas que aceleram seu crescimento."
+        },
+        {
+            number: "06",
+            image: "/fotos-rota/0617top1276D03FotoPerigo.jpg", // Vista panorâmica do topo
+            title: "NETWORKING QUE",
+            subtitle: "TRANSFORMA VIDAS",
+            description: "Conexões autênticas que geram impacto duradouro.",
+            subtext: "Participe de encontros presenciais que fortalecem laços e criam oportunidades."
+        },
+        {
+            number: "07",
+            image: "/fotos-rota/1637top1276D2FotoPerigo.jpg", // Multidão noturna roxa
+            title: "SUA REDE DE",
+            subtitle: "CONFIANÇA EMPRESARIAL",
+            description: "Construa parcerias baseadas em valores compartilhados.",
+            subtext: "Membros comprometidos com ética, transparência e crescimento mútuo."
+        },
+        {
+            number: "08",
+            image: "/fotos-rota/1749top1276D02FotoPerigo.jpg", // Árvore vermelha noturna
+            title: "OPORTUNIDADES",
+            subtitle: "SEM LIMITES",
+            description: "Marketplace exclusivo com procedência garantida.",
+            subtext: "Negocie com segurança sabendo exatamente com quem está fechando parceria."
+        },
+        {
+            number: "09",
+            image: "/fotos-rota/TOP 1079 (6376).jpg", // Parceria na água - única!
+            title: "GAMIFICAÇÃO QUE",
+            subtitle: "PREMIA AÇÃO",
+            description: "Sistema de pontos que valoriza networking ativo.",
+            subtext: "Cada conexão, cada deal fechado te aproxima de novos benefícios e reconhecimento."
+        },
+        {
+            number: "10",
+            image: "/fotos-rota/TOP 1079 (285).jpg", // Fogueira noturna
+            title: "EVENTOS PRESENCIAIS",
+            subtitle: "DE ALTO NÍVEL",
+            description: "438 confrarias realizadas com networking estratégico.",
+            subtext: "Encontros organizados que conectam os profissionais certos no momento ideal."
+        },
+        {
+            number: "11",
+            image: "/fotos-rota/TOP 1079 (413).jpg", // Amanhecer atmosférico
+            title: "ESCALADA",
+            subtitle: "PROFISSIONAL CONTÍNUA",
+            description: "Sistema de patentes reconhece sua evolução.",
+            subtext: "De Novato a Lenda: sua jornada de crescimento é visível e recompensada."
+        },
+        {
+            number: "12",
+            image: "/fotos-rota/TOP 1079 (416).jpg", // Prédio vermelho noite
+            title: "PROCEDÊNCIA E",
+            subtitle: "REPUTAÇÃO VISÍVEL",
+            description: "Histórico completo de cada membro disponível.",
+            subtext: "Transparência total: avaliações, projetos concluídos e credibilidade comprovada."
+        },
+        {
+            number: "13",
+            image: "/fotos-rota/TOP 1079 (4732).jpg", // Cara sorrindo energia
+            title: "PARCERIAS QUE",
+            subtitle: "ELEVAM NEGÓCIOS",
+            description: "87% dos membros fecharam pelo menos 1 deal.",
+            subtext: "Ambiente propício para colaborações que geram valor real e crescimento sustentável."
+        },
+        {
+            number: "14",
+            image: "/fotos-rota/TOP 1079 (3596).jpg", // Vitória no topo
+            title: "MENTORIAS E",
+            subtitle: "CONHECIMENTO PRÁTICO",
+            description: "Aprenda com quem já trilhou o caminho.",
+            subtext: "Acesso a profissionais experientes dispostos a compartilhar estratégias de sucesso."
+        },
+        {
+            number: "15",
+            image: "/fotos-rota/A (590).jpg", // Acampamento barracas
+            title: "INFRAESTRUTURA",
+            subtitle: "PARA SEU SUCESSO",
+            description: "Ferramentas e recursos que simplificam networking.",
+            subtext: "Plataforma completa com marketplace, projetos, gamificação e comunidade ativa."
+        },
+        {
+            number: "16",
+            image: "/fotos-rota/TOP 1079 (3445).jpg", // Grupo celebrando
+            title: "NETWORKING",
+            subtitle: "ESTRATÉGICO E EFICAZ",
+            description: "Conecte-se com quem realmente importa.",
+            subtext: "Algoritmos inteligentes facilitam encontros entre profissionais complementares."
+        },
+        {
+            number: "17",
+            image: "/fotos-rota/TOP 1079 (1093).jpg", // Paisagem montanha
+            title: "CRESCIMENTO",
+            subtitle: "ACELERADO E SUSTENTÁVEL",
+            description: "Planos com multiplicadores de pontos até 5x.",
+            subtext: "Invista em seu desenvolvimento e colha resultados exponenciais."
+        },
+        {
+            number: "18",
+            image: "/fotos-rota/TOP 1079 (1082).jpg", // Nascer sol montanha
+            title: "ÉTICA E",
+            subtitle: "PROFISSIONALISMO",
+            description: "Comunidade regida por código de conduta rigoroso.",
+            subtext: "Ambiente seguro onde respeito, integridade e excelência são valores inegociáveis."
+        },
+        {
+            number: "19",
+            image: "/fotos-rota/TOP 1079 (18).jpg", // Vista panorâmica épica
+            title: "RESULTADOS",
+            subtitle: "COMPROVADOS",
+            description: "Dados reais de impacto em negócios de membros.",
+            subtext: "Métricas transparentes mostram o valor gerado pela comunidade mês a mês."
+        },
+        {
+            number: "20",
+            image: "/fotos-rota/A (771).jpg", // Grupo caminhando
+            title: "SUA JORNADA",
+            subtitle: "COMEÇA AGORA",
+            description: "Junte-se a 2.4K+ profissionais de elite.",
+            subtext: "Transforme sua carreira com conexões que realmente importam e geram impacto."
         }
-        loadTopProfessionals()
-    }, [supabase])
+    ];
 
-    // Carousel Effect
+    // Auto-rotate carousel
     useEffect(() => {
         const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % 5)
-        }, 3000)
-        return () => clearInterval(timer)
-    }, [])
+            setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+        }, 6000); // 6 segundos por slide
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 50)
-        }
-        window.addEventListener('scroll', handleScroll)
-        return () => window.removeEventListener('scroll', handleScroll)
-    }, [])
+        async function loadPlans() {
+            const { data, error } = await supabase
+                .from('plan_config')
+                .select('*')
+                .eq('is_active', true)
+                .order('display_order');
 
-    const testimonials = [
-        {
-            name: "Carlos Mendes",
-            role: "Empresário",
-            text: "A experiência no Rota Business Club transformou minha vida. Encontrei não apenas profissionais excepcionais, mas uma verdadeira aliança estratégica.",
-            rating: 5
-        },
-        {
-            name: "Roberto Silva",
-            role: "Atleta",
-            text: "Participar dos eventos e conectar com outros homens de propósito foi fundamental para meu crescimento pessoal e profissional.",
-            rating: 5
-        },
-        {
-            name: "André Costa",
-            role: "Empreendedor",
-            text: "A comunidade Rota Business me ajudou a encontrar os melhores profissionais para meus projetos. Qualidade incomparável.",
-            rating: 5
+            if (data && !error) {
+                setPlans(data);
+            }
+            setLoading(false);
         }
-    ]
+        loadPlans();
+    }, []);
 
-    const stats = [
-        { icon: Users, value: "5.000+", label: "Membros Ativos" },
-        { icon: Mountain, value: "200+", label: "Eventos Realizados" },
-        { icon: Award, value: "98%", label: "Satisfação" },
-        { icon: TrendingUp, value: "15+", label: "Anos de História" }
-    ]
+    const [openFaq, setOpenFaq] = useState<number | null>(null);
 
     return (
-        <div className="min-h-screen bg-adventure">
-            {/* Floating Header */}
-            {/* Header removed - now global */}
-
-            {/* Hero Section */}
-            <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-                {/* Carousel Background */}
-                <div className="absolute inset-0 z-0">
-                    {[
-                        '/images/event-1.jpg',
-                        '/images/event-2.jpg',
-                        '/images/event-3.jpg',
-                        '/images/event-4.jpg',
-                        '/images/event-5.jpg'
-                    ].map((img, index) => (
-                        <div
-                            key={img}
-                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${currentSlide === index ? 'opacity-100' : 'opacity-0'
-                                }`}
+        <div className="min-h-screen bg-white text-gray-900">
+            {/* ============ HERO CAROUSEL ============ */}
+            <section className="relative h-screen overflow-hidden">
+                {/* Carousel Background Images */}
+                <div className="absolute inset-0">
+                    {heroSlides.map((slide, index) => (
+                        <motion.div
+                            key={index}
+                            style={{ scale }}
+                            className="absolute inset-0"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: index === currentSlide ? 1 : 0 }}
+                            transition={{ duration: 1.5, ease: "easeInOut" }}
                         >
-                            <img
-                                src={img}
-                                alt={`Background ${index + 1}`}
-                                className="w-full h-full object-cover"
+                            <Image
+                                src={slide.image}
+                                alt={`ROTA Business Club - ${slide.title}`}
+                                fill
+                                className="object-cover"
+                                style={{
+                                    objectPosition: index === 12 ? 'center 50%' : 'center 35%', // Slide 13 mais baixo
+                                    scale: 1.15 // Zoom adicional para crop
+                                }}
+                                priority={index === 0}
                             />
-                            {/* Overlay mais forte para melhor contraste */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/65 to-black/90" />
-                        </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/85 via-gray-900/50 to-transparent" />
+                        </motion.div>
                     ))}
                 </div>
 
                 {/* Content */}
-                <div className="container mx-auto px-4 relative z-10 pt-20">
-                    <div className="max-w-5xl mx-auto text-center">
-                        <h1 className="text-5xl md:text-7xl font-bold text-impact text-white mb-6 animate-transform leading-tight" style={{ textShadow: '2px 4px 8px rgba(0,0,0,0.9), 0 0 60px rgba(210,105,30,0.4)' }}>
-                            O ACAMPAMENTO BASE<br />DO HOMEM DE NEGÓCIOS
-                        </h1>
-                        <p className="text-xl md:text-2xl text-white mb-8 font-semibold max-w-3xl mx-auto" style={{ textShadow: '1px 2px 6px rgba(0,0,0,0.95)' }}>
-                            Infraestrutura de apoio, estratégia e alianças para sua escalada.
-                        </p>
-                        <p className="text-lg text-gray-100 mb-12 max-w-2xl mx-auto" style={{ textShadow: '1px 2px 4px rgba(0,0,0,0.9)' }}>
-                            O Rota Business Club não é apenas um diretório. É o ponto de convergência onde a disciplina da montanha encontra a ética corporativa.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link href="/auth/register">
-                                <Button size="lg" className="text-lg px-8 glow-orange-strong bg-secondary hover:bg-secondary/90 text-white">
-                                    <Compass className="w-5 h-5 mr-2" />
-                                    Juntar-se à Expedição
-                                </Button>
-                            </Link>
-                            <Link href="#profissionais">
-                                <Button size="lg" variant="outline" className="text-lg px-8 border-white/30 text-white hover:bg-white/10 hover:text-white">
-                                    <Search className="w-5 h-5 mr-2" />
-                                    Explorar Membros
-                                </Button>
-                            </Link>
+                <motion.div
+                    style={{ opacity }}
+                    className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center"
+                >
+                    {/* NÚMERO DO SLIDE - TESTE */}
+                    <motion.div
+                        key={`number-${currentSlide}`}
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="absolute top-24 right-8 z-50"
+                    >
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-20 h-20 rounded-full bg-[#CC5500] border-4 border-white flex items-center justify-center shadow-2xl">
+                                <span className="text-3xl font-black text-white">
+                                    {heroSlides[currentSlide].number}
+                                </span>
+                            </div>
+                            <div className="px-3 py-1 bg-white/90 rounded-full">
+                                <span className="text-xs font-bold text-gray-900">TESTE</span>
+                            </div>
                         </div>
+                    </motion.div>
+
+                    {/* Badge */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.3 }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#1E4D40] border border-[#CC5500] rounded-full mb-6"
+                    >
+                        <Zap className="w-4 h-4 text-[#CC5500]" />
+                        <span className="text-sm font-semibold text-white tracking-wider">SEJA EXTRAORDINÁRIO</span>
+                    </motion.div>
+
+                    {/* Animated Title */}
+                    <motion.h1
+                        key={`title-${currentSlide}`}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -30 }}
+                        transition={{ duration: 0.8 }}
+                        className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight"
+                        style={{ fontFamily: 'Montserrat, sans-serif' }}
+                    >
+                        {heroSlides[currentSlide].title}{' '}
+                        <span className="relative inline-block">
+                            <span className="bg-gradient-to-r from-[#1E4D40] via-[#3fa889] to-[#1E4D40] bg-clip-text text-transparent">
+                                <br />
+                                {heroSlides[currentSlide].subtitle}
+                            </span>
+                        </span>
+                    </motion.h1>
+
+                    {/* Animated Description */}
+                    <motion.p
+                        key={`desc-${currentSlide}`}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -30 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-xl md:text-2xl text-gray-200 mb-4 max-w-3xl font-semibold"
+                    >
+                        {heroSlides[currentSlide].description}
+                    </motion.p>
+
+                    <motion.p
+                        key={`subtext-${currentSlide}`}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -30 }}
+                        transition={{ duration: 0.8, delay: 0.3 }}
+                        className="text-base md:text-lg text-gray-300 mb-12 max-w-2xl"
+                    >
+                        {heroSlides[currentSlide].subtext}
+                    </motion.p>
+
+                    {/* CTAs */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="flex flex-col sm:flex-row gap-4"
+                    >
+                        <Link href="/auth/register">
+                            <button className="px-8 py-4 bg-[#1E4D40] hover:bg-[#1a5c4a] text-white font-bold rounded-lg transition-all shadow-lg uppercase tracking-wider">
+                                Alistar-se Agora
+                            </button>
+                        </Link>
+                        <button className="px-8 py-4 bg-transparent border-2 border-white text-white hover:bg-white/10 font-bold rounded-lg transition-all flex items-center gap-2 uppercase tracking-wider">
+                            <Play className="w-5 h-5 text-[#CC5500]" />
+                            Ver História
+                        </button>
+                    </motion.div>
+
+                    {/* Carousel Indicators */}
+                    <div className="absolute bottom-24 flex gap-2">
+                        {heroSlides.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentSlide(index)}
+                                className={`h-2 rounded-full transition-all ${index === currentSlide
+                                    ? 'w-8 bg-[#CC5500]'
+                                    : 'w-2 bg-white/40 hover:bg-white/60'
+                                    }`}
+                            />
+                        ))}
                     </div>
-                </div>
+
+                    {/* Scroll Indicator */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1.5, duration: 1 }}
+                        className="absolute bottom-12"
+                    >
+                        <ChevronDown className="w-8 h-8 text-[#CC5500] animate-bounce" />
+                    </motion.div>
+                </motion.div>
             </section>
 
-            {/* Stats Section */}
-            <section className="py-16 bg-card/30 backdrop-blur-sm">
-                <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        {stats.map((stat, index) => (
-                            <div key={index} className="text-center animate-transform" style={{ animationDelay: `${index * 0.1}s` }}>
-                                <div className="flex justify-center mb-4">
-                                    <div className="p-4 rounded-full bg-primary/20">
-                                        <stat.icon className="w-8 h-8 text-primary" />
-                                    </div>
-                                </div>
-                                <div className="text-4xl font-bold text-impact text-primary mb-2">
+            {/* ============ STATS BAR ============ */}
+            <section className="py-12 bg-[#1E4D40]">
+                <div className="container mx-auto px-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                        {[
+                            { label: "MEMBROS ATIVOS", value: "2.4K+", icon: Users },
+                            { label: "VIGOR GERADO", value: "850K+", icon: Flame },
+                            { label: "CONFRARIAS", value: "438", icon: Users },
+                            { label: "NEGÓCIOS FECHADOS", value: "1.2K+", icon: Trophy }
+                        ].map((stat, idx) => (
+                            <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="flex flex-col items-center"
+                            >
+                                <stat.icon className="w-10 h-10 text-[#CC5500] mb-3" />
+                                <div className="text-4xl font-black text-white mb-2">
                                     {stat.value}
                                 </div>
-                                <div className="text-sm text-muted-foreground uppercase tracking-wide">
+                                <div className="text-xs font-bold text-white/80 uppercase tracking-widest">
                                     {stat.label}
                                 </div>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Search Section */}
-            <section id="profissionais" className="py-20">
-                <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto">
-                        <h2 className="text-4xl md:text-5xl font-bold text-impact text-primary text-center mb-4">
-                            🏆 Top 3 do Ranking
-                        </h2>
-                        <p className="text-center text-muted-foreground mb-12">
-                            Os profissionais mais ativos e engajados da comunidade
+            {/* ============ ROTA DO VALENTE ============ */}
+            <section className="py-24 bg-gray-50">
+                <div className="container mx-auto px-6">
+                    {/* Título da Seção */}
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1E4D40]/10 border border-[#1E4D40]/20 rounded-full mb-4"
+                        >
+                            <Trophy className="w-5 h-5 text-[#1E4D40]" />
+                            <span className="text-xs font-black uppercase tracking-widest text-[#1E4D40]">
+                                Sistema de Gamificação
+                            </span>
+                        </motion.div>
+
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-4xl md:text-5xl font-black text-gray-900 mb-4 uppercase"
+                            style={{ fontFamily: 'Montserrat, sans-serif' }}
+                        >
+                            ROTA DO VALENTE
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-xl text-gray-600 max-w-3xl mx-auto mb-4"
+                        >
+                            Transformamos sua jornada profissional em uma <span className="font-bold text-[#1E4D40]">experiência de progressão</span>.
+                            Cada ação gera <span className="font-bold text-[#CC5500]">VIGOR</span> (pontos), desbloqueia medalhas e te leva ao topo do ranking mensal.
+                        </motion.p>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-gray-500 max-w-2xl mx-auto"
+                        >
+                            💡 Networking, fechamento de negócios e participação ativa valem pontos.
+                        </motion.p>
+                    </div>
+
+                    {/* Patentes - Trilha de Progressão */}
+                    <div className="mb-16">
+                        <h3 className="text-2xl font-black uppercase text-center text-gray-900 mb-4">
+                            Trilha de Progressão
+                        </h3>
+                        <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+                            Evolua através de 6 patentes conforme acumula VIGOR. Cada nível desbloqueia novos privilégios.
                         </p>
 
-                        {/* Search Bar */}
-                        <Card className="glass-strong border-primary/20 mb-12">
-                            <CardContent className="p-6">
-                                <div className="flex gap-4">
-                                    <div className="flex-1 relative">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                                        <Input
-                                            placeholder="Buscar por especialidade, nome ou localização..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-10 h-12 text-lg"
-                                        />
-                                    </div>
-                                    <Link href="/professionals">
-                                        <Button size="lg" className="h-12 glow-orange bg-secondary hover:bg-secondary/90 text-white">
-                                            Buscar
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Top 3 Professionals */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {loadingProfessionals ? (
-                                // Loading skeleton
-                                [...Array(3)].map((_, index) => (
-                                    <Card key={index} className="glass-strong border-primary/20 animate-pulse">
-                                        <CardContent className="p-6">
-                                            <div className="w-20 h-20 rounded-full bg-primary/20 mx-auto mb-4" />
-                                            <div className="h-6 bg-primary/20 rounded mb-2 w-3/4 mx-auto" />
-                                            <div className="h-4 bg-primary/10 rounded mb-3 w-1/2 mx-auto" />
-                                        </CardContent>
-                                    </Card>
-                                ))
-                            ) : professionals.length === 0 ? (
-                                <div className="col-span-3 text-center py-8 text-muted-foreground">
-                                    Nenhum profissional encontrado
-                                </div>
-                            ) : (
-                                professionals.slice(0, 3).map((prof, index) => {
-                                    const positionColors = [
-                                        'from-amber-400 to-amber-600', // Ouro
-                                        'from-gray-300 to-gray-500',   // Prata  
-                                        'from-amber-600 to-amber-800'  // Bronze
-                                    ]
-                                    const positionBg = [
-                                        'border-amber-400/50 bg-gradient-to-br from-amber-500/10 to-amber-600/5',
-                                        'border-gray-400/50 bg-gradient-to-br from-gray-400/10 to-gray-500/5',
-                                        'border-amber-700/50 bg-gradient-to-br from-amber-700/10 to-amber-800/5'
-                                    ]
-                                    const positionEmoji = ['🥇', '🥈', '🥉']
-
-                                    return (
-                                        <Card
-                                            key={prof.id}
-                                            className={`relative overflow-hidden border-2 transition-all duration-300 hover:scale-105 hover:shadow-2xl group animate-transform ${positionBg[index]}`}
-                                            style={{ animationDelay: `${index * 0.15}s` }}
+                        {/* Trilha Visual */}
+                        <div className="flex items-center justify-center flex-wrap gap-4">
+                            {[
+                                { name: "Novato", icon: Shield, points: "0+" },
+                                { name: "Especialista", icon: Target, points: "200+" },
+                                { name: "Guardião", icon: ShieldCheck, points: "500+" },
+                                { name: "Comandante", icon: Award, points: "1K+" },
+                                { name: "General", icon: Flame, points: "2K+" },
+                                { name: "Lenda", icon: Crown, points: "3.5K+" }
+                            ].map((patente, idx) => {
+                                const IconComponent = patente.icon;
+                                return (
+                                    <div key={idx} className="flex items-center">
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            whileInView={{ opacity: 1, scale: 1 }}
+                                            viewport={{ once: true }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className="flex flex-col items-center"
                                         >
-                                            {/* Position Badge */}
-                                            <div className={`absolute top-3 left-3 w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-br ${positionColors[index]} shadow-lg z-10`}>
-                                                <span className="text-xl">{positionEmoji[index]}</span>
+                                            {/* Card da Patente */}
+                                            <div className="relative group">
+                                                <div className="w-24 h-24 rounded-full flex items-center justify-center border-4 border-[#1E4D40] bg-white shadow-lg group-hover:scale-110 transition-transform">
+                                                    <IconComponent className="w-10 h-10 text-[#1E4D40]" />
+                                                </div>
+                                                {/* Badge de pontos */}
+                                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                                                    <div className="px-2 py-0.5 bg-gray-900 text-white text-xs font-bold rounded-full whitespace-nowrap">
+                                                        {patente.points}
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            <CardContent className="p-6 pt-4">
-                                                {/* Avatar com borda colorida */}
-                                                <div className="relative w-24 h-24 mx-auto mb-4 mt-2">
-                                                    <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${positionColors[index]} p-1 shadow-xl`}>
-                                                        <div className="w-full h-full rounded-full overflow-hidden bg-card flex items-center justify-center">
-                                                            {prof.avatar_url ? (
-                                                                <img
-                                                                    src={prof.avatar_url}
-                                                                    alt={prof.full_name}
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            ) : (
-                                                                <Users className="w-12 h-12 text-primary" />
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    {/* Patente */}
-                                                    <div className="absolute -bottom-1 -right-1">
-                                                        <RankInsignia rankId={prof.rank_id} size="sm" />
-                                                    </div>
+                                            {/* Nome */}
+                                            <div className="mt-4 text-center">
+                                                <div className="text-sm font-black uppercase text-gray-900">
+                                                    {patente.name}
                                                 </div>
+                                            </div>
+                                        </motion.div>
 
-                                                <h3 className="text-xl font-bold text-impact text-primary mb-1 text-center">
-                                                    {prof.full_name}
-                                                </h3>
-
-                                                {/* Vigor Destaque */}
-                                                <div className="flex items-center justify-center gap-2 mb-3">
-                                                    <Flame className="w-5 h-5 text-orange-500" />
-                                                    <span className="text-lg font-bold text-orange-500">
-                                                        {(prof.vigor || 0).toLocaleString()} Vigor
-                                                    </span>
-                                                </div>
-
-                                                {prof.pista && (
-                                                    <p className="text-sm text-muted-foreground mb-3 flex items-center justify-center gap-1">
-                                                        <MapPin className="w-3 h-3" />
-                                                        {prof.pista}
-                                                    </p>
-                                                )}
-
-                                                <p className="text-sm text-foreground mb-4 line-clamp-2 text-center">
-                                                    {prof.bio || 'Membro do Rota Business Club'}
-                                                </p>
-
-                                                <div className="flex gap-2">
-                                                    <Link href={getProfileUrl({ full_name: prof.full_name, slug: prof.slug, rota_number: prof.rota_number })} className="flex-1">
-                                                        <Button className="w-full glow-orange" size="sm">
-                                                            Ver Perfil
-                                                        </Button>
-                                                    </Link>
-                                                    <RatingDialog
-                                                        professionalId={prof.id}
-                                                        professionalName={prof.full_name}
-                                                    />
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    )
-                                })
-                            )}
-                        </div>
-
-                        <div className="text-center mt-8">
-                            <Link href="/professionals">
-                                <Button size="lg" variant="outline" className="border-primary/30">
-                                    Ver Todos os Membros
-                                    <ChevronRight className="w-5 h-5 ml-2" />
-                                </Button>
-                            </Link>
+                                        {/* Seta Conectora */}
+                                        {idx < 5 && (
+                                            <ArrowRight className="hidden lg:block w-8 h-8 text-[#CC5500] mx-2" />
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
-                </div>
-            </section>
 
-            {/* Plans Section */}
-            <PlansSection />
-
-            {/* Confraternities Section */}
-            <FeaturedConfraternities />
-
-            {/* Video Section */}
-            <section className="py-20 bg-card/30 backdrop-blur-sm">
-                <div className="container mx-auto px-4">
-                    <h2 className="text-4xl md:text-5xl font-bold text-impact text-primary text-center mb-4">
-                        Nossa História
-                    </h2>
-                    <p className="text-center text-muted-foreground mb-12">
-                        A jornada da montanha aplicada aos negócios
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                        {/* Video 1 - YouTube */}
-                        <Card className="glass-strong border-primary/20 hover:border-primary/40 transition-all group overflow-hidden">
-                            <CardContent className="p-0">
-                                <div className="relative aspect-video bg-black">
-                                    <iframe
-                                        width="100%"
-                                        height="100%"
-                                        src="https://www.youtube.com/embed/joxNGPx_N4c"
-                                        title="Manifesto Rota Business"
-                                        frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                        className="absolute inset-0"
-                                    ></iframe>
-                                </div>
-                                <div className="p-6">
-                                    <h3 className="text-lg font-bold text-primary mb-2">
-                                        Manifesto Rota Business
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Entenda o código que nos une.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Video 2 - YouTube */}
-                        <Card className="glass-strong border-primary/20 hover:border-primary/40 transition-all group overflow-hidden">
-                            <CardContent className="p-0">
-                                <div className="relative aspect-video bg-black">
-                                    <iframe
-                                        width="100%"
-                                        height="100%"
-                                        src="https://www.youtube.com/embed/b7ZxP1J0WSw"
-                                        title="Experiência da Montanha"
-                                        frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                        className="absolute inset-0"
-                                    ></iframe>
-                                </div>
-                                <div className="p-6">
-                                    <h3 className="text-lg font-bold text-primary mb-2">
-                                        Experiência da Montanha
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Onde a resiliência é forjada.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </section>
-
-            {/* Testimonials */}
-            <section id="depoimentos" className="py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="text-4xl md:text-5xl font-bold text-impact text-primary text-center mb-4">
-                        Relatos do Campo
-                    </h2>
-                    <p className="text-center text-muted-foreground mb-12">
-                        O impacto do Rota Business Club na vida de quem vive a subida
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {testimonials.map((testimonial, index) => (
-                            <Card
-                                key={index}
-                                className="glass-strong border-primary/20 hover:border-primary/40 transition-all animate-transform"
-                                style={{ animationDelay: `${index * 0.1}s` }}
+                    {/* ============ MEDALHAS  - PERMANENTES ============ */}
+                    <div className="mb-16">
+                        <div className="text-center mb-12">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-[#1E4D40] text-white rounded-full mb-4"
                             >
-                                <CardContent className="p-6">
-                                    <Quote className="w-10 h-10 text-primary/30 mb-4" />
-                                    <p className="text-foreground mb-6 italic">
-                                        "{testimonial.text}"
-                                    </p>
-                                    <div className="flex items-center gap-1 mb-4">
-                                        {[...Array(testimonial.rating)].map((_, i) => (
-                                            <Star key={i} className="w-4 h-4 text-accent fill-accent" />
-                                        ))}
+                                <Medal className="w-5 h-5" />
+                                <span className="font-black uppercase text-sm">Medalhas Ad Aeternum</span>
+                            </motion.div>
+                            <h3 className="text-2xl font-black uppercase text-gray-900 mb-3">
+                                Conquistas Permanentes
+                            </h3>
+                            <p className="text-gray-600 max-w-2xl mx-auto">
+                                Medalhas são <strong>conquistas permanentes</strong> que você ganha ao completar marcos importantes.
+                                Uma vez conquistadas, <strong>ficam para sempre</strong> no seu perfil (Ad Aeternum).
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[
+                                { name: "Alistamento Concluído", icon: ClipboardCheck, points: 100, desc: "Perfil 100%" },
+                                { name: "Primeira Confraria", icon: Heart, points: 50, desc: "1º encontro" },
+                                { name: "Irmandade", icon: Briefcase, points: 75, desc: "Contratar membro" },
+                                { name: "Sentinela Elite", icon: Gem, points: 500, desc: "3 meses Elite" }
+                            ].map((medal, idx) => {
+                                const IconComponent = medal.icon;
+                                return (
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        className="flex flex-col items-center p-6 rounded-xl border-2 border-gray-200 bg-white hover:border-[#1E4D40]/30 hover:shadow-lg transition-all"
+                                    >
+                                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-[#1E4D40] to-[#2D6D5B] shadow-lg mb-4">
+                                            <IconComponent className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-sm font-black uppercase text-gray-900 mb-1">
+                                                {medal.name}
+                                            </div>
+                                            <div className="text-xs text-gray-500 mb-3">
+                                                {medal.desc}
+                                            </div>
+                                            <div className="px-3 py-1 bg-[#1E4D40]/10 text-[#1E4D40] font-bold text-xs rounded-full">
+                                                +{medal.points} VIGOR
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* ============ PROEZAS - MENSAIS ============ */}
+                    <div className="mb-16">
+                        <div className="text-center mb-12">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#CC5500] to-[#FF8C42] text-white rounded-full mb-4"
+                            >
+                                <Flame className="w-5 h-5" />
+                                <span className="font-black uppercase text-sm">Proezas do Mês</span>
+                            </motion.div>
+                            <h3 className="text-2xl font-black uppercase text-gray-900 mb-3">
+                                Desafios Mensais
+                            </h3>
+                            <p className="text-gray-600 max-w-2xl mx-auto">
+                                Proezas são <strong>desafios mensais</strong> que testam sua dedicação e atividade.
+                                Elas <strong>resetam todo dia 1</strong> de cada mês, criando competições épicas entre membros!
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[
+                                { name: "Networker Elite", icon: Users, points: 200, desc: "10 novos elos" },
+                                { name: "Mercador Ativo", icon: TrendingUp, points: 150, desc: "5 anúncios" },
+                                { name: "Social Butterfly", icon: Star, points: 100, desc: "3 confraternidades" },
+                                { name: "Negociador Nato", icon: Heart, points: 300, desc: "2 contratos" }
+                            ].map((proeza, idx) => {
+                                const IconComponent = proeza.icon;
+                                return (
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        className="flex flex-col items-center p-6 rounded-xl border-2 border-gray-200 bg-white hover:border-[#CC5500]/30 hover:shadow-lg transition-all relative overflow-hidden"
+                                    >
+                                        {/* Badge Mensal */}
+                                        <div className="absolute top-2 right-2">
+                                            <div className="px-2 py-0.5 bg-[#CC5500] text-white text-[10px] font-black rounded-full">
+                                                MENSAL
+                                            </div>
+                                        </div>
+
+                                        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-[#CC5500] to-[#FF8C42] shadow-lg mb-4">
+                                            <IconComponent className="w-8 h-8 text-white" />
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-sm font-black uppercase text-gray-900 mb-1">
+                                                {proeza.name}
+                                            </div>
+                                            <div className="text-xs text-gray-500 mb-3">
+                                                {proeza.desc}
+                                            </div>
+                                            <div className="px-3 py-1 bg-[#CC5500]/10 text-[#CC5500] font-bold text-xs rounded-full">
+                                                +{proeza.points} VIGOR
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Multiplicadores */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="bg-gradient-to-r from-[#1E4D40] to-[#1a5c4a] rounded-xl p-8 text-white mb-12"
+                    >
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-black uppercase mb-2">
+                                ⚡ Acelere Sua Progressão
+                            </h3>
+                            <p className="text-white/80 text-sm">
+                                Assinantes ganham multiplicadores de VIGOR em todas as ações
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[
+                                { plan: "Recruta", multi: "1x", desc: "Grátis" },
+                                { plan: "Veterano", multi: "1.5x", desc: "R$ 97/mês" },
+                                { plan: "Elite", multi: "3x", desc: "R$ 127/mês" },
+                                { plan: "Lendário", multi: "5x", desc: "R$ 247/mês" }
+                            ].map((item, idx) => (
+                                <div key={idx} className="text-center">
+                                    <div className="text-4xl font-black text-[#CC5500] mb-2">
+                                        {item.multi}
                                     </div>
-                                    <div>
-                                        <div className="font-bold text-primary">{testimonial.name}</div>
-                                        <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                                    <div className="text-sm font-bold uppercase mb-1">
+                                        {item.plan}
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    <div className="text-xs text-white/70">
+                                        {item.desc}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+
+                    {/* CTA para ver ranking */}
+                    <div className="text-center">
+                        <Link href="/dashboard">
+                            <button className="px-8 py-4 bg-[#CC5500] hover:bg-[#CC5500]/90 text-white font-bold rounded-lg transition-all uppercase tracking-wider inline-flex items-center gap-2">
+                                <Crown className="w-5 h-5" />
+                                Ver Ranking Atual
+                            </button>
+                        </Link>
+                    </div>
+                </div>
+            </section >
+
+            {/* ============ CONFRARIA ============ */}
+            < section className="py-24 bg-white" >
+                <div className="container mx-auto px-6">
+                    {/* Título */}
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC5500]/10 border border-[#CC5500]/20 rounded-full mb-4"
+                        >
+                            <Users className="w-5 h-5 text-[#CC5500]" />
+                            <span className="text-xs font-black uppercase tracking-widest text-[#CC5500]">
+                                Networking Presencial
+                            </span>
+                        </motion.div>
+
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-4xl md:text-5xl font-black text-gray-900 mb-4 uppercase"
+                            style={{ fontFamily: 'Montserrat, sans-serif' }}
+                        >
+                            CONFRARIA
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-xl text-gray-600 max-w-3xl mx-auto mb-4"
+                        >
+                            <span className="font-bold text-[#CC5500]">Confrarias</span> são encontros presenciais estratégicos entre membros.
+                            Aqui você cria <span className="font-bold text-[#1E4D40]">conexões reais</span> que geram negócios, parcerias e amizades duradouras.
+                        </motion.p>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-gray-500 max-w-2xl mx-auto"
+                        >
+                            💡 Membros premium podem criar e participar de mais confrarias por mês.
+                        </motion.p>
+                    </div>
+
+                    {/* Grid Galeria + Info */}
+                    <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+                        {/* Galeria */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="grid grid-cols-2 gap-4"
+                        >
+                            {[
+                                "/fotos-rota/TOP 1079 (4251).jpg",
+                                "/fotos-rota/TOP 1079 (5629).jpg",
+                                "/fotos-rota/TOP 1079 (6401).jpg",
+                                "/fotos-rota/TOP 1079 (1126).jpg"
+                            ].map((foto, idx) => (
+                                <div
+                                    key={idx}
+                                    className="relative h-48 rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform"
+                                >
+                                    <Image
+                                        src={foto}
+                                        alt={`Confraria ${idx + 1}`}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, x: 50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                        >
+                            <h3 className="text-2xl font-black uppercase text-gray-900 mb-4">
+                                O que acontece em uma Confraria?
+                            </h3>
+                            <p className="text-gray-600 mb-6">
+                                São encontros organizados pelos próprios membros para networking, troca de experiências e fechamento de negócios.
+                            </p>
+                            <ul className="space-y-4 mb-8">
+                                {[
+                                    "Networking estratégico com profissionais verificados",
+                                    "Apresentações de negócios e pitches",
+                                    "Parcerias e contratos fechados no local",
+                                    "Ambiente seguro e de alta confiança"
+                                ].map((item, idx) => (
+                                    <li key={idx} className="flex items-start gap-3">
+                                        <CheckCircle2 className="w-6 h-6 text-[#1E4D40] flex-shrink-0 mt-1" />
+                                        <span className="text-gray-700">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <div className="bg-[#1E4D40]/5 rounded-lg p-4 mb-6">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Trophy className="w-5 h-5 text-[#CC5500]" />
+                                    <span className="font-bold text-gray-900">Números Reais:</span>
+                                </div>
+                                <ul className="space-y-1 text-sm text-gray-700">
+                                    <li>• <strong>438</strong> confrarias realizadas em 2025</li>
+                                    <li>• <strong>R$ 1.2M+</strong> em negócios gerados</li>
+                                    <li>• <strong>87%</strong> dos membros fecharam pelo menos 1 deal</li>
+                                </ul>
+                            </div>
+
+                            <div className="mt-8">
+                                <Link href="/elo-da-rota">
+                                    <button className="px-6 py-3 bg-[#CC5500] hover:bg-[#CC5500]/90 text-white font-bold rounded-lg transition-all uppercase tracking-wider inline-flex items-center gap-2">
+                                        Ver Próximas Confrarias
+                                        <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                </Link>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </section >
+
+            {/* ============ MARKETPLACE ============ */}
+            < section className="py-24 bg-gray-50" >
+                <div className="container mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1E4D40]/10 border border-[#1E4D40]/20 rounded-full mb-4"
+                        >
+                            <Sparkles className="w-5 h-5 text-[#1E4D40]" />
+                            <span className="text-xs font-black uppercase tracking-widest text-[#1E4D40]">
+                                Negócios com Procedência
+                            </span>
+                        </motion.div>
+
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-4xl md:text-5xl font-black text-gray-900 mb-4 uppercase"
+                            style={{ fontFamily: 'Montserrat, sans-serif' }}
+                        >
+                            MARKETPLACE
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-xl text-gray-600 max-w-3xl mx-auto mb-4"
+                        >
+                            Um <span className="font-bold text-[#1E4D40]">marketplace exclusivo</span> para membros negociarem serviços e produtos.
+                            Aqui você sabe <span className="font-bold text-[#CC5500]">com quem está fazendo negócio</span>.
+                        </motion.p>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-gray-500 max-w-2xl mx-auto"
+                        >
+                            💡 Todos os membros são verificados. Histórico, avaliações e reputação visíveis.
+                        </motion.p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8 mb-12">
+                        {[
+                            { title: "Membros Verificados", icon: CheckCircle2, desc: "Todos passam por validação" },
+                            { title: "Procedência", icon: Shield, desc: "Histórico e avaliações" },
+                            { title: "Irmandade", icon: Users, desc: "Negócie com confiança" }
+                        ].map((feature, idx) => (
+                            <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="text-center p-6 bg-white rounded-lg shadow-md"
+                            >
+                                <feature.icon className="w-12 h-12 text-[#1E4D40] mx-auto mb-4" />
+                                <h3 className="text-lg font-black uppercase text-gray-900 mb-2">
+                                    {feature.title}
+                                </h3>
+                                <p className="text-gray-600">{feature.desc}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <div className="text-center">
+                        <Link href="/marketplace">
+                            <button className="px-6 py-3 bg-[#1E4D40] hover:bg-[#1a5c4a] text-white font-bold rounded-lg transition-all uppercase tracking-wider inline-flex items-center gap-2">
+                                Explorar Marketplace
+                                <ArrowRight className="w-5 h-5" />
+                            </button>
+                        </Link>
+                    </div>
+                </div>
+            </section >
+
+            {/* ============ PROJETOS ============ */}
+            < section className="py-24 bg-white" >
+                <div className="container mx-auto px-6">
+                    {/* Título */}
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC5500]/10 border border-[#CC5500]/20 rounded-full mb-4"
+                        >
+                            <Target className="w-5 h-5 text-[#CC5500]" />
+                            <span className="text-xs font-black uppercase tracking-widest text-[#CC5500]">
+                                Oportunidades Diretas
+                            </span>
+                        </motion.div>
+
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-4xl md:text-5xl font-black text-gray-900 mb-4 uppercase"
+                            style={{ fontFamily: 'Montserrat, sans-serif' }}
+                        >
+                            PROJETOS
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-xl text-gray-600 max-w-3xl mx-auto mb-4"
+                        >
+                            Poste sua <span className="font-bold text-[#CC5500]">demanda</span> ou encontre <span className="font-bold text-[#1E4D40]">oportunidades</span> de projetos reais.
+                            Conectamos quem precisa com quem pode entregar.
+                        </motion.p>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-gray-500 max-w-2xl mx-auto"
+                        >
+                            Desde consultorias até desenvolvimento completo de software.
+                        </motion.p>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-[#CC5500] to-[#FF8C42] rounded-xl p-12 text-white text-center">
+                        <h3 className="text-3xl font-black uppercase mb-4">
+                            R$ 127K+ em Contratos Gerados
+                        </h3>
+                        <p className="text-xl mb-8 text-white/90">
+                            Nossos membros fecharam mais de 1.200 projetos nos últimos 6 meses.
+                        </p>
+                        <Link href="/projects">
+                            <button className="px-8 py-4 bg-white text-[#CC5500] hover:bg-gray-100 font-bold rounded-lg transition-all uppercase tracking-wider inline-flex items-center gap-2">
+                                Publicar Seu Projeto
+                                <ArrowRight className="w-5 h-5" />
+                            </button>
+                        </Link>
+                    </div>
+                </div>
+            </section >
+
+            {/* ============ PLANOS ============ */}
+            < section className="py-24 bg-white" >
+                <div className="container mx-auto px-6">
+                    {/* Título */}
+                    <div className="text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC5500]/10 border border-[#CC5500]/20 rounded-full mb-4"
+                        >
+                            <Trophy className="w-5 h-5 text-[#CC5500]" />
+                            <span className="text-xs font-black uppercase tracking-widest text-[#CC5500]">
+                                Escolha Seu Plano
+                            </span>
+                        </motion.div>
+
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-4xl md:text-5xl font-black text-gray-900 mb-4 uppercase"
+                            style={{ fontFamily: 'Montserrat, sans-serif' }}
+                        >
+                            PLANOS
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-xl text-gray-600 max-w-2xl mx-auto"
+                        >
+                            Escolha o plano ideal para seu <span className="font-bold text-[#1E4D40]">momento</span> e{' '}
+                            <span className="font-bold text-[#1E4D40]">objetivos</span>.
+                        </motion.p>
+                    </div>
+
+                    {/* Cards de Planos */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
+                        {loading ? (
+                            <div className="col-span-full text-center py-12">
+                                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#1E4D40] border-t-transparent"></div>
+                            </div>
+                        ) : (
+                            plans.map((plan, idx) => {
+                                const isElite = plan.tier === 'elite';
+                                return (
+                                    <motion.div
+                                        key={plan.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        className={`relative p-8 rounded-xl border-2 h-full flex flex-col ${isElite
+                                            ? 'border-[#CC5500] bg-gradient-to-br from-[#CC5500]/10 to-[#FF8C42]/10 shadow-2xl scale-105'
+                                            : 'border-gray-200 bg-white hover:border-[#1E4D40]/30 shadow-lg'
+                                            } transition-all hover:shadow-xl`}
+                                    >
+                                        {/* Badge Mais Popular */}
+                                        {isElite && (
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                                                <div className="px-4 py-1 bg-gradient-to-r from-[#CC5500] to-[#FF8C42] text-white text-xs font-black uppercase rounded-full shadow-lg">
+                                                    MAIS POPULAR
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Nome do Plano */}
+                                        <div className="text-center mb-6">
+                                            <h3 className={`text-2xl font-black uppercase mb-2 ${isElite ? 'text-[#CC5500]' : 'text-gray-900'
+                                                }`}>
+                                                {plan.name}
+                                            </h3>
+                                            <div className="flex items-baseline justify-center gap-2">
+                                                <span className={`text-4xl font-black whitespace-nowrap ${isElite ? 'text-[#CC5500]' : 'text-[#1E4D40]'
+                                                    }`}>
+                                                    {plan.price === 0
+                                                        ? 'Grátis'
+                                                        : `R$ ${plan.price.toFixed(2).replace('.', ',')}`
+                                                    }
+                                                </span>
+                                                {plan.price > 0 && (
+                                                    <span className="text-gray-500 whitespace-nowrap">/mês</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Multiplicador VIGOR */}
+                                        <div className="text-center mb-6 py-3 px-4 bg-[#1E4D40]/10 rounded-lg">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Zap className="w-5 h-5 text-[#CC5500]" />
+                                                <span className="font-bold text-gray-900">
+                                                    Multiplicador {plan.xp_multiplier}x
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Features */}
+                                        <ul className="space-y-3 mb-8 flex-grow">
+                                            {plan.features?.map((feature, fIdx) => (
+                                                <li key={fIdx} className="flex items-start gap-2">
+                                                    <CheckCircle2 className="w-5 h-5 text-[#1E4D40] flex-shrink-0 mt-0.5" />
+                                                    <span className="text-sm text-gray-700">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        {/* CTA */}
+                                        <Link href="/auth/register">
+                                            <button
+                                                className={`w-full py-3 rounded-lg font-bold uppercase tracking-wider transition-all ${isElite
+                                                    ? 'bg-gradient-to-r from-[#CC5500] to-[#FF8C42] text-white hover:shadow-lg'
+                                                    : 'bg-[#1E4D40] text-white hover:bg-[#1E4D40]/90'
+                                                    }`}
+                                            >
+                                                {plan.price === 0 ? 'Começar Grátis' : 'Assinar Agora'}
+                                            </button>
+                                        </Link>
+                                    </motion.div>
+                                )
+                            })
+                        )}
+                    </div>
+                </div>
+            </section >
+
+            {/* ============ FAQ ============ */}
+            < section className="py-24 bg-gray-50" >
+                <div className="container mx-auto px-6 max-w-4xl">
+                    <motion.h2
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="text-4xl md:text-5xl font-black text-gray-900 text-center mb-16 uppercase"
+                        style={{ fontFamily: 'Montserrat, sans-serif' }}
+                    >
+                        ❓ Perguntas Frequentes
+                    </motion.h2>
+
+                    <div className="space-y-4">
+                        {[
+                            {
+                                q: "Como funciona o sistema de gamificação?",
+                                a: "Cada ação na plataforma gera VIGOR (pontos). Quanto mais ativo você for, mais rápido progride nas patentes e desbloqueia medalhas e proezas."
+                            },
+                            {
+                                q: "Posso cancelar minha assinatura?",
+                                a: "Sim! Cancelamento sem multas a qualquer momento. Seu acesso permanece até o fim do período pago."
+                            },
+                            {
+                                q: "Como funcionam as Confrarias?",
+                                a: "São encontros presenciais entre membros para networking, conexões e negócios. Membros pagos podem criar e participar de mais confrarias por mês."
+                            },
+                            {
+                                q: "O Marketplace é seguro?",
+                                a: "Sim! Todos os membros são verificados. Você pode ver avaliações, histórico e perfil completo antes de fechar negócio."
+                            }
+                        ].map((faq, idx) => (
+                            <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="bg-white rounded-lg shadow-md overflow-hidden"
+                            >
+                                <button
+                                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                                    className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                                >
+                                    <span className="font-bold text-gray-900">{faq.q}</span>
+                                    {openFaq === idx ? (
+                                        <Minus className="w-5 h-5 text-[#1E4D40]" />
+                                    ) : (
+                                        <Plus className="w-5 h-5 text-[#1E4D40]" />
+                                    )}
+                                </button>
+                                {openFaq === idx && (
+                                    <div className="px-6 pb-4 text-gray-600">
+                                        {faq.a}
+                                    </div>
+                                )}
+                            </motion.div>
                         ))}
                     </div>
                 </div>
-            </section>
+            </section >
 
-            {/* Offer Services CTA */}
-            <section className="py-20 bg-card/30 backdrop-blur-sm">
-                <div className="container mx-auto px-4">
-                    <Card className="glass-strong border-primary/20 max-w-4xl mx-auto">
-                        <CardContent className="p-12 text-center">
-                            <Shield className="w-16 h-16 text-primary mx-auto mb-6" />
-                            <h2 className="text-3xl md:text-4xl font-bold text-impact text-primary mb-4">
-                                Junte-se à Elite
-                            </h2>
-                            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-                                Faça parte do Rota Business Club.
-                                Conecte-se com clientes de alto nível e expanda seu negócio com honra.
+            {/* ============ FOOTER ============ */}
+            < footer className="bg-[#1E4D40] text-white py-12" >
+                <div className="container mx-auto px-6">
+                    <div className="grid md:grid-cols-4 gap-8 mb-8">
+                        {/* Logo */}
+                        <div>
+                            <h3 className="text-2xl font-black mb-4 uppercase">ROTA</h3>
+                            <p className="text-white/70 text-sm">
+                                O acampamento base do homem de negócio.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <Link href="/auth/register">
-                                    <Button size="lg" className="glow-orange-strong bg-secondary hover:bg-secondary/90 text-white">
-                                        <Briefcase className="w-5 h-5 mr-2" />
-                                        Cadastrar como Profissional
-                                    </Button>
-                                </Link>
-                                <Button size="lg" variant="outline" className="border-primary/30">
-                                    Saiba Mais
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </section>
+                        </div>
 
-            {/* Event Photos Gallery */}
-            <section id="eventos" className="py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="text-4xl md:text-5xl font-bold text-impact text-primary text-center mb-4">
-                        Nossas Expedições
-                    </h2>
-                    <p className="text-center text-muted-foreground mb-12">
-                        Experiências transformadoras em contato com a natureza e o desafio
-                    </p>
+                        {/* Links */}
+                        <div>
+                            <h4 className="font-bold uppercase mb-4 text-sm tracking-wider">Plataforma</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><Link href="/dashboard" className="text-white/70 hover:text-white">Dashboard</Link></li>
+                                <li><Link href="/elo-da-rota" className="text-white/70 hover:text-white">Confrarias</Link></li>
+                                <li><Link href="/marketplace" className="text-white/70 hover:text-white">Marketplace</Link></li>
+                                <li><Link href="/projects" className="text-white/70 hover:text-white">Projetos</Link></li>
+                            </ul>
+                        </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
-                        {/* Featured Image (Large) */}
-                        <div className="col-span-2 row-span-2 relative rounded-lg overflow-hidden group cursor-pointer min-h-[300px]">
-                            <img
-                                src="/images/event-4.jpg"
-                                alt="Grupo Rota Business"
-                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6">
-                                <div>
-                                    <h3 className="text-white font-bold text-xl mb-1">A Força do Grupo</h3>
-                                    <p className="text-gray-300 text-sm">Unidade e propósito</p>
-                                </div>
+                        <div>
+                            <h4 className="font-bold uppercase mb-4 text-sm tracking-wider">Institucional</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><Link href="/planos" className="text-white/70 hover:text-white">Planos</Link></li>
+                                <li><Link href="/about" className="text-white/70 hover:text-white">Sobre</Link></li>
+                                <li><Link href="/contact" className="text-white/70 hover:text-white">Contato</Link></li>
+                            </ul>
+                        </div>
+
+                        {/* Social */}
+                        <div>
+                            <h4 className="font-bold uppercase mb-4 text-sm tracking-wider">Redes Sociais</h4>
+                            <div className="flex gap-4">
+                                <a href="#" className="text-white/70 hover:text-white"><Facebook className="w-5 h-5" /></a>
+                                <a href="#" className="text-white/70 hover:text-white"><Instagram className="w-5 h-5" /></a>
+                                <a href="#" className="text-white/70 hover:text-white"><Linkedin className="w-5 h-5" /></a>
                             </div>
                         </div>
-
-                        {/* Image 2 */}
-                        <div className="aspect-square relative rounded-lg overflow-hidden group cursor-pointer">
-                            <img
-                                src="/images/event-1.jpg"
-                                alt="Palestra"
-                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                        </div>
-
-                        {/* Image 3 */}
-                        <div className="aspect-square relative rounded-lg overflow-hidden group cursor-pointer">
-                            <img
-                                src="/images/event-2.jpg"
-                                alt="Atividade Noturna"
-                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                        </div>
-
-                        {/* Image 4 */}
-                        <div className="aspect-square relative rounded-lg overflow-hidden group cursor-pointer">
-                            <img
-                                src="/images/event-3.jpg"
-                                alt="Liderança"
-                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                        </div>
-
-                        {/* Image 5 */}
-                        <div className="aspect-square relative rounded-lg overflow-hidden group cursor-pointer">
-                            <img
-                                src="/images/event-5.jpg"
-                                alt="Natureza"
-                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                        </div>
                     </div>
 
-                    <div className="text-center mt-8">
-                        <Button size="lg" variant="outline" className="border-primary/30">
-                            Ver Galeria Completa
-                            <ChevronRight className="w-5 h-5 ml-2" />
-                        </Button>
+                    <div className="border-t border-white/20 pt-8 text-center text-sm text-white/70">
+                        © 2026 ROTA Business Club. Todos os direitos reservados.
                     </div>
                 </div>
-            </section>
-
-            {/* Footer */}
-            <footer className="py-12 bg-card/50 backdrop-blur-sm border-t border-primary/20">
-                <div className="container mx-auto px-4">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-3">
-                            <RotabusinessLogo size={30} />
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                            © 2024 Rota Business Club. Todos os direitos reservados.
-                        </div>
-                        <div className="flex gap-6">
-                            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                Sobre
-                            </Link>
-                            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                Contato
-                            </Link>
-                            <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors">
-                                Admin
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </footer>
-        </div>
-    )
+            </footer >
+        </div >
+    );
 }
