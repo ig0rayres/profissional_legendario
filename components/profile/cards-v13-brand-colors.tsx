@@ -443,6 +443,7 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                 .from('user_connections')
                 .update({ status: 'accepted', accepted_at: new Date().toISOString() })
                 .eq('id', connectionId)
+                .eq('status', 'pending') // 🔒 ANTI-FARM: Só aceita se ainda estiver pending
                 .select()
 
             console.log('[ELO] Resultado:', { data, error })
@@ -601,9 +602,9 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                                 </span>
                             </button>
 
-                            {/* Popup de solicitações pendentes */}
+                            {/* Popup de solicitações pendentes - FIXED para não ser cortado */}
                             {showPendingPopup && (
-                                <div className="absolute right-0 top-12 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                                <div className="fixed right-4 top-20 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-[9999] overflow-hidden">
                                     <div className="bg-gradient-to-r from-[#1E4D40] to-[#2A6B5A] p-3">
                                         <h4 className="text-white font-bold text-sm flex items-center gap-2">
                                             <UserPlus className="w-4 h-4" />
