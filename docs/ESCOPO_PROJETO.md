@@ -1,8 +1,8 @@
 # 📋 ROTA BUSINESS CLUB - ESCOPO COMPLETO DO PROJETO
 
-**Versão:** 2.1  
-**Data:** 28/01/2026  
-**Status:** 🟢 Produção + Sistema de Temporadas Implementado
+**Versão:** 2.2  
+**Data:** 03/02/2026  
+**Status:** 🟢 Produção + Marketplace Completo Implementado
 
 ---
 
@@ -739,60 +739,244 @@ Dia 01 às 00:01:
 ### Conceito
 
 Área para membros anunciarem produtos, veículos, imóveis e serviços.
+## 14. MARKETPLACE ✅ **IMPLEMENTADO**
 
-### Funcionalidades Implementadas
+### Visão Geral
 
-- ✅ Cadastro de produtos/serviços
-- ✅ Categorias configuráveis (Veículos, Imóveis, Eletrônicos, etc)
-- ✅ Campos específicos por categoria (Veículos: ano/km/cor, Imóveis: m²/venda/locação)
-- ✅ Modalidades de anúncio (Básico/Elite/Lendário) com preços diferentes
-- ✅ Destaque visual para anúncios Elite e Lendário
-- ✅ Limite de anúncios por plano do usuário
-- ✅ Upload de múltiplas fotos
-- ✅ Expiração automática de anúncios (duração por categoria)
-- ✅ Marcar como vendido
-- ✅ Admin completo com 3 abas (Anúncios, Categorias, Modalidades)
+Sistema completo de compra e venda integrado à plataforma, permitindo que membros:
+- 🛒 **VENDA** produtos e serviços
+- 🔍 **PROCUREM** (Compra) itens específicos
+- 📱 Recebam notificações de elos
+- 🎯 Posts automáticos no feed
+
+**Documentação Completa:** Ver `/brain/MARKETPLACE_DOCUMENTACAO.md`
+
+### Tipos de Anúncios
+
+#### 🛒 VENDA (sell)
+- Usuário **possui** o item e quer vendê-lo
+- Pode escolher modalidade (Básico/Elite/Lendário)
+- Preço obrigatório
+- Condição: Novo, Seminovo, Usado
+- Fotos: 5-25 (dependendo da modalidade)
+- Duração: 15-90 dias
+
+#### 🔍 COMPRA "PROCURA-SE" (buy)
+- Usuário **procura** um item específico
+- **SEMPRE GRATUITO**
+- Duração fixa: **30 dias**
+- Sem modalidades
+- Badge laranja diferenciado
+- Notifica elos automaticamente
+
+### Modalidades de Anúncio (Apenas Vendas)
+
+| Modalidade | Preço | Duração | Fotos | Destaque |
+|------------|-------|---------|-------|----------|
+| **Básico** | Grátis | 15 dias | 5 | Sem destaque |
+| **Elite** | R$ 29,90 | 30 dias | 15 | Badge verde, boost +50 |
+| **Lendário** | R$ 99,90 | 90 dias | 25 | Badge dourado, boost +100 |
+
+### Categorias Dinâmicas
+
+Categorias carregadas do banco com configurações específicas:
+
+**Principais:**
+-  🚗 **Veí culos** - Requer modalidade, campos específicos (ano, marca, modelo, km)
+- 🏠 **Imóveis** - Requer modalidade, campos específicos (área, quartos, tipo)
+- 📦 **Outros** - Sem modalidade, sempre gratuito, 30 dias
+
+**Configurações por Categoria:**
+- `requires_tier`: Se exige escolha de modalidade
+- `duration_days`: Duração padrão (sem tier)
+- `max_photos`: Limite de fotos
+- `icon`: Ícone Lucide para exibição
 
 ### Limites por Plano
 
-| Plano | Anúncios Permitidos |
-|-------|--------------------|
+| Plano | Anúncios Simultâneos |
+|-------|---------------------|
 | Recruta | 0 |
-| Veterano | 2 |
-| Elite | 10 |
+| Novato | 1 |
+| Valente | 3 |
 | Lendário | Ilimitado |
 
-### Modalidades de Anúncio (Veículos)
+### Fluxo de Criação
 
-| Modalidade | Preço | Duração | Destaque |
-|------------|-------|---------|----------|
-| Básico | Grátis | 30 dias | - |
-| Elite | R$ 49,90 | 45 dias | Badge verde, posição privilegiada |
-| Lendário | R$ 99,90 | 60 dias | Badge dourado, topo da listagem |
+**VENDA:**
+```
+1. Home → Botão "VENDER" (verde)
+2. Redireciona: /marketplace/create?type=sell
+3. Escolhe categoria
+4. Escolhe modalidade (se aplicável)
+5. Preenche formulário
+6. Se pago → Stripe → Webhook → Ativa
+7. Se grátis → Ativa imediatamente
+8. Triggers:
+   ✅ Notifica elos (se habilitado)
+   ✅ Cria post no feed
+```
 
-### Modalidades de Anúncio (Imóveis)
+**COMPRA:**
+```
+1. Home → Botão "COMPRAR" (laranja)
+2. Redireciona: /marketplace/create?type=buy
+3. Alert: "Sempre gratuito, 30 dias"
+4. Escolhe categoria
+5. Preenche o que procura
+6. Publica → Ativa imediatamente
+7. Triggers:
+   ✅ Notifica elos (se habilitado)
+   ✅ Cria post no feed com badge laranja
+```
 
-| Modalidade | Preço | Duração | Destaque |
-|------------|-------|---------|----------|
-| Básico | Grátis | 60 dias | - |
-| Elite | R$ 79,90 | 90 dias | Badge verde |
-| Lendário | R$ 149,90 | 120 dias | Badge dourado, tour virtual |
+### Sistema de Notificações
+
+**Tabelas:**
+- `user_notification_preferences` - Preferências do usuário
+- `notifications` - Notificações enviadas
+
+**Triggers Automáticos:**
+
+```sql
+-- Quando anúncio fica ativo
+notify_elos_on_marketplace_ad()
+  → Busca elos do usuário
+  → Verifica preferências de cada elo
+  → Envia notificação se habilitado
+```
+
+**Tipos de Notificação:**
+1. 🛒 **Novo Anúncio de VENDA**
+   - Controle: `marketplace_new_ads`
+   - Mensagem: "[Nome] está vendendo: [Título]"
+
+2. 🔍 **Procura-se (COMPRA)**
+   - Controle: `marketplace_buy_requests`
+   - Mensagem: "[Nome] está procurando: [Título]"
+
+**Configurações:** `/settings/notifications`
+- Toggles separados para venda/compra
+- Salva em `user_notification_preferences`
+- Apenas usuários logados
+
+### Integração com Feed
+
+**Trigger:** `create_feed_post_on_marketplace_ad()`
+
+**Comportamento:**
+- Cria post automático quando anúncio fica ativo
+- Post tipo: `marketplace`
+- Metadata: categoria, preço, localização, imagem
+- Badge diferenciado por tipo (verde/laranja)
+
+**Filtros no Feed:**
+```
+☑️ Geral
+☑️ Elos
+☑️ Meus
+☑️ Marketplace  🆕
+```
+- Multi-seleção permitida
+- Persistência: localStorage
+- Todos habilitados por padrão
+
+### Filtros e Busca
+
+**Tabs de Tipo:**
+```
+[Todos (70)] [Vendas (45)] [Procurando (25)]
+```
+
+**Filtros Avançados (accordion):**
+- 🔍 Busca por texto (real-time)
+- 📁 Categorias (checkboxes múltiplas)
+- 💰 Range de preço (De/Até)
+- 🔧 Condição (Novo/Seminovo/Usado)
+- Botão "Limpar Filtros"
+- Contador de resultados
+
+**Combinação:** Todos filtros funcionam simultaneamente
+
+### Design Visual
+
+**Cores do Sistema:**
+- Verde (`#10b981`) - Venda/Elite
+- Dourado (`#f59e0b`) - Lendário
+- Laranja (`#f97316`) - Compra/Procura-se
+- Cinza (`#6b7280`) - Básico
+
+**Badges:**
+- ⭐ ELITE (verde)
+- 👑 LENDÁRIO (dourado)
+- 🔍 PROCURA-SE (laranja)
+
+**Cards:**
+- Bordas coloridas por tipo/tier
+- Imagens otimizadas
+- Preço destacado
+- Localização, detalhes específicos
 
 ### Tabelas do Banco
 
-- `marketplace_categories` - Categorias (nome, slug, ícone, duração padrão)
-- `marketplace_ad_tiers` - Modalidades (preço, duração, destaques)
-- `marketplace_ads` - Anúncios em si
+```
+marketplace_categories          → Categorias dinâmicas
+marketplace_ad_tiers           → Modalidades (Básico/Elite/Lendário)
+marketplace_ads                → Anúncios principais
+user_notification_preferences  → Preferências de notificação
+notifications                  → Notificações enviadas
+posts                          → Posts automáticos no feed (+metadata)
+```
 
 ### Admin
 
 - URL: `/admin/marketplace`
 - 3 abas: Anúncios | Categorias | Modalidades
-- CRUD completo para cada aba
+- CRUD completo
+- Estatísticas em tempo real
+- Aprovação manual (opcional)
+
+### Rotas Principais
+
+| Rota | Descrição |
+|------|-----------|
+| `/marketplace` | Listagem completa com filtros |
+| `/marketplace/create` | Formulário de criação |
+| `/marketplace/[id]` | Detalhes do anúncio |
+| `/settings/notifications` | Preferências de notificação |
+
+### Regras de Negócio
+
+1. **Expiração automática:** Trigger diário marca anúncios expirados
+2. **Renovação:** Permitida com novo pagamento (para tiers pagos)
+3. **Edição:** Título, descrição, fotos - Categoria e tier bloqueados
+4. **Exclusão:** Status `deleted`, mantém no banco
+5. **Marcar vendido:** Status `sold`, remove da listagem
+
+### Integrações
+
+- ✅ **Stripe:** Pagamento de modalidades Elite/Lendário
+- ✅ **Supabase Storage:** Upload de imagens
+- ✅ **Email:** Notificações (via Resend)
+- ✅ **Feed:** Posts automáticos
 
 ### Status
 
-✅ **Implementado** - Falta apenas integração Stripe para pagamento de tiers
+✅ **100% IMPLEMENTADO** (03/02/2026)
+
+**Commits:**
+- `d0b15443` - Toggle + migrations
+- `dbc1308e` - Botões + formulário
+- `1b3dbd04` - Badges visuais
+- `a37d3b30` - Filtros avançados
+- `4a1be726` - Feed checkboxes
+- `8e0a9621` - Settings page
+
+**Pendências:**
+- [ ] Sistema de favoritos
+- [ ] Comparador de produtos
+- [ ] Chat interno
+- [ ] Sistema de propostas
 
 ---
 
