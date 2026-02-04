@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation' // 🆕 Adicionado useSearchParams
 import Link from 'next/link'
 import Image from 'next/image'
 import { useForm } from 'react-hook-form'
@@ -48,6 +48,7 @@ type FormData = z.infer<typeof formSchema>
 
 export default function CreateListingPage() {
     const router = useRouter()
+    const searchParams = useSearchParams() // 🆕 Ler parâmetros da URL
     const { user } = useAuth()
     const supabase = createClient()
 
@@ -73,6 +74,15 @@ export default function CreateListingPage() {
 
     const selectedCategoryId = watch('category_id')
     const selectedCategory = categories.find(c => c.id === selectedCategoryId)
+
+    // 🆕 Ler parâmetro 'type' da URL e pré-selecionar listingType
+    useEffect(() => {
+        const typeParam = searchParams?.get('type')
+        if (typeParam === 'sell' || typeParam === 'buy') {
+            setListingType(typeParam)
+        }
+    }, [searchParams])
+
     const isVehicle = selectedCategory?.slug === 'veiculos'
     const isProperty = selectedCategory?.slug === 'imoveis'
 
@@ -487,8 +497,21 @@ export default function CreateListingPage() {
                                 </div>
                             </div>
 
-                            {/* Modalidade do Anúncio */}
-                            {availableTiers.length > 0 && (
+                            {/* 🆕 Alert para anúncios de COMPRA (grátis) */}
+                            {listingType === 'buy' && (
+                                <div className="flex items-start gap-3 p-4 bg-orange-500/10 border-2 border-orange-500/30 rounded-lg">
+                                    <Info className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                                    <div className="text-sm">
+                                        <p className="font-semibold text-orange-700 mb-1">Anúncio de Procura</p>
+                                        <p className="text-muted-foreground">
+                                            Anúncios de procura são sempre <strong>gratuitos</strong> e ficam ativos por <strong>30 dias</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Modalidade do Anúncio - APENAS para VENDAS */}
+                            {listingType === 'sell' && availableTiers.length > 0 && (
                                 <div>
                                     <Label className="flex items-center gap-2 mb-3">
                                         <Crown className="w-4 h-4 text-amber-500" />

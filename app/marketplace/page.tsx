@@ -140,6 +140,39 @@ export default function MarketplacePage() {
                 </div>
             </div>
 
+            {/* 🆕 Botões Principais: VENDER e COMPRAR */}
+            <div className="container mx-auto px-4 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                    {/* Botão VENDER - Verde */}
+                    <Link href={user ? "/marketplace/create?type=sell" : "/auth/login"}>
+                        <Button
+                            className="w-full h-24 bg-secondary hover:bg-secondary/90 text-white text-lg font-bold shadow-lg hover:shadow-xl transition-all group"
+                            size="lg"
+                        >
+                            <Store className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
+                            <div className="text-left">
+                                <div>VENDER</div>
+                                <p className="text-xs font-normal opacity-80">Anuncie seu produto</p>
+                            </div>
+                        </Button>
+                    </Link>
+
+                    {/* Botão COMPRAR - Laranja */}
+                    <Link href={user ? "/marketplace/create?type=buy" : "/auth/login"}>
+                        <Button
+                            className="w-full h-24 bg-orange-500 hover:bg-orange-600 text-white text-lg font-bold shadow-lg hover:shadow-xl transition-all group"
+                            size="lg"
+                        >
+                            <Search className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
+                            <div className="text-left">
+                                <div>COMPRAR</div>
+                                <p className="text-xs font-normal opacity-80">Procuro um produto</p>
+                            </div>
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+
             <div className="container mx-auto px-4 py-8">
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Sidebar / Categories */}
