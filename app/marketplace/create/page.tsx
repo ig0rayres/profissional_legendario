@@ -65,6 +65,7 @@ export default function CreateListingPage() {
     const [userPlan, setUserPlan] = useState<{ tier: string, maxAds: number | null }>({ tier: 'recruta', maxAds: 0 })
     const [currentAdsCount, setCurrentAdsCount] = useState(0)
     const [maxPhotosAllowed, setMaxPhotosAllowed] = useState(5) // Limite dinâmico baseado na categoria
+    const [listingType, setListingType] = useState<'sell' | 'buy'>('sell') // 🆕 Tipo: Vender ou Procurar
 
     const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(formSchema)
@@ -346,6 +347,7 @@ export default function CreateListingPage() {
                     property_details,
                     status,
                     payment_status,
+                    listing_type: listingType, // 🆕 Tipo do anúncio
                     expires_at: expiresAt.toISOString(),
                     published_at: tierIsFree ? new Date().toISOString() : null
                 })
@@ -440,6 +442,49 @@ export default function CreateListingPage() {
                                     </SelectContent>
                                 </Select>
                                 {errors.category_id && <p className="text-sm text-destructive mt-1">{errors.category_id.message}</p>}
+                            </div>
+
+                            {/* 🆕 TIPO: Vender ou Procurar */}
+                            <div>
+                                <Label className="flex items-center gap-2 mb-3">
+                                    🔄 Tipo de Anúncio
+                                </Label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setListingType('sell')}
+                                        className={`
+                                            p-4 rounded-lg border-2 transition-all font-semibold
+                                            ${listingType === 'sell'
+                                                ? 'border-green-500 bg-green-500/10 text-green-700'
+                                                : 'border-muted hover:border-green-500/50 text-muted-foreground'
+                                            }
+                                        `}
+                                    >
+                                        <div className="flex items-center justify-center gap-2 mb-1">
+                                            <Star className="w-5 h-5" />
+                                            <span>Quero Vender</span>
+                                        </div>
+                                        <p className="text-xs opacity-75">Tenho este item para vender</p>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setListingType('buy')}
+                                        className={`
+                                            p-4 rounded-lg border-2 transition-all font-semibold
+                                            ${listingType === 'buy'
+                                                ? 'border-orange-500 bg-orange-500/10 text-orange-700'
+                                                : 'border-muted hover:border-orange-500/50 text-muted-foreground'
+                                            }
+                                        `}
+                                    >
+                                        <div className="flex items-center justify-center gap-2 mb-1">
+                                            <AlertCircle className="w-5 h-5" />
+                                            <span>Procurando</span>
+                                        </div>
+                                        <p className="text-xs opacity-75">Estou procurando este item</p>
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Modalidade do Anúncio */}
