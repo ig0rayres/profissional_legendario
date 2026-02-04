@@ -42,27 +42,22 @@ export default function NaRotaPage() {
     const [activeTab, setActiveTab] = useState<'global' | 'user' | 'connections'>('global')
     const [createModalOpen, setCreateModalOpen] = useState(false)
 
-    // 🆕 Filtros de tipo de post (checkboxes multi-seleção)
-    const [postTypeFilters, setPostTypeFilters] = useState({
-        general: true,
-        connections: true,
-        personal: true,
-        marketplace: true
-    })
+    // 🆕 Filtro de Marketplace (único checkbox adicional)
+    const [showMarketplace, setShowMarketplace] = useState(true)
 
-    // Carregar preferências do localStorage
+    // Carregar preferência do localStorage
     useEffect(() => {
-        const saved = localStorage.getItem('feedPostTypeFilters')
-        if (saved) {
-            setPostTypeFilters(JSON.parse(saved))
+        const saved = localStorage.getItem('feedShowMarketplace')
+        if (saved !== null) {
+            setShowMarketplace(JSON.parse(saved))
         }
     }, [])
 
-    // Salvar preferências no localStorage
-    const toggleFilter = (filter: keyof typeof postTypeFilters) => {
-        const newFilters = { ...postTypeFilters, [filter]: !postTypeFilters[filter] }
-        setPostTypeFilters(newFilters)
-        localStorage.setItem('feedPostTypeFilters', JSON.stringify(newFilters))
+    // Salvar preferência no localStorage
+    const toggleMarketplace = () => {
+        const newValue = !showMarketplace
+        setShowMarketplace(newValue)
+        localStorage.setItem('feedShowMarketplace', JSON.stringify(newValue))
     }
 
     // Hooks centralizados
@@ -425,51 +420,18 @@ export default function NaRotaPage() {
                                     </TabsList>
                                 </Tabs>
 
-                                {/* 🆕 Filtros de Tipo de Post (Checkboxes) */}
-                                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                    <p className="text-xs font-semibold text-gray-700 mb-2">Filtrar por tipo:</p>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={postTypeFilters.general}
-                                                onChange={() => toggleFilter('general')}
-                                                className="w-4 h-4 text-gray-600 rounded"
-                                            />
-                                            <Users className="w-3.5 h-3.5 text-gray-600" />
-                                            <span className="text-gray-700">Geral</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={postTypeFilters.connections}
-                                                onChange={() => toggleFilter('connections')}
-                                                className="w-4 h-4 text-amber-600 rounded"
-                                            />
-                                            <Zap className="w-3.5 h-3.5 text-amber-600" />
-                                            <span className="text-gray-700">Elos</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={postTypeFilters.personal}
-                                                onChange={() => toggleFilter('personal')}
-                                                className="w-4 h-4 text-blue-600 rounded"
-                                            />
-                                            <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                                            <span className="text-gray-700">Meus</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={postTypeFilters.marketplace}
-                                                onChange={() => toggleFilter('marketplace')}
-                                                className="w-4 h-4 text-orange-600 rounded"
-                                            />
-                                            <Store className="w-3.5 h-3.5 text-orange-600" />
-                                            <span className="text-gray-700">Marketplace</span>
-                                        </label>
-                                    </div>
+                                {/* 🆕 Filtro de Marketplace (checkbox único) */}
+                                <div className="mb-4">
+                                    <label className="flex items-center gap-2 text-sm cursor-pointer p-2 hover:bg-gray-50 rounded transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={showMarketplace}
+                                            onChange={toggleMarketplace}
+                                            className="w-4 h-4 text-orange-600 rounded"
+                                        />
+                                        <Store className="w-4 h-4 text-orange-600" />
+                                        <span className="text-gray-700 font-medium">Incluir Marketplace</span>
+                                    </label>
                                 </div>
 
                                 {/* Posts */}
