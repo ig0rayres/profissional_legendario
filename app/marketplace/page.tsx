@@ -22,6 +22,13 @@ export default function MarketplacePage() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+    // 🆕 Filtros avançados
+    const [listingTypeFilter, setListingTypeFilter] = useState<'all' | 'sell' | 'buy'>('all')
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+    const [priceMin, setPriceMin] = useState<string>('')
+    const [priceMax, setPriceMax] = useState<string>('')
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+
     const [categories, setCategories] = useState<MarketplaceCategory[]>([])
     const [ads, setAds] = useState<MarketplaceAd[]>([])
 
@@ -66,16 +73,30 @@ export default function MarketplacePage() {
         setLoading(false)
     }
 
-    // Filtrar anúncios
+    // 🆕 Filtrar anúncios com TODOS os filtros
     const filteredAds = ads.filter(ad => {
+        // Filtro de tipo (Todos, Vendas, Procurando)
+        const matchesType = listingTypeFilter === 'all' || ad.listing_type === listingTypeFilter
+
+        // Filtro de busca por texto
         const matchesSearch = !searchTerm ||
             ad.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (ad.description?.toLowerCase().includes(searchTerm.toLowerCase()))
 
-        const matchesCategory = !selectedCategory || ad.category_id === selectedCategory
+        // Filtro de categorias múltiplas (se != array vazio, filtrar)
+        const matchesCategories = selectedCategories.length === 0 ||
+            selectedCategories.includes(ad.category_id)
 
-        return matchesSearch && matchesCategory
+        // Filtro de range de preço
+        const minPrice = priceMin ? parseFloat(priceMin) : 0
+        const maxPrice = priceMax ? parseFloat(priceMax) : Infinity
+        const matchesPrice = ad.price >= minPrice && ad.price <= maxPrice
+
+        return matchesType && matchesSearch && matchesCategories && matchesPrice
     })
+
+    // Contagem de resultados
+    const resultsCount = filteredAds.length
 
     // Icone dinâmico da categoria
     function getCategoryIcon(iconName: string) {
@@ -170,6 +191,135 @@ export default function MarketplacePage() {
                             </div>
                         </Button>
                     </Link>
+                </div>
+            </div>
+
+            {/* 🆕 FILTROS */}
+            <div className="container mx-auto px-4 py-4">
+                {/* Tabs de Tipo */}
+                <div className="flex gap-2 mb-4">
+                    <Button
+                        variant={listingTypeFilter === 'all' ? 'default' : 'outline'}
+                        onClick={() => setListingTypeFilter('all')}
+                        className="flex-1 md:flex-none"
+                    >
+                        Todos ({ads.length})
+                    </Button>
+                    <Button
+                        variant={listingTypeFilter === 'sell' ? 'default' : 'outline'}
+                        onClick={() => setListingTypeFilter('sell')}
+                        className="flex-1 md:flex-none"
+                    >
+                        <Store className="w-4 h-4 mr-1" />
+                        Vendas ({ads.filter(a => a.listing_type === 'sell').length})
+                    </Button>
+                    <Button
+                        variant={listingTypeFilter === 'buy' ? 'outline' : 'outline'}
+                        onClick={() => setListingTypeFilter('buy')}
+                        className={`flex-1 md:flex-none ${listingTypeFilter === 'buy' ? 'bg-orange-500 text-white hover:bg-orange-600' : ''}`}
+                    >
+                        <Search className="w-4 h-4 mr-1" />
+                        Procurando ({ads.filter(a => a.listing_type === 'buy').length})
+                    </Button>
+                </div>
+
+                {/* Painel de Filtros Avançados */}
+                <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-lg p-4 space-y-4">
+                    {/* Busca por texto */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Buscar por nome ou palavra-chave..."
+                            className="pl-9"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Filtros Avançados (accordion) */}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                        className="w-full justify-between"
+                    >
+                        <span className="flex items-center gap-2">
+                            <Filter className="w-4 h-4" />
+                            Filtros Avançados
+                        </span>
+                        {showAdvancedFilters ? '▲' : '▼'}
+                    </Button>
+
+                    {showAdvancedFilters && (
+                        <div className="space-y-4 pt-2 border-t border-primary/10">
+                            {/* Categorias */}
+                            <div>
+                                <Label className="text-sm font-semibold mb-2 block">📁 Categorias</Label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    {categories.map(cat => (
+                                        <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCategories.includes(cat.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedCategories([...selectedCategories, cat.id])
+                                                    } else {
+                                                        setSelectedCategories(selectedCategories.filter(c => c !== cat.id))
+                                                    }
+                                                }}
+                                                className="w-4 h-4 text-primary rounded border-muted"
+                                            />
+                                            <span className="text-sm">{cat.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Range de Preço */}
+                            <div>
+                                <Label className="text-sm font-semibold mb-2 block">💰 Faixa de Preço</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Input
+                                        type="number"
+                                        placeholder="De R$"
+                                        value={priceMin}
+                                        onChange={(e) => setPriceMin(e.target.value)}
+                                    />
+                                    <Input
+                                        type="number"
+                                        placeholder="Até R$"
+                                        value={priceMax}
+                                        onChange={(e) => setPriceMax(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Ações */}
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setSearchTerm('')
+                                        setSelectedCategories([])
+                                        setPriceMin('')
+                                        setPriceMax('')
+                                        setListingTypeFilter('all')
+                                    }}
+                                    className="flex-1"
+                                >
+                                    🗑️ Limpar Filtros
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="flex-1"
+                                >
+                                    ✅ Aplicar ({resultsCount} resultados)
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
