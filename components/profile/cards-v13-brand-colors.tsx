@@ -575,8 +575,11 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#1E4D40]/30 transition-all duration-300 group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#1E4D40]/30 transition-all duration-300 group relative">
+            {/* Glass animation container - isolated with overflow-hidden */}
+            <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            </div>
 
             <CardContent className="p-5 relative">
                 <div className="flex items-center justify-between mb-4">
@@ -607,9 +610,9 @@ export function ElosDaRotaV13({ connections: propConnections, pendingCount: prop
                                 </span>
                             </button>
 
-                            {/* Popup de solicitações pendentes - FIXED e Z-INDEX MÁXIMO */}
+                            {/* Popup de solicitações pendentes - Z-INDEX MÁXIMO ABSOLUTO */}
                             {showPendingPopup && (
-                                <div className="fixed right-4 top-20 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                                <div className="fixed right-4 top-20 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden" style={{ zIndex: 9999 }}>
                                     <div className="bg-gradient-to-r from-[#1E4D40] to-[#2A6B5A] p-3">
                                         <h4 className="text-white font-bold text-sm flex items-center gap-2">
                                             <UserPlus className="w-4 h-4" />
@@ -979,7 +982,7 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
     }
 
     return (
-        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group relative z-10">
+        <Card className="bg-white border border-gray-200 shadow-md hover:shadow-xl hover:border-[#D2691E]/30 transition-all duration-300 group relative">
             {/* Glass animation container - isolated with overflow-hidden */}
             <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -1031,7 +1034,7 @@ export function ConfraternityStatsV13({ confraternities: propConfraternities, us
 
                                 {/* Popup de Convites Pendentes */}
                                 {showInvitesPopup && (
-                                    <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-[100] overflow-hidden">
+                                    <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
                                         <div className="bg-gradient-to-r from-[#D2691E] to-[#B85715] px-4 py-3">
                                             <h4 className="text-white font-bold text-sm">Convites Pendentes</h4>
                                             <p className="text-white/80 text-xs">{pendingInvitesCount} convite(s) aguardando</p>
