@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { PostsService, Post, SidebarData, PostQueryOptions } from '@/lib/services/posts-service'
 
 interface UsePostsOptions {
-    feedType: 'global' | 'user' | 'connections'
+    feedType: 'global' | 'user' | 'connections' | 'marketplace'
     userId?: string
     autoLoad?: boolean
 }

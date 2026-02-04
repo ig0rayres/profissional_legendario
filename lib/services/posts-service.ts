@@ -38,7 +38,7 @@ export interface Post {
 }
 
 export interface PostQueryOptions {
-    feedType: 'global' | 'user' | 'connections'
+    feedType: 'global' | 'user' | 'connections' | 'marketplace'
     userId?: string
     currentUserId?: string
     limit?: number
@@ -136,6 +136,9 @@ export class PostsService {
             // Aplicar filtros baseado no tipo
             if (feedType === 'global') {
                 query = query.eq('visibility', 'public')
+            } else if (feedType === 'marketplace') {
+                // 🆕 Apenas posts do marketplace
+                query = query.eq('post_type', 'marketplace').eq('visibility', 'public')
             } else if (feedType === 'user' && userId) {
                 // Posts do usuário + posts de confrarias que ele participou + posts onde foi marcado
                 const confIds = await this.getUserConfraternityIds(userId)
