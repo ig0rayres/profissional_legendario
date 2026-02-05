@@ -313,21 +313,48 @@ export function ChatWidget() {
 
         setSending(true)
 
-        const { error } = await supabase
+        const messageContent = newMessage.trim()
+        const tempId = `temp-${Date.now()}` // ID temporário para otimistic update
+
+        // Criar a mensagem temporária que será enviada
+        const newMessageObj: Message = {
+            id: tempId,
+            conversation_id: selectedConversation.id,
+            sender_id: user.id,
+            content: messageContent,
+            read_at: null,
+            created_at: new Date().toISOString()
+        }
+
+        // ✅ ADICIONAR MENSAGEM IMEDIATAMENTE (optimistic update)
+        setMessages(prev => [...prev, newMessageObj])
+        setNewMessage('')
+        scrollToBottom()
+
+        const { data, error } = await supabase
             .from('messages')
             .insert({
                 conversation_id: selectedConversation.id,
                 sender_id: user.id,
-                content: newMessage.trim()
+                content: messageContent
             })
+            .select()
+            .single()
 
         if (error) {
             console.error('Erro ao enviar mensagem:', error)
+            // Remover mensagem temporária em caso de erro
+            setMessages(prev => prev.filter(m => m.id !== tempId))
+            setNewMessage(messageContent) // Restaurar texto
             setSending(false)
             return
         }
 
-        setNewMessage('')
+        // ✅ SUBSTITUIR mensagem temporária pela real (com ID do banco)
+        if (data) {
+            setMessages(prev => prev.map(m => m.id === tempId ? data as Message : m))
+        }
+
         setSending(false)
         inputRef.current?.focus()
     }

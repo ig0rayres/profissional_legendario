@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit, Award, ChevronDown, ChevronUp } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Edit, Award, ChevronDown, ChevronUp, ShoppingCart, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -33,7 +33,14 @@ interface Post {
     comments_count: number
     created_at: string
     updated_at: string
-    post_type?: 'confraria' | 'em_campo' | 'projeto_entregue' | null
+    post_type?: 'confraria' | 'em_campo' | 'projeto_entregue' | 'marketplace' | null
+    metadata?: {
+        marketplace_ad_id?: string
+        listing_type?: 'sell' | 'buy'
+        category?: string
+        price?: number
+        location?: string
+    } | null
     // Vinculações
     medal_id?: string | null
     achievement_id?: string | null
@@ -195,7 +202,9 @@ export function PostCard({
     }
 
     // Determinar tipo de post para banner
-    const postType = post.post_type || (post.confraternity_id ? 'confraria' : null)
+    // SOLUÇÃO SIMPLES: Se tem marketplace_ad_id na metadata, é marketplace
+    const isMarketplace = !!(post.metadata as any)?.marketplace_ad_id
+    const postType = isMarketplace ? 'marketplace' : (post.post_type || (post.confraternity_id ? 'confraria' : null))
 
     // Gerar URLs de perfil
     const getUserProfileUrl = (user: { id: string; slug?: string; rota_number?: string }) => {
@@ -211,6 +220,7 @@ export function PostCard({
                 postType === 'confraria' && "border-stone-300",
                 postType === 'em_campo' && "border-zinc-300",
                 postType === 'projeto_entregue' && "border-emerald-300",
+                postType === 'marketplace' && "border-blue-300",
                 !postType && "border-gray-200"
             )}>
                 <CardContent className="p-0">
@@ -396,30 +406,48 @@ export function PostCard({
                             post.media_urls.length === 2 && "grid-cols-2",
                             post.media_urls.length >= 3 && "grid-cols-2"
                         )}>
-                            {post.media_urls.slice(0, 4).map((url, index) => (
-                                <div
-                                    key={index}
-                                    className={cn(
-                                        "relative aspect-square bg-gray-100",
-                                        post.media_urls.length === 1 && "aspect-video",
-                                        post.media_urls.length === 3 && index === 0 && "col-span-2"
-                                    )}
-                                >
-                                    <Image
-                                        src={url}
-                                        alt={`Foto ${index + 1}`}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                    {index === 3 && post.media_urls.length > 4 && (
-                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                            <span className="text-white text-2xl font-bold">
-                                                +{post.media_urls.length - 4}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                            {post.media_urls.slice(0, 4).map((url, index) => {
+                                const marketplaceAdId = (post.metadata as any)?.marketplace_ad_id
+                                const photoContent = (
+                                    <div
+                                        className={cn(
+                                            "relative aspect-square bg-gray-100",
+                                            post.media_urls.length === 1 && "aspect-video",
+                                            post.media_urls.length === 3 && index === 0 && "col-span-2"
+                                        )}
+                                    >
+                                        <Image
+                                            src={url}
+                                            alt={`Foto ${index + 1}`}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                        {index === 3 && post.media_urls.length > 4 && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                                <span className="text-white text-2xl font-bold">
+                                                    +{post.media_urls.length - 4}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+
+                                // Se for marketplace, envolve com Link
+                                if (marketplaceAdId) {
+                                    return (
+                                        <Link
+                                            key={index}
+                                            href={`/marketplace/${marketplaceAdId}`}
+                                            className="hover:opacity-90 transition-opacity cursor-pointer"
+                                        >
+                                            {photoContent}
+                                        </Link>
+                                    )
+                                }
+
+                                // Senão, retorna só o conteúdo
+                                return <div key={index}>{photoContent}</div>
+                            })}
                         </div>
                     )}
 
@@ -466,6 +494,20 @@ export function PostCard({
                                     <ChevronDown className="w-4 h-4" />
                                 )}
                             </Button>
+
+                            {/* Marketplace Ad Button */}
+                            {postType === 'marketplace' && post.metadata?.marketplace_ad_id && (
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="gap-2 h-8 bg-blue-600 hover:bg-blue-700 text-white"
+                                    onClick={() => router.push(`/marketplace/${post.metadata?.marketplace_ad_id}`)}
+                                >
+                                    <ShoppingCart className="w-4 h-4" />
+                                    <span className="text-xs font-medium">Ver Anúncio</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                </Button>
+                            )}
 
                             {/* Share button */}
                             <Button

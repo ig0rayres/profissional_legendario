@@ -28,6 +28,14 @@ export interface Post {
     media_urls: string[]
     visibility: 'public' | 'connections' | 'private'
     confraternity_id: string | null
+    post_type?: 'confraria' | 'em_campo' | 'projeto_entregue' | 'marketplace' | null
+    metadata?: {
+        marketplace_ad_id?: string
+        listing_type?: 'sell' | 'buy'
+        category?: string
+        price?: number
+        location?: string
+    } | null
     likes_count: number
     comments_count: number
     created_at: string
@@ -106,6 +114,8 @@ export class PostsService {
             media_urls,
             visibility,
             confraternity_id,
+            post_type,
+            metadata,
             tagged_user_ids,
             likes_count,
             comments_count,
@@ -135,12 +145,13 @@ export class PostsService {
 
             // Aplicar filtros baseado no tipo
             if (feedType === 'global') {
+                // 🌍 Global: posts públicos (INCLUI marketplace)
                 query = query.eq('visibility', 'public')
             } else if (feedType === 'marketplace') {
-                // 🆕 Apenas posts do marketplace
+                // 🛒 Marketplace: apenas posts do marketplace
                 query = query.eq('post_type', 'marketplace').eq('visibility', 'public')
             } else if (feedType === 'user' && userId) {
-                // Posts do usuário + posts de confrarias que ele participou + posts onde foi marcado
+                // 👤 Meus: posts do usuário + confrarias + marcado (EXCLUI marketplace)
                 const confIds = await this.getUserConfraternityIds(userId)
 
                 // Filtros: autor OU confraria OU marcado
@@ -154,9 +165,13 @@ export class PostsService {
                 filters.push(`tagged_user_ids.cs.{${userId}}`)
 
                 query = query.or(filters.join(','))
+                // ❌ EXCLUIR marketplace da tab Meus
+                query = query.or('post_type.is.null,post_type.neq.marketplace')
             } else if (feedType === 'connections' && userId) {
-                // Posts públicos ou de conexões
+                // ⚡ Elos: posts públicos ou de conexões (EXCLUI marketplace)
                 query = query.in('visibility', ['public', 'connections'])
+                // ❌ EXCLUIR marketplace da tab Elos
+                query = query.or('post_type.is.null,post_type.neq.marketplace')
             }
 
             const { data, error } = await query
@@ -266,6 +281,8 @@ export class PostsService {
                     media_urls: post.media_urls || [],
                     visibility: post.visibility,
                     confraternity_id: post.confraternity_id,
+                    post_type: post.post_type || null,  // 🆕 INCLUIR post_type
+                    metadata: post.metadata || null,    // 🆕 INCLUIR metadata
                     likes_count: post.likes_count || 0,
                     comments_count: post.comments_count || 0,
                     created_at: post.created_at,
