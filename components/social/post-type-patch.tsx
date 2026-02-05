@@ -1,9 +1,9 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Users, Flame, CheckCircle2, Award, Shield, Target, Flag, Medal } from 'lucide-react'
+import { Users, Flame, CheckCircle2, Award, Shield, Target, Flag, Medal, ShoppingCart } from 'lucide-react'
 
-export type PostType = 'confraria' | 'em_campo' | 'projeto_entregue' | 'medalha'
+export type PostType = 'confraria' | 'em_campo' | 'projeto_entregue' | 'medalha' | 'marketplace'
 
 interface PostTypePatchProps {
     type: PostType
@@ -53,6 +53,16 @@ const patchConfig = {
         text: 'text-yellow-100',
         iconColor: 'text-yellow-500',
         accent: 'ring-yellow-600/30',
+    },
+    marketplace: {
+        label: 'MARKETPLACE',
+        icon: ShoppingCart,
+        // Azul corporativo - negócios
+        bg: 'bg-blue-900',
+        border: 'border-blue-700',
+        text: 'text-blue-100',
+        iconColor: 'text-blue-400',
+        accent: 'ring-blue-600/30',
     },
 }
 
